@@ -1,0 +1,14 @@
+<div class="welcome-container">
+  <header class="welcome-header">
+    <h1>Welcome</h1>
+    <p>Select an option below to get started.</p>
+  </header>
+
+  <div class="tile-grid">
+    <div class="tile" *ngFor="let tile of tiles">
+      <button class="tile-button" (click)="tile.title === 'Logout' ? logout() : null">
+        <span class="tile-title">{{ tile.title }}</span>
+      </button>
+    </div>
+  </div>
+</div>

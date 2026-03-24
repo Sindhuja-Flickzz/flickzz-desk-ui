@@ -1,0 +1,36 @@
+/* Global styles */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&display=swap');
+
+.mat-body, .mat-body-2, .mat-typography .mat-body, .mat-typography .mat-body-2, .mat-typography {
+  font-family: 'Nunito', sans-serif;
+}
+
+html body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Nunito', sans-serif;
+  background: #F4F4F4;
+  color: #00246B;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Nunito', sans-serif;
+  background: #F4F4F4;
+  color: #00246B;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: #00246B;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
