@@ -6,11 +6,11 @@ import { AbstractControl, ValidationErrors } from '@angular/forms';
   providedIn: 'root'
 })
 export class DateUtilsService {
-  formatToDDMMYYYY(date: Date): Date {
+  formatToDDMMYYYY(date: Date): String {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear().toString();
-    return new Date(+year, +month - 1, +day);
+    return `${day}.${month}.${year}`;
   }
 
   getCurrentDate(date: Date): Date {
@@ -76,6 +76,4 @@ export class DateUtilsService {
 
     return null;
   }
-
-
 }

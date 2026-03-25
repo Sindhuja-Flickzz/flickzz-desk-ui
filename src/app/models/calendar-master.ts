@@ -16,8 +16,8 @@ import { CalendarHolidayVO } from './calendar-holiday';
 export interface CalendarRequest {
   calendarCode: string;
   calendarType: string;
-  validFrom: Date;
-  validTo: Date;
+  validFrom: String;
+  validTo: String;
   workingDays: string[];
   holidays: CalendarHolidayVO[];
   workFrom: string;

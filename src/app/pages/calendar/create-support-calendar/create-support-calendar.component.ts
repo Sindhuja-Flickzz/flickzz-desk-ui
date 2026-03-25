@@ -116,7 +116,7 @@ export class CreateSupportCalendarComponent implements OnInit, OnDestroy {
 
   addHoliday(): void {
     // Clear previous errors
-    this.newHolidayErrors = {};
+    this.newHolidayErrors = {};    
 
     // Get values
     const holidayDate = this.newHoliday.get('holidayDate')?.value?.trim();
@@ -178,41 +178,12 @@ export class CreateSupportCalendarComponent implements OnInit, OnDestroy {
     return regex.test(control.value) ? null : { 'alphanumeric': { value: control.value } };
   }
 
-  // dateValidator(control: any): { [key: string]: any } | null {
-  //   if (!control.value) {
-  //     return null;
-  //   }
-  //   // DD.MM.YYYY format
-  //   // const regex = /^\d{2}\.\d{2}\.\d{4}$/;
-  //   const regex = /^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.\d{4}$/;
-
-  //   if (!regex.test(control.value)) {
-  //     return { 'invalidDateFormat': { value: control.value } };
-  //   }
-  //   const [day, month, year] = control.value.split('.').map((part: string) => parseInt(part, 10));
-  //   const date = new Date(year, month - 1, day);
-  //   if (isNaN(date.getTime()) || date.getDate() !== day || date.getMonth() !== month - 1 || date.getFullYear() !== year) {
-  //     return { 'invalidDate': { value: control.value } };
-  //   }
-  //   // For validFrom and validTo, ensure future dates
-  //   const today = new Date();
-  //   today.setHours(0, 0, 0, 0);
-  //   if (control.parent && (control.parent.get('validFrom') === control || control.parent.get('validTo') === control)) {
-  //     if (date < today) {
-  //       return { 'pastDate': { value: control.value } };
-  //     }
-  //   }
-  //   return null;
-  // }
-
   onTimeChange(event: Event) {
     this.fieldErrors[(event.target as HTMLInputElement).id] = null;
     const input = event.target as HTMLInputElement;
     const rawValue = input.value; // e.g. "09:30" or "09:30:00"
-
     // Force to HH:MM only
     const formatted = rawValue.substring(0,5);
-
     // Update the appropriate time field
     if (input.id === 'timeFrom') {
       this.calendarForm.get('timeFrom')?.setValue(formatted);
@@ -222,8 +193,6 @@ export class CreateSupportCalendarComponent implements OnInit, OnDestroy {
 
     // Validate timeFrom is earlier than timeTo
     this.validateTimeRange();
-
-    this.createDaysCheckboxes();
   }
 
   validateTimeRange(): void {
@@ -242,13 +211,14 @@ export class CreateSupportCalendarComponent implements OnInit, OnDestroy {
         this.calendarForm.get('timeTo')?.reset();
         this.fieldErrors['timeFrom'] = 'From time must be earlier than To time';
         this.fieldErrors['timeTo'] = 'To time must be later than From time';
-      }
+      }      
     }
   }
 
 
   onSubmit(): void {
     this.formSubmitted = true;
+    this.fieldErrors = {};
 
     this.getFieldError();
 
@@ -265,21 +235,12 @@ export class CreateSupportCalendarComponent implements OnInit, OnDestroy {
       this.fieldErrors['holidays'] = 'Please add at least one holiday';
     }
 
-    // if (Object.keys(this.fieldErrors).length === 0) {
-    //   console.log('No errors');
-    // } else {
-    //   console.log('There are errors');
-    // }
-
-
-    // Combine time with current date to create proper datetime format
-    const timeFromParts = this.calendarForm.get('timeFrom')?.value.split(':');
-    const timeToParts = this.calendarForm.get('timeTo')?.value.split(':');
-    const now = new Date();
-    const workFromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(),
-      parseInt(timeFromParts[0], 10), parseInt(timeFromParts[1], 10), 0);
-    const workToDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(),
-      parseInt(timeToParts[0], 10), parseInt(timeToParts[1], 10), 0);
+    if (Object.keys(this.fieldErrors).length === 0) {
+      console.log('No errors');
+    } else {
+      console.log('Errors:', this.fieldErrors);
+      return
+    }
 
     const calendarData: CalendarRequest = {
       calendarCode: this.calendarForm.get('calendarCode')?.value,
@@ -288,8 +249,8 @@ export class CreateSupportCalendarComponent implements OnInit, OnDestroy {
       validTo: this.dateUtils.formatToDDMMYYYY(new Date(this.calendarForm.get('validTo')?.value)),
       workingDays: selectedDays,
       holidays: holidays,
-      workFrom: workFromDate.toISOString(),
-      workTo: workToDate.toISOString(),
+      workFrom: this.calendarForm.get('timeFrom')?.value,
+      workTo: this.calendarForm.get('timeTo')?.value,
       timezone: this.calendarForm.get('timezone')?.value
     };
 
@@ -311,7 +272,7 @@ export class CreateSupportCalendarComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.submitting = false;
-        this.submitError = error.error?.message || 'Failed to create calendar. Please try again.';
+        this.submitError = error.error?.description || 'Failed to create calendar. Please try again.';
       }
     });
   }
@@ -320,25 +281,27 @@ export class CreateSupportCalendarComponent implements OnInit, OnDestroy {
     this.formSubmitted = false; // Reset formSubmitted to avoid showing errors on initial load
     Object.keys(this.calendarForm.controls).forEach(key => {
       const field = this.calendarForm.get(key);
-      if (field?.hasError('required')) {
-        this.fieldErrors[key] = `${key} is required`;
-        return `${key} is required`;
+      if (key != 'holidayDate' && key != 'description') {
+        if (field?.hasError('required')) {
+          this.fieldErrors[key] = `${key} is required`;
+          return `${key} is required`;
+        }
+        if (field?.hasError('alphanumeric')) {
+          return 'Calendar code must be alphanumeric';
+        }
+        if (field?.hasError('invalidDateFormat')) {
+          return 'Date format must be DD.MM.YYYY';
+        }
+        if (field?.hasError('invalidDate')) {
+          return 'Invalid date';
+        }
+        if (field?.hasError('pastDate')) {
+          return 'Date must be in the future';
+        }
       }
-      if (field?.hasError('alphanumeric')) {
-        return 'Calendar code must be alphanumeric';
-      }
-      if (field?.hasError('invalidDateFormat')) {
-        return 'Date format must be DD.MM.YYYY';
-      }
-      if (field?.hasError('invalidDate')) {
-        return 'Invalid date';
-      }
-      if (field?.hasError('pastDate')) {
-        return 'Date must be in the future';
-      }
+      
       return '';
     });
     return '';
   }
-
 }
