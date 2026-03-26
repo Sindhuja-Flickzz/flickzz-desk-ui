@@ -3,8 +3,9 @@ import { RouterModule, Routes } from '@angular/router';
 import {LoginComponent} from "./pages/login/login.component";
 import {RegisterComponent} from "./pages/register/register.component";
 import {WelcomeComponent} from "./pages/welcome/welcome.component";
-import {CreateSupportCalendarComponent} from "./pages/calendar/create-support-calendar/create-support-calendar.component";
-import {authGuard} from "./serives/auth/auth.guard";
+import {CreateCalendarComponent} from "./pages/calendar/create-calendar/create-calendar.component";
+import {CalendarListPageComponent} from "./pages/calendar/calendar-list/calendar-list.component";
+import {authGuard} from "./service/auth/auth.guard";
 
 const routes: Routes = [
   {
@@ -26,8 +27,13 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
-    path: 'calendar/create-support-calendar',
-    component: CreateSupportCalendarComponent,
+    path: 'calendar/create-calendar',
+    component: CreateCalendarComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'calendar/list',
+    component: CalendarListPageComponent,
     canActivate: [authGuard]
   },
   {
