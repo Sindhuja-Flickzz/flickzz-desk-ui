@@ -35,63 +35,122 @@ export const MENU_INFO: MenuItem[] = [
         "menuId": 2,
         "menuName": "Settings",
         "isActive": true,
-        "icon" : "⚙️",
+        "icon": "⚙️",
         "isParent": true,
         "subMenus": [
+        {
+            "subMenuId": 201,
+            "subMenuName": "General",
+            "isActive": true,
+            "childSubMenus": [
             {
-                "subMenuId": 201,
-                "subMenuName": "Organization Setup",
+                "subMenuId": 20101,
+                "subMenuName": "Organisation Setup",
                 "isActive": true,
-                "childSubMenus": [{
-                        "subMenuId": 20101,
-                        "subMenuName": "Calendar",
+                "childSubMenus": [
+                {
+                    "subMenuId": 2010101,
+                    "subMenuName": "Define",
+                    "isActive": true,
+                    "childSubMenus": [
+                    {
+                        "subMenuId": 201010101,
+                        "subMenuName": "Company",
                         "isActive": true,
                         "childSubMenus": [
-                            {
-                                "subMenuId": 2010101,
-                                "subMenuName": "Define Calendar",
-                                "isActive": true,
-                                "childSubMenus": [
-                                    {
-                                        "subMenuId": 201010101,
-                                        "subMenuName": "Create Support Calendar",
-                                        "isActive": true,
-                                        "route": "/calendar/create-support-calendar",
-                                        "childSubMenus": []
-                                    },
-                                    {
-                                        "subMenuId": 201010102,
-                                        "subMenuName": "Create Custom Calendar",
-                                        "route": "/welcome",
-                                        "isActive": true,
-                                        "childSubMenus": []
-                                    },
-                                    {
-                                        "subMenuId": 2010103,
-                                        "subMenuName": "List",
-                                        "route": "/welcome",
-                                        "isActive": true,
-                                        "childSubMenus": []
-                                    }
-                                ]
-                            },
-                            {
-                                "subMenuId": 20102,
-                                "subMenuName": "Assign Calendar",
-                                "route": "/welcome",
-                                "isActive": true,
-                                "childSubMenus": []
-                            }
+                        {
+                            "subMenuId": 20101010101,
+                            "subMenuName": "Requestor",
+                            "route": "/welcome",
+                            "isActive": true,
+                            "childSubMenus": []
+                        },
+                        {
+                            "subMenuId": 20101010102,
+                            "subMenuName": "Service Provider",
+                            "route": "/welcome",
+                            "isActive": true,
+                            "childSubMenus": []
+                        }
                         ]
-                    }]
+                    },
+                    {
+                        "subMenuId": 201010102,
+                        "subMenuName": "Plant",
+                        "route": "/welcome",
+                        "isActive": true,
+                        "childSubMenus": []
+                    },
+                    {
+                        "subMenuId": 201010103,
+                        "subMenuName": "Skills",
+                        "route": "/welcome",
+                        "isActive": true,
+                        "childSubMenus": []
+                    }
+                    ]
+                }
+                ]
+            },
+            {
+                "subMenuId": 20102,
+                "subMenuName": "Master",
+                "isActive": true,
+                "childSubMenus": [
+                {
+                    "subMenuId": 2010201,
+                    "subMenuName": "Agent",
+                    "route": "/welcome",
+                    "isActive": true,
+                    "childSubMenus": []
+                },
+                {
+                    "subMenuId": 2010202,
+                    "subMenuName": "Calendar",
+                    "isActive": true,
+                    "childSubMenus": [
+                    {
+                        "subMenuId": 201020201,
+                        "subMenuName": "Define",
+                        "isActive": true,
+                        "childSubMenus": [
+                        {
+                            "subMenuId": 20102020101,
+                            "subMenuName": "Create Support Calendar",
+                            "route": "/calendar/create-calendar",
+                            "isActive": true,
+                            "childSubMenus": []
+                        },
+                        {
+                            "subMenuId": 20102020102,
+                            "subMenuName": "Create Requestor Calendar",
+                            "route": "/calendar/create-calendar",
+                            "isActive": true,
+                            "childSubMenus": []
+                        },
+                        {
+                            "subMenuId": 20102020103,
+                            "subMenuName": "List",
+                            "route": "/calendar/list",
+                            "isActive": true,
+                            "childSubMenus": []
+                        }
+                        ]
+                    }
+                    ]
+                }
+                ]
             }
+            ]
+        }        
         ]
     }
-]
+];
+
 
 export const APP_CONSTANTS = {
   APP_NAME: 'FlickzzDesk',
-  API_BASE_URL: '/flickzz-desk'
+  API_BASE_URL: 'http://localhost:5000/flickzz-desk'
 };
 
 export const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

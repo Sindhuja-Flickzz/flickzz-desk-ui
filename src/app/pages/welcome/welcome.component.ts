@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import {Router} from "@angular/router";
 import {LogoutRequest} from '../../models/logout-request';
-import {AuthenticationService} from "../../serives/authentication.service";
+import {AuthenticationService} from "../../service/authentication.service";
 import {CommonResponse} from "../../models/authentication-response";
 
 @Component({

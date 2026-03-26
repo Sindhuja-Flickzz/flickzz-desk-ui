@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
-import { AuthenticationService } from './serives/authentication.service';
+import { AuthenticationService } from './service/authentication.service';
 import { MenuItem } from './models/menu';
 import { MENU_INFO, APP_CONSTANTS } from './data/app_constants';
 
@@ -118,8 +118,14 @@ export class AppComponent implements OnInit, OnDestroy {
 
   onNodeClick(node: MenuNode) {
     this.setActive(node.id);
+
     if (node.route) {
-      this.router.navigate([node.route]);
+      if (node.route === '/calendar/create-calendar') {
+        const type = node.name?.toLowerCase().includes('requestor') ? 'requestor' : 'support';
+        this.router.navigate([node.route], { queryParams: { type } });
+      } else {
+        this.router.navigate([node.route]);
+      }
       this.openPath = [];
     } else if (node.children?.length) {
       this.setOpenPath(node);
