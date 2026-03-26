@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import {RegisterLoginRequest} from "../../models/register-login-request";
 import {CommonResponse} from "../../models/authentication-response";
-import {AuthenticationService} from "../../serives/authentication.service";
+import {AuthenticationService} from "../../service/authentication.service";
 import {Router} from "@angular/router";
 import {VerificationRequest} from "../../models/verification-request";
 
