@@ -1,66 +1,58 @@
 <div class="app-shell" [class.collapsed]="isSidebarCollapsed" [class.menu-open]="isMobileMenuOpen">
   <aside class="sidenav" [class.collapsed]="isSidebarCollapsed" [class.open]="isMobileMenuOpen" *ngIf="showSidebar">
-    <div class="sidenav-header">
+    <!-- <div class="sidenav-header">
       <div class="brand-container">
         <img class="brand-logo" src="assets/flickzz.png" alt="FlickzzDesk logo" />
         <div class="brand-text" *ngIf="!isSidebarCollapsed">
           <h1 class="brand-name">{{ app_consants.APP_NAME }}</h1>
         </div>
       </div>
-      <button class="close-mobile" (click)="toggleMobileMenu()" *ngIf="isMobileMenuOpen" aria-label="Close menu">
-        ✕
-      </button>
-    </div>
+    </div> -->
 
-    <nav class="menu" (mouseleave)="clearOpenPath()">
-      <div class="menu-scroll">
-        <ul class="menu-list top-menu">
-          <li *ngFor="let node of menuTree" [class.active]="activeNodeId === node.id">
-            <button
-              type="button"
-              class="menu-item"
-              [class.active]="activeNodeId === node.id"
-              (mouseenter)="onNodeHover(node, 0, $event)"
-              (click)="onNodeClick(node)">
-              <span class="menu-icon" aria-hidden="true">{{ node.icon }}</span>
-              <span class="menu-label" *ngIf="!isSidebarCollapsed">{{ node.name }}</span>
-              <span *ngIf="!isSidebarCollapsed && node.children?.length" class="menu-chevron">▸</span>
-            </button>
-          </li>
-        </ul>
+    <nav class="menu sidebar-menu" [class.collapsed]="isSidebarCollapsed" [class.open]="isMobileMenuOpen">
+      <div class="sidenav-header">
+        <div class="brand-container">
+          <img class="brand-logo" src="assets/flickzz.png" alt="FlickzzDesk logo" />
+          <div class="brand-text" *ngIf="!isSidebarCollapsed">
+            <h1 class="brand-name">{{ app_consants.APP_NAME }}</h1>
+          </div>
+        </div>
       </div>
+      <div class="menu-scroll">
+        <ng-template #recursiveList let-items let-level="level">
+          <ul class="menu-list level-{{level}}">
+            <li *ngFor="let node of items" [class.active]="isActive(node) || activeNodeId === node.id" [class.disabled]="!node.isActive">
+              <div class="menu-entry" [class.open]="isExpanded(node)" (click)="onNodeClick(node)">
+                <span class="menu-icon" *ngIf="node.icon">{{ node.icon }}</span>
+                <span class="menu-title">{{ node.name }}</span>
+                <span *ngIf="node.children?.length" class="submenu-indicator">{{ isExpanded(node) ? '▾' : '▸' }}</span>
+              </div>
 
-      <ng-container *ngFor="let submenuItems of getSubmenuLevels(); let level = index">
-        <div class="submenu-popup" [style.left.px]="getPopupLeft(level)" [style.top.px]="getPopupTop(level)" [style.zIndex]="100 + level" (mouseenter)="onPopupHover()">
-          <ul class="menu-list submenu-list">
-            <li *ngFor="let node of submenuItems" [class.active]="activeNodeId === node.id">
-              <button
-                type="button"
-                class="menu-item"
-                [class.active]="activeNodeId === node.id"
-                (mouseenter)="onNodeHover(node, level + 1, $event)"
-                (click)="onNodeClick(node)">
-                <span class="menu-label">{{ node.name }}</span>
-              </button>
+              <ng-container *ngIf="node.children?.length && isExpanded(node)"
+                            [ngTemplateOutlet]="recursiveList"
+                            [ngTemplateOutletContext]="{ $implicit: node.children, level: level + 1 }">
+              </ng-container>
             </li>
           </ul>
-        </div>
-      </ng-container>
-    </nav>
+        </ng-template>
 
-    <div class="sidebar-footer">
-      <button class="sidebar-collapse" (click)="toggleSidebar()" aria-label="Toggle sidebar">
-        <span *ngIf="isSidebarCollapsed">&gt;&gt;</span>
+        <ng-container *ngTemplateOutlet="recursiveList; context: { $implicit: menuTree, level: 1 }"></ng-container>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="sidebar-collapse" (click)="toggleSidebar()" aria-label="Toggle sidebar">
+          <span *ngIf="isSidebarCollapsed">&gt;&gt;</span>
         <span *ngIf="!isSidebarCollapsed">&lt;&lt;</span>
-      </button>
-    </div>
+        </button>
+      </div>
+    </nav>
   </aside>
 
   <div class="main">
     <header class="topbar">
-      <!-- <button class="mobile-hamburger" (click)="toggleMobileMenu()" aria-label="Toggle navigation">
+      <button class="mobile-hamburger" *ngIf="showSidebar" (click)="toggleMobileMenu()" aria-label="Toggle navigation">
         ☰
-      </button> -->
+      </button>
       <div class="page-title">{{ getActivePageTitle() }}</div>
       <div class="topbar-actions">
         <button class="logout" *ngIf="isLoggedIn()" (click)="logout()">Logout</button>
