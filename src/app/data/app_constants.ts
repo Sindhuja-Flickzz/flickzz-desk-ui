@@ -91,58 +91,58 @@ export const MENU_INFO: MenuItem[] = [
                     ]
                 }
                 ]
-            }
-            ]
-        },
-        {
-            "subMenuId": 202,
-            "subMenuName": "Master",
-            "isActive": true,
-            "childSubMenus": [
-            {
-                "subMenuId": 20201,
-                "subMenuName": "Agent",
-                "route": "/welcome",
-                "isActive": true,
-                "childSubMenus": []
             },
             {
-                "subMenuId": 20202,
-                "subMenuName": "Calendar",
+                "subMenuId": 20102,
+                "subMenuName": "Master",
                 "isActive": true,
                 "childSubMenus": [
                 {
-                    "subMenuId": 2020201,
-                    "subMenuName": "Define",
+                    "subMenuId": 2010201,
+                    "subMenuName": "Agent",
+                    "route": "/welcome",
+                    "isActive": true,
+                    "childSubMenus": []
+                },
+                {
+                    "subMenuId": 2010202,
+                    "subMenuName": "Calendar",
                     "isActive": true,
                     "childSubMenus": [
                     {
-                        "subMenuId": 202020101,
-                        "subMenuName": "Create Support Calendar",
-                        "route": "/calendar/create-calendar",
+                        "subMenuId": 201020201,
+                        "subMenuName": "Define",
                         "isActive": true,
-                        "childSubMenus": []
-                    },
-                    {
-                        "subMenuId": 202020102,
-                        "subMenuName": "Create Requestor Calendar",
-                        "route": "/calendar/create-calendar",
-                        "isActive": true,
-                        "childSubMenus": []
-                    },
-                    {
-                        "subMenuId": 202020103,
-                        "subMenuName": "List",
-                        "route": "/calendar/list",
-                        "isActive": true,
-                        "childSubMenus": []
+                        "childSubMenus": [
+                        {
+                            "subMenuId": 20102020101,
+                            "subMenuName": "Create Support Calendar",
+                            "route": "/calendar/create-calendar",
+                            "isActive": true,
+                            "childSubMenus": []
+                        },
+                        {
+                            "subMenuId": 20102020102,
+                            "subMenuName": "Create Requestor Calendar",
+                            "route": "/calendar/create-calendar",
+                            "isActive": true,
+                            "childSubMenus": []
+                        },
+                        {
+                            "subMenuId": 20102020103,
+                            "subMenuName": "List",
+                            "route": "/calendar/list",
+                            "isActive": true,
+                            "childSubMenus": []
+                        }
+                        ]
                     }
                     ]
                 }
                 ]
             }
             ]
-        }
+        }        
         ]
     }
 ];
