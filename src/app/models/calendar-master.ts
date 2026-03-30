@@ -32,4 +32,6 @@ export interface CalendarRequest {
   timezone: string;
   isSupport: boolean;
   isRequestor: boolean;
+  createdBy: string;
+  updatedBy: string;
 }

@@ -1,0 +1,89 @@
+<div class="calendar-list-container">
+  <div class="calendar-list-header">
+    <h2>Calendar List</h2>
+  </div>
+
+  <div class="calendar-filters">
+    <div class="filter-item">
+      <!-- <label for="calendarSearch">Search by code/type</label> -->
+      <input id="calendarSearch" type="text" class="form-control" [(ngModel)]="searchTerm" (ngModelChange)="onSearchTermChange($event)" placeholder="Search by Calendar Code/ Type" />
+    </div>
+    <div class="filter-item">
+      <!-- <label>Type</label> -->
+      <div class="type-filter-options">
+        <label class="radio-label">
+          <input type="radio" name="typeFilter" value="all" [(ngModel)]="selectedTypeFilter" (change)="onTypeFilterChange('all')" />
+          All
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="typeFilter" value="support" [(ngModel)]="selectedTypeFilter" (change)="onTypeFilterChange('support')" />
+          Support
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="typeFilter" value="requestor" [(ngModel)]="selectedTypeFilter" (change)="onTypeFilterChange('requestor')" />
+          Requestor
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="alert alert-error">
+    {{ error }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading">
+    Loading calendars...
+  </div>
+
+  <!-- Calendar Grid -->
+  <div *ngIf="!loading && !error" class="calendar-grid">
+    <mat-card *ngFor="let calendar of filteredCalendars" class="calendar-card">
+      <mat-card-header>
+        <mat-card-title>{{ calendar.calendarCode }}</mat-card-title>
+        <mat-card-subtitle>{{ calendar.calendarType }}</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="calendar-info">
+          <p><strong>Valid From:</strong> {{ calendar.validFrom | date:'mediumDate' }}</p>
+          <p><strong>Valid To:</strong> {{ calendar.validTo | date:'mediumDate' }}</p>
+          <p><strong>Timezone:</strong> {{ calendar.timezone }}</p>
+          <p><strong>Work Hours:</strong> {{ calendar.workFrom }} - {{ calendar.workTo }}</p>
+        </div>
+
+        <div class="list-info">
+          <div class="list-summary">
+            <span>Workdays: {{ calendar.workdays.length || 0 }}</span>
+            <button mat-icon-button (click)="onViewDetails(calendar, 'workdays')" title="View Workdays">
+              <mat-icon>expand_more</mat-icon>
+            </button>
+          </div>
+          <div class="list-summary">
+            <span>Holidays: {{ calendar.holidays.length || 0 }}</span>
+            <button mat-icon-button (click)="onViewDetails(calendar, 'holidays')" title="View Holidays">
+              <mat-icon>expand_more</mat-icon>
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button mat-raised-button color="primary" (click)="onViewCalendar(calendar)">
+          <mat-icon>visibility</mat-icon>
+          View
+        </button>
+        <button mat-raised-button color="warn" (click)="onDeleteCalendar(calendar)">
+          <mat-icon>delete</mat-icon>
+          Delete
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && calendars.length === 0" class="empty-state">
+    No calendars found.
+  </div>
+</div>

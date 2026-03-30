@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import {Router} from "@angular/router";
 import {LogoutRequest} from '../../models/logout-request';
 import {AuthenticationService} from "../../service/authentication.service";
-import {CommonResponse} from "../../models/authentication-response";
 
 @Component({
   selector: 'app-welcome',
@@ -19,20 +18,6 @@ export class WelcomeComponent {
     { title: 'Logout' }
   ];
   isLoading = false;
-  commonResponse: CommonResponse = {
-    successCode: '',
-    response: {
-      code: '',
-      title: '',
-      description: ''
-    },
-    object: {
-      accessToken: '',
-      mfaEnabled: false,
-      refreshToken: '',
-      secretImageUri: ''
-    }
-  };
 
   constructor(private authService: AuthenticationService, private router: Router) {}
 

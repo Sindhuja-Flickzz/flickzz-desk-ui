@@ -1,0 +1,39 @@
+.modal-container {
+  min-width: 500px;
+  max-width: 800px;
+}
+
+.table-container {
+  margin-top: 16px;
+}
+
+table {
+  width: 100%;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-style: italic;
+}
+
+mat-dialog-actions {
+  padding: 16px 0;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+  .modal-container {
+    min-width: 90vw;
+    max-width: 90vw;
+  }
+
+  table {
+    font-size: 14px;
+  }
+
+  th, td {
+    padding: 8px 4px;
+  }
+}
