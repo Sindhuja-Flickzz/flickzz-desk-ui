@@ -24,7 +24,7 @@ export interface MenuItem {
 }
 
 export interface MenuListResponse {
-  object: MenuItem[];
+  attributes: MenuItem[];
   response: {
     code: string;
     title: string;

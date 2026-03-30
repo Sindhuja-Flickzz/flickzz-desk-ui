@@ -1,7 +1,8 @@
-export interface FlickzzDeskSuccessResponse {
+export interface FlickzzDeskResponse {
   code: string;
   title: string;
   description: string;
+  attributes: CommonObject;
 }
 
 export interface CommonObject {
@@ -9,10 +10,5 @@ export interface CommonObject {
   mfaEnabled: boolean;
   refreshToken: string;
   secretImageUri: string;
-}
-
-export interface CommonResponse {
-  successCode: string;
-  response: FlickzzDeskSuccessResponse;
-  object: CommonObject;
+  userRole: string;
 }

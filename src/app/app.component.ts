@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, HostListener } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthenticationService } from './service/authentication.service';
@@ -26,16 +26,31 @@ export class AppComponent implements OnInit, OnDestroy {
   isSidebarCollapsed = false;
   isMobileMenuOpen = false;
   menuItems: MenuItem[] = [];
+  allMenuTree: MenuNode[] = [];
   menuTree: MenuNode[] = [];
 
   activeRoute = '';
   activeNodeId?: number;
   showSidebar = false;
 
+  settingsOnlyMode = false;
+  settingsNodeId?: number;
+
   expandedNodeIds = new Set<number>();
   private closeMenuTimeout?: any;
 
   private routerSub?: Subscription;
+
+  // Drag-to-resize properties
+  defaultSidebarWidth = 260;
+  collapsedWidth = 60;
+  sidebarWidth = 260;
+  minSidebarWidth = 200;
+  maxSidebarWidth = 500;
+  isResizing = false;
+  startX = 0;
+  startWidth = 0;
+  isHoveringRightEdge!: boolean;
 
   constructor(
     private router: Router,
@@ -52,6 +67,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.routerSub = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
+        // Update active route
+        this.activeRoute = event.url;
+
         // Show sidebar for authenticated routes only
         const show = !!localStorage.getItem('token') && !event.url.startsWith('/login') && !event.url.startsWith('/register');
         this.showSidebar = show;
@@ -61,6 +79,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
         // Close mobile menu on route change
         this.isMobileMenuOpen = false;
+        
+        // Reset sidebar width to default when not collapsed
+        if (!this.isSidebarCollapsed) {
+          this.sidebarWidth = this.defaultSidebarWidth;
+        }
       });
   }
 
@@ -68,15 +91,90 @@ export class AppComponent implements OnInit, OnDestroy {
     this.routerSub?.unsubscribe();
   }
 
-  loadMenu() {
-    this.menuItems = MENU_INFO.filter(m => m.isActive);
-    this.menuTree = this.menuItems.map(m => this.normalizeToNode(m));
+  // Drag-to-resize methods
+  onResizeStart(event: MouseEvent) {
+    // Don't allow resizing when sidebar is collapsed
+    if (this.isSidebarCollapsed) {
+      return;
+    }
+    
+    // Check if clicking on the right edge (within 10px of the right side)
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const isRightEdge = event.clientX > rect.right - 10;
+
+    if (isRightEdge) {
+      this.isResizing = true;
+      this.startX = event.clientX;
+      this.startWidth = this.sidebarWidth;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      event.preventDefault();
+    }
   }
 
-  refreshMenu() {
-    this.activeNodeId = undefined;
-    this.expandedNodeIds.clear();
-    this.loadMenu();
+  onMouseMove(event: MouseEvent) {
+    if (this.isResizing) return;
+    
+    // Disable resize handle when sidebar is collapsed
+    if (this.isSidebarCollapsed) {
+      document.body.style.cursor = '';
+      this.isHoveringRightEdge = false;
+      return;
+    }
+
+    // Check if hovering over the right edge
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const isRightEdge = event.clientX > rect.right - 10;
+    this.isHoveringRightEdge = isRightEdge;
+
+    if (isRightEdge) {
+      document.body.style.cursor = 'col-resize';
+    } else {
+      document.body.style.cursor = '';
+    }
+  }
+
+  onMouseLeave() {
+    if (!this.isResizing) {
+      this.isHoveringRightEdge = false;
+      document.body.style.cursor = '';
+    }
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onResizeMove(event: MouseEvent) {
+    if (!this.isResizing) return;
+
+    const deltaX = event.clientX - this.startX;
+    const newWidth = Math.max(this.minSidebarWidth, Math.min(this.maxSidebarWidth, this.startWidth + deltaX));
+    this.sidebarWidth = newWidth;
+  }
+
+  @HostListener('document:mouseup')
+  onResizeEnd() {
+    if (!this.isResizing) return;
+
+    this.isResizing = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    
+    // If collapsed, ensure width stays at collapsedWidth
+    if (this.isSidebarCollapsed) {
+      this.sidebarWidth = this.collapsedWidth;
+    }
+  }
+
+  loadMenu() {
+    this.menuItems = MENU_INFO.filter(m => m.isActive);
+    this.allMenuTree = this.menuItems.map(m => this.normalizeToNode(m));
+    this.menuTree = [...this.allMenuTree];
+
+    const settingsNode = this.findNodeByName(this.allMenuTree, 'Settings');
+    this.settingsNodeId = settingsNode?.id;
+
+    if (this.settingsOnlyMode) {
+      this.enterSettingsMode();
+    }
   }
 
   onNodeHover(node: MenuNode, level: number = 0) {
@@ -92,7 +190,19 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (node.isParent && node.name === 'Settings') {
+      if (!this.settingsOnlyMode) {
+        this.enterSettingsMode(node);
+      } else {
+        // allow collapse/expand in settings-only mode if needed
+        this.toggleExpansion(node);
+      }
+      this.setActive(node.id);
+      return;
+    }
+
     this.setActive(node.id);
+
     if (node.children && node.children.length) {
       this.toggleExpansion(node);
       return;
@@ -234,6 +344,13 @@ export class AppComponent implements OnInit, OnDestroy {
 
   toggleSidebar() {
     this.isSidebarCollapsed = !this.isSidebarCollapsed;
+    // When collapsing, set width to collapsedWidth (60px), overriding any drag-resize
+    // When expanding, restore to default width
+    this.sidebarWidth = this.isSidebarCollapsed ? this.collapsedWidth : this.defaultSidebarWidth;
+  }
+
+  toggleToNormal() {
+    this.isSidebarCollapsed ? this.toggleSidebar() : this.isSidebarCollapsed;
   }
 
   toggleMobileMenu() {
@@ -250,6 +367,38 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     }
     return undefined;
+  }
+
+  private findNodeByName(nodes: MenuNode[], name: string): MenuNode | undefined {
+    for (const node of nodes) {
+      if (node.name === name) return node;
+      if (node.children) {
+        const found = this.findNodeByName(node.children, name);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  }
+
+  enterSettingsMode(settingsNode?: MenuNode) {
+    const settingsRoot = settingsNode || this.findNodeByName(this.allMenuTree, 'Settings');
+    if (!settingsRoot) { return; }
+
+    this.settingsOnlyMode = true;
+    this.settingsNodeId = settingsRoot.id;
+
+    // Show only Settings root and its descendants
+    this.menuTree = [settingsRoot];
+    this.expandedNodeIds.clear();
+    this.expandedNodeIds.add(settingsRoot.id);
+    this.activeNodeId = settingsRoot.id;
+  }
+
+  exitSettingsMode() {
+    this.settingsOnlyMode = false;
+    this.menuTree = [...this.allMenuTree];
+    this.expandedNodeIds.clear();
+    this.activeNodeId = undefined;
   }
 
   getActivePageTitle() {

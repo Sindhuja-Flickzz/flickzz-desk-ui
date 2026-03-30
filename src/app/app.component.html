@@ -1,26 +1,30 @@
 <div class="app-shell" [class.collapsed]="isSidebarCollapsed" [class.menu-open]="isMobileMenuOpen">
-  <aside class="sidenav" [class.collapsed]="isSidebarCollapsed" [class.open]="isMobileMenuOpen" *ngIf="showSidebar">
-    <!-- <div class="sidenav-header">
-      <div class="brand-container">
-        <img class="brand-logo" src="assets/flickzz.png" alt="FlickzzDesk logo" />
-        <div class="brand-text" *ngIf="!isSidebarCollapsed">
-          <h1 class="brand-name">{{ app_consants.APP_NAME }}</h1>
-        </div>
-      </div>
-    </div> -->
-
-    <nav class="menu sidebar-menu" [class.collapsed]="isSidebarCollapsed" [class.open]="isMobileMenuOpen">
+  <aside class="sidenav" [style.width.px]="sidebarWidth" [class.collapsed]="isSidebarCollapsed" [class.open]="isMobileMenuOpen" *ngIf="showSidebar"
+          (mousedown)="onResizeStart($event)" (mousemove)="onMouseMove($event)" (mouseleave)="onMouseLeave()">
+    <nav class="menu sidebar-menu" [class.collapsed]="isSidebarCollapsed" [class.open]="isMobileMenuOpen" [class.settings-only]="settingsOnlyMode">
       <div class="sidenav-header">
+      <ng-container *ngIf="settingsOnlyMode; else standardHeader">
+        <!-- <button class="back-btn" type="button" (click)="exitSettingsMode()" aria-label="Back to full menu">← Back</button>
+        <span class="settings-title">Settings</span> -->
+        <div class="brand-container">
+          <button class="back-btn" type="button" (click)="exitSettingsMode()" aria-label="Back to full menu">←</button>
+          <div class="brand-text" *ngIf="!isSidebarCollapsed">
+            <h1 class="brand-name">{{ app_consants.APP_NAME }}</h1>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #standardHeader>
         <div class="brand-container">
           <img class="brand-logo" src="assets/flickzz.png" alt="FlickzzDesk logo" />
           <div class="brand-text" *ngIf="!isSidebarCollapsed">
             <h1 class="brand-name">{{ app_consants.APP_NAME }}</h1>
           </div>
         </div>
-      </div>
-      <div class="menu-scroll">
+      </ng-template>
+    </div>
+    <div class="menu-scroll">
         <ng-template #recursiveList let-items let-level="level">
-          <ul class="menu-list level-{{level}}">
+          <ul class="menu-list level-{{level}}" (click)="toggleToNormal()">
             <li *ngFor="let node of items" [class.active]="isActive(node) || activeNodeId === node.id" [class.disabled]="!node.isActive">
               <div class="menu-entry" [class.open]="isExpanded(node)" (click)="onNodeClick(node)">
                 <span class="menu-icon" *ngIf="node.icon">{{ node.icon }}</span>
@@ -40,9 +44,9 @@
       </div>
 
       <div class="sidebar-footer">
-        <button class="sidebar-collapse" (click)="toggleSidebar()" aria-label="Toggle sidebar">
-          <span *ngIf="isSidebarCollapsed">&gt;&gt;</span>
-        <span *ngIf="!isSidebarCollapsed">&lt;&lt;</span>
+        <button class="sidebar-collapse" (click)="toggleSidebar()" [attr.aria-label]="isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'" [class.collapsed]="isSidebarCollapsed">
+          <span class="collapse-icon" *ngIf="!isSidebarCollapsed">&#x276E;&#x276E;<</span>
+          <span class="collapse-icon" *ngIf="isSidebarCollapsed">>&#x276F;&#x276F;</span>
         </button>
       </div>
     </nav>
