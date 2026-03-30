@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import {RegisterLoginRequest} from "../../models/register-login-request";
-import {CommonResponse} from "../../models/authentication-response";
+import {FlickzzDeskResponse} from "../../models/authentication-response";
 import {AuthenticationService} from "../../service/authentication.service";
 import {Router} from "@angular/router";
 import {VerificationRequest} from "../../models/verification-request";
@@ -15,18 +15,16 @@ export class RegisterComponent {
   registerRequest: RegisterLoginRequest = {
     mfaEnabled: false
   };
-  commonResponse: CommonResponse = {
-    successCode: '',
-    response: {
-      code: '',
-      title: '',
-      description: ''
-    },
-    object: {
+  commonResponse: FlickzzDeskResponse = {
+    code: '',
+    title: '',
+    description: '',
+    attributes: {
       accessToken: '',
       mfaEnabled: false,
       refreshToken: '',
-      secretImageUri: ''
+      secretImageUri: '',
+      userRole: ''
     }
   };
   message = '';
@@ -43,8 +41,8 @@ export class RegisterComponent {
     this.authService.register(this.registerRequest)
       .subscribe({
         next: (response) => {
-          if (response.response.code == 'GM-200') {    
-            if(response.object.mfaEnabled) {        
+          if (response.code == 'GM-200') {    
+            if(response.attributes.mfaEnabled) {        
               this.commonResponse = response;
             } else {
               // inform the user
@@ -70,8 +68,8 @@ export class RegisterComponent {
         next: (response) => {
           this.message = 'Account created successfully\nYou will be redirected to the Welcome page in 3 seconds';
           setTimeout(() => {
-            localStorage.setItem('token', response.object.accessToken as string);
-            localStorage.setItem('refreshToken', response.object.refreshToken as string);
+            localStorage.setItem('token', response.attributes.accessToken as string);
+            localStorage.setItem('refreshToken', response.attributes.refreshToken as string);
             this.router.navigate(['welcome']);
           }, 3000);
         }

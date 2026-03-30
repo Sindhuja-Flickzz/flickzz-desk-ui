@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import {CommonResponse} from "../../models/authentication-response";
+import {FlickzzDeskResponse} from "../../models/authentication-response";
 import {AuthenticationService} from "../../service/authentication.service";
 import {Router} from "@angular/router";
 import {VerificationRequest} from "../../models/verification-request";
@@ -17,18 +17,16 @@ export class LoginComponent {
     password: ''
   };
   otpCode = '';
-  commonResponse: CommonResponse = {
-    successCode: '',
-    response: {
-      code: '',
-      title: '',
-      description: ''
-    },
-    object: {
+  commonResponse: FlickzzDeskResponse = {
+    code: '',
+    title: '',
+    description: '',
+    attributes: {
       accessToken: '',
       mfaEnabled: false,
       refreshToken: '',
-      secretImageUri: ''
+      secretImageUri: '',
+      userRole: ''
     }
   };
 
@@ -45,10 +43,11 @@ export class LoginComponent {
       .subscribe({
         next: (response) => {
           this.commonResponse = response;
-          if (!this.commonResponse.object.mfaEnabled) {
-            localStorage.setItem('token', response.object.accessToken as string);
-            localStorage.setItem('refreshToken', response.object.refreshToken as string);
+          if (!this.commonResponse.attributes.mfaEnabled) {
+            localStorage.setItem('token', response.attributes.accessToken as string);
+            localStorage.setItem('refreshToken', response.attributes.refreshToken as string);
             localStorage.setItem('userId', this.registerLoginRequest.email as string);
+            localStorage.setItem('userRole', response.attributes.userRole as string);
             this.router.navigate(['welcome']);
           }
         }
@@ -63,9 +62,10 @@ export class LoginComponent {
     this.authService.verifyCode(verifyRequest)
       .subscribe({
         next: (response) => {
-          localStorage.setItem('token', response.object.accessToken as string);
-          localStorage.setItem('refreshToken', response.object.refreshToken as string);
+          localStorage.setItem('token', response.attributes.accessToken as string);
+          localStorage.setItem('refreshToken', response.attributes.refreshToken as string);
           localStorage.setItem('userId', this.registerLoginRequest.email as string);
+          localStorage.setItem('userRole', response.attributes.userRole as string);
           this.router.navigate(['welcome']);
         }
       });

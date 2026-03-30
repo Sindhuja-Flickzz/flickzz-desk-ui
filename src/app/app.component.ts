@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, HostListener } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthenticationService } from './service/authentication.service';
@@ -9,9 +9,10 @@ export interface MenuNode {
   id: number;
   name: string;
   children?: MenuNode[];
-  icon: string;
+  icon?: string;
   isParent?: boolean;
   route?: string;
+  isActive?: boolean;
 }
 
 @Component({
@@ -25,15 +26,31 @@ export class AppComponent implements OnInit, OnDestroy {
   isSidebarCollapsed = false;
   isMobileMenuOpen = false;
   menuItems: MenuItem[] = [];
+  allMenuTree: MenuNode[] = [];
   menuTree: MenuNode[] = [];
+
+  activeRoute = '';
   activeNodeId?: number;
-  openPath: MenuNode[] = [];
   showSidebar = false;
-  hoveredNodeAtLevel: Map<number, MenuNode> = new Map();
-  popupTopPosition: Map<number, number> = new Map();
+
+  settingsOnlyMode = false;
+  settingsNodeId?: number;
+
+  expandedNodeIds = new Set<number>();
   private closeMenuTimeout?: any;
 
   private routerSub?: Subscription;
+
+  // Drag-to-resize properties
+  defaultSidebarWidth = 260;
+  collapsedWidth = 60;
+  sidebarWidth = 260;
+  minSidebarWidth = 200;
+  maxSidebarWidth = 500;
+  isResizing = false;
+  startX = 0;
+  startWidth = 0;
+  isHoveringRightEdge!: boolean;
 
   constructor(
     private router: Router,
@@ -50,6 +67,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.routerSub = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
+        // Update active route
+        this.activeRoute = event.url;
+
         // Show sidebar for authenticated routes only
         const show = !!localStorage.getItem('token') && !event.url.startsWith('/login') && !event.url.startsWith('/register');
         this.showSidebar = show;
@@ -59,57 +79,106 @@ export class AppComponent implements OnInit, OnDestroy {
 
         // Close mobile menu on route change
         this.isMobileMenuOpen = false;
+        
+        // Reset sidebar width to default when not collapsed
+        if (!this.isSidebarCollapsed) {
+          this.sidebarWidth = this.defaultSidebarWidth;
+        }
       });
   }
 
   ngOnDestroy() {
     this.routerSub?.unsubscribe();
-    if (this.closeMenuTimeout) {
-      clearTimeout(this.closeMenuTimeout);
+  }
+
+  // Drag-to-resize methods
+  onResizeStart(event: MouseEvent) {
+    // Don't allow resizing when sidebar is collapsed
+    if (this.isSidebarCollapsed) {
+      return;
+    }
+    
+    // Check if clicking on the right edge (within 10px of the right side)
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const isRightEdge = event.clientX > rect.right - 10;
+
+    if (isRightEdge) {
+      this.isResizing = true;
+      this.startX = event.clientX;
+      this.startWidth = this.sidebarWidth;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      event.preventDefault();
+    }
+  }
+
+  onMouseMove(event: MouseEvent) {
+    if (this.isResizing) return;
+    
+    // Disable resize handle when sidebar is collapsed
+    if (this.isSidebarCollapsed) {
+      document.body.style.cursor = '';
+      this.isHoveringRightEdge = false;
+      return;
+    }
+
+    // Check if hovering over the right edge
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const isRightEdge = event.clientX > rect.right - 10;
+    this.isHoveringRightEdge = isRightEdge;
+
+    if (isRightEdge) {
+      document.body.style.cursor = 'col-resize';
+    } else {
+      document.body.style.cursor = '';
+    }
+  }
+
+  onMouseLeave() {
+    if (!this.isResizing) {
+      this.isHoveringRightEdge = false;
+      document.body.style.cursor = '';
+    }
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onResizeMove(event: MouseEvent) {
+    if (!this.isResizing) return;
+
+    const deltaX = event.clientX - this.startX;
+    const newWidth = Math.max(this.minSidebarWidth, Math.min(this.maxSidebarWidth, this.startWidth + deltaX));
+    this.sidebarWidth = newWidth;
+  }
+
+  @HostListener('document:mouseup')
+  onResizeEnd() {
+    if (!this.isResizing) return;
+
+    this.isResizing = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    
+    // If collapsed, ensure width stays at collapsedWidth
+    if (this.isSidebarCollapsed) {
+      this.sidebarWidth = this.collapsedWidth;
     }
   }
 
   loadMenu() {
     this.menuItems = MENU_INFO.filter(m => m.isActive);
-    this.menuTree = this.menuItems.map(m => this.normalizeToNode(m));
-    this.openPath = [];
+    this.allMenuTree = this.menuItems.map(m => this.normalizeToNode(m));
+    this.menuTree = [...this.allMenuTree];
+
+    const settingsNode = this.findNodeByName(this.allMenuTree, 'Settings');
+    this.settingsNodeId = settingsNode?.id;
+
+    if (this.settingsOnlyMode) {
+      this.enterSettingsMode();
+    }
   }
 
-  refreshMenu() {
-    this.openPath = [];
-    this.activeNodeId = undefined;
-    this.loadMenu();
-  }
-
-  onNodeHover(node: MenuNode, level: number = 0, event?: Event) {
-    
+  onNodeHover(node: MenuNode, level: number = 0) {
     this.setActive(node.id);
-    // Clear any pending close timeout
-    if (this.closeMenuTimeout) {
-      clearTimeout(this.closeMenuTimeout);
-      this.closeMenuTimeout = undefined;
-    }
-    
-    if (!node) return;
-    this.hoveredNodeAtLevel.set(level, node);
-    
-    // Calculate popup position based on the hovered button's position
-    if (event) {
-      const button = event.target as HTMLElement;
-      const rect = button.getBoundingClientRect();
-      const menuElement = (event.target as HTMLElement).closest('.menu');
-      if (menuElement) {
-        const menuRect = menuElement.getBoundingClientRect();
-        const topPosition = rect.top - menuRect.top;
-        this.popupTopPosition.set(level, topPosition);
-      }
-    }
-    
-    this.setOpenPath(node);
-  }
-
-  onPopupHover() {
-    // Clear any pending close timeout when hovering over popups
     if (this.closeMenuTimeout) {
       clearTimeout(this.closeMenuTimeout);
       this.closeMenuTimeout = undefined;
@@ -117,7 +186,27 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   onNodeClick(node: MenuNode) {
+    if (!node.isActive) {
+      return;
+    }
+
+    if (node.isParent && node.name === 'Settings') {
+      if (!this.settingsOnlyMode) {
+        this.enterSettingsMode(node);
+      } else {
+        // allow collapse/expand in settings-only mode if needed
+        this.toggleExpansion(node);
+      }
+      this.setActive(node.id);
+      return;
+    }
+
     this.setActive(node.id);
+
+    if (node.children && node.children.length) {
+      this.toggleExpansion(node);
+      return;
+    }
 
     if (node.route) {
       if (node.route === '/calendar/create-calendar') {
@@ -126,11 +215,6 @@ export class AppComponent implements OnInit, OnDestroy {
       } else {
         this.router.navigate([node.route]);
       }
-      this.openPath = [];
-    } else if (node.children?.length) {
-      this.setOpenPath(node);
-    } else {
-      this.openPath = [];
     }
   }
 
@@ -138,22 +222,37 @@ export class AppComponent implements OnInit, OnDestroy {
     this.activeNodeId = nodeId;
   }
 
-  setOpenPath(node: MenuNode) {
+  toggleExpansion(node: MenuNode) {
+    if (this.expandedNodeIds.has(node.id)) {
+      // collapse this node and descendants
+      this.collapseBranch(node);
+      return;
+    }
+
+    // Only one expanded branch at a time: reset and expand path to the clicked node
     const path = this.findPathToNode(this.menuTree, node.id);
-    this.openPath = path ?? [];
+    this.expandedNodeIds.clear();
+    if (path) {
+      path.forEach(n => this.expandedNodeIds.add(n.id));
+    }
   }
 
-  clearOpenPath() {
-    // Schedule the close with a delay to allow moving to popup
-    if (this.closeMenuTimeout) {
-      clearTimeout(this.closeMenuTimeout);
-    }
-    this.closeMenuTimeout = setTimeout(() => {
-      this.openPath = [];
-      this.hoveredNodeAtLevel.clear();
-      this.popupTopPosition.clear();
-      this.closeMenuTimeout = undefined;
-    }, 300); // 300ms delay allows smooth transition to popups
+  collapseBranch(node: MenuNode) {
+    const nodeIdsToCollapse = new Set<number>();
+
+    const collect = (n: MenuNode) => {
+      nodeIdsToCollapse.add(n.id);
+      if (n.children) {
+        n.children.forEach(child => collect(child));
+      }
+    };
+
+    collect(node);
+    nodeIdsToCollapse.forEach(id => this.expandedNodeIds.delete(id));
+  }
+
+  isExpanded(node: MenuNode): boolean {
+    return this.expandedNodeIds.has(node.id);
   }
 
   private findPathToNode(nodes: MenuNode[], id: number, currentPath: MenuNode[] = []): MenuNode[] | undefined {
@@ -170,28 +269,20 @@ export class AppComponent implements OnInit, OnDestroy {
     return undefined;
   }
 
-  getSubmenuLevels(): MenuNode[][] {
-    return this.openPath
-      .filter(node => node.children?.length)
-      .map(node => node.children!);
-  }
-
-  getPopupLeft(level: number): number {
-    const sidebarWidth = this.isSidebarCollapsed ? 70 : 260;
-    const popupSpacing = 220;
-    return sidebarWidth + level * popupSpacing;
-  }
-
-  getPopupTop(level: number): number {
-    return this.popupTopPosition.get(level) ?? 0;
+  isActive(node: MenuNode): boolean {
+    if (!node.route || !this.activeRoute) {
+      return false;
+    }
+    return this.activeRoute === node.route || this.activeRoute.startsWith(node.route);
   }
 
   private normalizeToNode(item: any): MenuNode {
     const id = item.menuId ?? item.subMenuId ?? 0;
     const name = item.menuName ?? item.subMenuName ?? '';
     const icon = item.icon;
-    const isParent = item.isParent ?? item.isParent ?? false;
+    const isParent = item.isParent ?? false;
     const route = item.route;
+    const isActive = item.isActive ?? true;
 
     const childrenRaw: any[] = [];
     if (Array.isArray(item.subMenus)) {
@@ -211,8 +302,26 @@ export class AppComponent implements OnInit, OnDestroy {
       icon,
       isParent,
       route,
+      isActive,
       children: children.length ? children : undefined
     };
+  }
+
+  onPopupHover() {
+    if (this.closeMenuTimeout) {
+      clearTimeout(this.closeMenuTimeout);
+      this.closeMenuTimeout = undefined;
+    }
+  }
+
+  clearOpenPath() {
+    if (this.closeMenuTimeout) {
+      clearTimeout(this.closeMenuTimeout);
+    }
+    this.closeMenuTimeout = setTimeout(() => {
+      this.expandedNodeIds.clear();
+      this.closeMenuTimeout = undefined;
+    }, 300);
   }
 
   isLoggedIn() {
@@ -235,6 +344,13 @@ export class AppComponent implements OnInit, OnDestroy {
 
   toggleSidebar() {
     this.isSidebarCollapsed = !this.isSidebarCollapsed;
+    // When collapsing, set width to collapsedWidth (60px), overriding any drag-resize
+    // When expanding, restore to default width
+    this.sidebarWidth = this.isSidebarCollapsed ? this.collapsedWidth : this.defaultSidebarWidth;
+  }
+
+  toggleToNormal() {
+    this.isSidebarCollapsed ? this.toggleSidebar() : this.isSidebarCollapsed;
   }
 
   toggleMobileMenu() {
@@ -251,6 +367,38 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     }
     return undefined;
+  }
+
+  private findNodeByName(nodes: MenuNode[], name: string): MenuNode | undefined {
+    for (const node of nodes) {
+      if (node.name === name) return node;
+      if (node.children) {
+        const found = this.findNodeByName(node.children, name);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  }
+
+  enterSettingsMode(settingsNode?: MenuNode) {
+    const settingsRoot = settingsNode || this.findNodeByName(this.allMenuTree, 'Settings');
+    if (!settingsRoot) { return; }
+
+    this.settingsOnlyMode = true;
+    this.settingsNodeId = settingsRoot.id;
+
+    // Show only Settings root and its descendants
+    this.menuTree = [settingsRoot];
+    this.expandedNodeIds.clear();
+    this.expandedNodeIds.add(settingsRoot.id);
+    this.activeNodeId = settingsRoot.id;
+  }
+
+  exitSettingsMode() {
+    this.settingsOnlyMode = false;
+    this.menuTree = [...this.allMenuTree];
+    this.expandedNodeIds.clear();
+    this.activeNodeId = undefined;
   }
 
   getActivePageTitle() {

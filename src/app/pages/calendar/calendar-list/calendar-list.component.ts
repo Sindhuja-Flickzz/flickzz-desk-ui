@@ -1,0 +1,153 @@
+import { Component, OnInit } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
+import { CalendarService } from '../../../service/calendar.service';
+import { CalendarMasterVO } from '../../../models/calendar-master';
+import { CalendarDetailsModalComponent } from '../calendar-details-modal/calendar-details-modal.component';
+import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../../shared/confirmation-dialog/confirmation-dialog.component';
+
+@Component({
+  selector: 'app-calendar-list',
+  templateUrl: './calendar-list.component.html',
+  styleUrls: ['./calendar-list.component.scss']
+})
+export class CalendarListPageComponent implements OnInit {
+  calendars: CalendarMasterVO[] = [];
+  filteredCalendars: CalendarMasterVO[] = [];
+  searchTerm = '';
+  selectedTypeFilter: 'all' | 'support' | 'requestor' = 'all';
+  loading = false;
+  error: string | null = null;
+
+  constructor(
+    private calendarService: CalendarService,
+    private router: Router,
+    private dialog: MatDialog
+  ) {}
+
+  ngOnInit(): void {
+    this.loadCalendars();
+  }
+
+  loadCalendars(): void {
+    this.loading = true;
+    this.error = null;
+    this.calendarService.getAllCalendars().subscribe({
+      next: (calendars) => {
+        this.calendars = (calendars as any).attributes as CalendarMasterVO[]; // Handle case where response might not have 'object'
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = err.error?.description || 'Failed to load calendars. Please try again.';
+        this.loading = false;
+        console.error('Error loading calendars:', err);
+      }
+    });
+  }
+
+  onViewCalendar(calendar: CalendarMasterVO): void {
+    const isRequestor = calendar.calendarType?.toLowerCase().includes('requestor');
+    this.router.navigate(['/calendar/create-calendar'], {
+      queryParams: { mode: 'edit', code: calendar.calendarCode, type: isRequestor ? 'requestor' : 'support' },
+      state: { calendar: calendar }
+    });
+  }
+
+  createSupportCalendar(): void {
+    this.router.navigate(['/calendar/create-calendar'], {
+      queryParams: { type: 'support' }
+    });
+  }
+
+  createRequestorCalendar(): void {
+    this.router.navigate(['/calendar/create-calendar'], {
+      queryParams: { type: 'requestor' }
+    });
+  }
+
+  onSearchTermChange(value: string): void {
+    this.searchTerm = value;
+    this.applyFilters();
+  }
+
+  onTypeFilterChange(value: 'all' | 'support' | 'requestor'): void {
+    this.selectedTypeFilter = value;
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    const term = this.searchTerm.trim().toLowerCase();
+
+    this.filteredCalendars = this.calendars.filter(calendar => {
+      let termMatch = true;
+      if (term) {
+        termMatch = (calendar.calendarCode || '').toLowerCase().includes(term)
+          || (calendar.calendarType || '').toLowerCase().includes(term);
+      }
+
+      let typeMatch = true;
+      if (this.selectedTypeFilter === 'support') {
+        typeMatch = (calendar.calendarType || '').toLowerCase().includes('support')
+          || !!(calendar as any).isSupport;
+      } else if (this.selectedTypeFilter === 'requestor') {
+        typeMatch = (calendar.calendarType || '').toLowerCase().includes('requestor')
+          || !!(calendar as any).isRequestor;
+      }
+
+      return termMatch && typeMatch;
+    });
+  }
+
+  onDeleteCalendar(calendar: CalendarMasterVO): void {
+    const dialogData: ConfirmationDialogData = {
+      title: 'Delete Calendar',
+      message: `Are you sure you want to delete calendar "${calendar.calendarCode}"?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      showCancel: true,
+      type: 'delete'
+    };
+
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '420px',
+      data: dialogData
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.calendarService.deleteCalendar(calendar.calendarCode).subscribe({
+          next: () => {
+            this.openInfoDialog('Calendar deleted successfully.', 'Success');
+            this.loadCalendars();
+          },
+          error: (err) => {
+            this.error = 'Failed to delete calendar. Please try again.';
+            console.error('Error deleting calendar:', err);
+            this.openInfoDialog(this.error, 'Error');
+          }
+        });
+      }
+    });
+  }
+
+  onViewDetails(calendar: CalendarMasterVO, listType: 'workdays' | 'holidays'): void {
+    this.dialog.open(CalendarDetailsModalComponent, {
+      data: { calendar, listType },
+      width: '600px'
+    });
+  }
+
+  openInfoDialog(message: string, title = 'Info'): void {
+    this.dialog.open(ConfirmationDialogComponent, {
+      width: '420px',
+      data: {
+        title,
+        message,
+        confirmText: 'OK',
+        showCancel: false,
+        type: 'info'
+      } as ConfirmationDialogData
+    });
+  }
+}
