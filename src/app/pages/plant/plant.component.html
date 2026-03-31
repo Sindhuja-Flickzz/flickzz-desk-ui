@@ -1,0 +1,78 @@
+<div class="plant-page">
+  <div class="tabs">
+    <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
+    <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <h2>{{ pageTitle }}</h2>
+
+    <form [formGroup]="plantForm" (ngSubmit)="onSave()">
+
+      <!-- <div *ngIf="formError" class="error-text">{{ formError }}</div> -->
+      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+      
+      <div class="field">
+        <label>Plant Name</label>
+        <input type="text" formControlName="plantName" placeholder="Enter plant name" [readonly]="isEditMode"/>
+        <span *ngIf="formError.plantName" class="error-text">{{ formError.plantName }}</span>
+      </div>
+
+      <div class="field">
+        <label>Region</label>
+        <select formControlName="countryId">
+          <option value="" disabled>Select region</option>
+          <option *ngFor="let c of countries" [value]="c.countryId">{{ c.countryName }}</option>
+        </select>
+        <span *ngIf="formError.countryId" class="error-text">{{ formError.countryId }}</span>
+      </div>
+
+      <div class="field">
+        <label>Calendar</label>
+        <select formControlName="calendarId">
+          <option value="" disabled>Select calendar</option>
+          <option *ngFor="let cal of calendars" [value]="cal.calendarId">{{ cal.calendarCode }}</option>
+        </select>
+        <span *ngIf="formError.calendarId" class="error-text">{{ formError.calendarId }}</span>
+      </div>
+      
+      <div class="actions">
+        <button type="submit" *ngIf="!isSubmitting" class="save-btn">{{ isEditMode ? 'Update Plant' : 'Save Plant' }}</button>
+        <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>{{ isEditMode ? 'Updating Plant' : 'Saving Plant' }}</button>
+        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <h2>Plant List</h2>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Plant Name</th>
+            <th>Region</th>
+            <th>Calendar</th>
+            <th>Created By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let plant of plants">
+            <td>{{ plant.plantName }}</td>
+            <td>{{ plant.region.countryName }}</td>
+            <td>{{ plant.calendar.calendarCode }}</td>
+            <td>{{ plant.createdBy }}</td>
+            <td class="action-buttons">
+              <button type="button" (click)="onViewPlant(plant)"><mat-icon>visibility</mat-icon></button>
+              <button type="button" (click)="onDeletePlant(plant)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
