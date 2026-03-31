@@ -6,6 +6,7 @@ import {WelcomeComponent} from "./pages/welcome/welcome.component";
 import {CreateCalendarComponent} from "./pages/calendar/create-calendar/create-calendar.component";
 import {CalendarListPageComponent} from "./pages/calendar/calendar-list/calendar-list.component";
 import {PlantComponent} from "./pages/plant/plant.component";
+import {SkillComponent} from "./pages/skill/skill.component";
 import {authGuard} from "./service/auth/auth.guard";
 
 const routes: Routes = [
@@ -40,6 +41,11 @@ const routes: Routes = [
   {
     path: 'plant',
     component: PlantComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'skill',
+    component: SkillComponent,
     canActivate: [authGuard]
   },
   {

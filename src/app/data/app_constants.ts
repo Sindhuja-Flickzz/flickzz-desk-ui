@@ -84,7 +84,7 @@ export const MENU_INFO: MenuItem[] = [
                     {
                         "subMenuId": 201010103,
                         "subMenuName": "Skills",
-                        "route": "/welcome",
+                        "route": "/skill",
                         "isActive": true,
                         "childSubMenus": []
                     }

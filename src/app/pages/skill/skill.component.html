@@ -1,0 +1,68 @@
+<div class="skill-page">
+  <div class="tabs">
+    <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
+    <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <h2>{{ pageTitle }}</h2>
+
+    <form [formGroup]="skillForm" (ngSubmit)="onSave()">
+
+      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+      <div class="field">
+        <label>Skill Name</label>
+        <div class="input-group">
+          <input type="text" formControlName="skillName" placeholder="Enter skill name" [readonly]="isEditMode"/>
+          <button type="button" *ngIf="!isEditMode" class="add-btn" (click)="addSkill()">+</button>
+        </div>
+        <span *ngIf="formError.skillName" class="error-text">{{ formError.skillName }}</span>
+      </div>
+
+      <div *ngIf="!isEditMode && skillList.length > 0" class="skills-added">
+        <h3>Skills to Create:</h3>
+        <div class="skills-chips">
+          <button type="button" *ngFor="let skill of skillList" class="skill-chip" (click)="removeSkill(skill)">
+            {{ skill }}
+            <span class="remove-icon">×</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" *ngIf="!isSubmitting" class="save-btn">{{ isEditMode ? 'Update Skill' : 'Save Skills' }}</button>
+        <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>{{ isEditMode ? 'Updating Skill' : 'Saving Skills' }}</button>
+        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <h2>Skill List</h2>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Skill Name</th>
+            <th>Created By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let skill of skills">
+            <td>{{ skill.skillName }}</td>
+            <td>{{ skill.createdBy }}</td>
+            <td class="action-buttons">
+              <!-- <button type="button" (click)="onViewSkill(skill)"><mat-icon>visibility</mat-icon></button> -->
+              <button type="button" (click)="onDeleteSkill(skill)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
