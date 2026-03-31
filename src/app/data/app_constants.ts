@@ -77,7 +77,7 @@ export const MENU_INFO: MenuItem[] = [
                     {
                         "subMenuId": 201010102,
                         "subMenuName": "Plant",
-                        "route": "/welcome",
+                        "route": "/plant",
                         "isActive": true,
                         "childSubMenus": []
                     },

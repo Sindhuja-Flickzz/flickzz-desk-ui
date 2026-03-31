@@ -5,6 +5,7 @@ import {RegisterComponent} from "./pages/register/register.component";
 import {WelcomeComponent} from "./pages/welcome/welcome.component";
 import {CreateCalendarComponent} from "./pages/calendar/create-calendar/create-calendar.component";
 import {CalendarListPageComponent} from "./pages/calendar/calendar-list/calendar-list.component";
+import {PlantComponent} from "./pages/plant/plant.component";
 import {authGuard} from "./service/auth/auth.guard";
 
 const routes: Routes = [
@@ -34,6 +35,11 @@ const routes: Routes = [
   {
     path: 'calendar/list',
     component: CalendarListPageComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'plant',
+    component: PlantComponent,
     canActivate: [authGuard]
   },
   {

@@ -12,6 +12,7 @@ import { CreateCalendarComponent } from './pages/calendar/create-calendar/create
 import { CalendarListPageComponent } from './pages/calendar/calendar-list/calendar-list.component';
 import { CalendarDetailsModalComponent } from './pages/calendar/calendar-details-modal/calendar-details-modal.component';
 import { ConfirmationDialogComponent } from './shared/confirmation-dialog/confirmation-dialog.component';
+import { PlantComponent } from './pages/plant/plant.component';
 import {HttpClient, HttpClientModule, HTTP_INTERCEPTORS} from "@angular/common/http";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import { AuthInterceptor } from './service/auth.interceptor';
@@ -34,7 +35,8 @@ import { MatPaginatorModule } from '@angular/material/paginator';
     CreateCalendarComponent,
     CalendarListPageComponent,
     CalendarDetailsModalComponent,
-    ConfirmationDialogComponent
+    ConfirmationDialogComponent,
+    PlantComponent
   ],
   imports: [
     BrowserModule,
