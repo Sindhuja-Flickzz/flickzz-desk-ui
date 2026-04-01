@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
+import { PageEvent } from '@angular/material/paginator';
 import { CalendarService } from '../../../service/calendar.service';
 import { CalendarMasterVO } from '../../../models/calendar-master';
 import { CalendarDetailsModalComponent } from '../calendar-details-modal/calendar-details-modal.component';
@@ -18,6 +19,12 @@ export class CalendarListPageComponent implements OnInit {
   selectedTypeFilter: 'all' | 'support' | 'requestor' = 'all';
   loading = false;
   error: string | null = null;
+
+  // Pagination
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
+  totalRecords = 0;
+  currentPage = 0;
 
   constructor(
     private calendarService: CalendarService,
@@ -97,6 +104,9 @@ export class CalendarListPageComponent implements OnInit {
 
       return termMatch && typeMatch;
     });
+
+    this.totalRecords = this.filteredCalendars.length;
+    this.currentPage = 0; // Reset to first page when filtering
   }
 
   onDeleteCalendar(calendar: CalendarMasterVO): void {
@@ -149,5 +159,16 @@ export class CalendarListPageComponent implements OnInit {
         type: 'info'
       } as ConfirmationDialogData
     });
+  }
+
+  getPaginatedCalendars(): CalendarMasterVO[] {
+    const startIndex = this.currentPage * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.filteredCalendars.slice(startIndex, endIndex);
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
   }
 }

@@ -61,14 +61,14 @@ export const MENU_INFO: MenuItem[] = [
                         {
                             "subMenuId": 20101010101,
                             "subMenuName": "Requestor",
-                            "route": "/welcome",
+                            "route": "/company/requestor",
                             "isActive": true,
                             "childSubMenus": []
                         },
                         {
                             "subMenuId": 20101010102,
                             "subMenuName": "Service Provider",
-                            "route": "/welcome",
+                            "route": "/company/service-provider",
                             "isActive": true,
                             "childSubMenus": []
                         }
@@ -84,7 +84,7 @@ export const MENU_INFO: MenuItem[] = [
                     {
                         "subMenuId": 201010103,
                         "subMenuName": "Skills",
-                        "route": "/welcome",
+                        "route": "/skill",
                         "isActive": true,
                         "childSubMenus": []
                     }

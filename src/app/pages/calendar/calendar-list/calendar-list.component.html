@@ -39,7 +39,7 @@
 
   <!-- Calendar Grid -->
   <div *ngIf="!loading && !error" class="calendar-grid">
-    <mat-card *ngFor="let calendar of filteredCalendars" class="calendar-card">
+    <mat-card *ngFor="let calendar of getPaginatedCalendars()" class="calendar-card">
       <mat-card-header>
         <mat-card-title>{{ calendar.calendarCode }}</mat-card-title>
         <mat-card-subtitle>{{ calendar.calendarType }}</mat-card-subtitle>
@@ -80,6 +80,17 @@
         </button>
       </mat-card-actions>
     </mat-card>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="!loading && !error && filteredCalendars.length > 0" class="pagination-controls">
+    <mat-paginator
+      [length]="totalRecords"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      (page)="onPageChange($event)"
+      showFirstLastButtons>
+    </mat-paginator>
   </div>
 
   <!-- Empty State -->

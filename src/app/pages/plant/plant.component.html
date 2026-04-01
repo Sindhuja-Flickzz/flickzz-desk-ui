@@ -61,7 +61,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let plant of plants">
+          <tr *ngFor="let plant of getPaginatedPlants()">
             <td>{{ plant.plantName }}</td>
             <td>{{ plant.region.countryName }}</td>
             <td>{{ plant.calendar.calendarCode }}</td>
@@ -73,6 +73,16 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="pagination-controls">
+      <mat-paginator
+        [length]="totalRecords"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        showFirstLastButtons>
+      </mat-paginator>
     </div>
   </div>
 </div>
