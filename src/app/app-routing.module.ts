@@ -8,6 +8,7 @@ import {CalendarListPageComponent} from "./pages/calendar/calendar-list/calendar
 import {PlantComponent} from "./pages/plant/plant.component";
 import {SkillComponent} from "./pages/skill/skill.component";
 import {CompanyComponent} from "./pages/company/company.component";
+import {AgentComponent} from "./pages/agent/agent.component";
 import {authGuard} from "./service/auth/auth.guard";
 
 const routes: Routes = [
@@ -65,6 +66,11 @@ const routes: Routes = [
     component: CompanyComponent,
     canActivate: [authGuard],
     data: { type: 'service-provider' }
+  },
+  {
+    path: 'agent',
+    component: AgentComponent,
+    canActivate: [authGuard]
   },
   {
     path: '**',
