@@ -14,6 +14,7 @@ import { CalendarDetailsModalComponent } from './pages/calendar/calendar-details
 import { ConfirmationDialogComponent } from './shared/confirmation-dialog/confirmation-dialog.component';
 import { PlantComponent } from './pages/plant/plant.component';
 import { SkillComponent } from './pages/skill/skill.component';
+import { CompanyComponent } from './pages/company/company.component';
 import {HttpClient, HttpClientModule, HTTP_INTERCEPTORS} from "@angular/common/http";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import { AuthInterceptor } from './service/auth.interceptor';
@@ -38,7 +39,8 @@ import { MatPaginatorModule } from '@angular/material/paginator';
     CalendarDetailsModalComponent,
     ConfirmationDialogComponent,
     PlantComponent,
-    SkillComponent
+    SkillComponent,
+    CompanyComponent
   ],
   imports: [
     BrowserModule,

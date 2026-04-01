@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { PageEvent } from '@angular/material/paginator';
 import { SkillService } from '../../service/skill.service';
 import { SkillMaster, SkillRequest } from '../../models/skill-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
@@ -18,12 +19,18 @@ export class SkillComponent implements OnInit {
   originalFormValue: any = null;
 
   skills: SkillMaster[] = [];
-  skillList: string[] = []; // for create tab
+  skillList: { name: string; years: number; months: number }[] = []; // for create tab
   loading = false;
   formError: any = {};
   submitSuccess = '';
   submitError = '';
   isSubmitting = false;
+
+  // Pagination
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
+  totalRecords = 0;
+  currentPage = 0;
 
   constructor(
     private fb: FormBuilder,
@@ -32,7 +39,9 @@ export class SkillComponent implements OnInit {
   ) {
     this.skillForm = this.fb.group({
       skillId: [null],
-      skillName: ['', Validators.required]
+      skillName: ['', Validators.required],
+      experienceYears: [0, [Validators.required, Validators.min(0), Validators.max(50)]],
+      experienceMonths: [0, [Validators.required, Validators.min(0), Validators.max(11)]]
     });
   }
 
@@ -58,6 +67,8 @@ export class SkillComponent implements OnInit {
     this.skillService.getAllSkills().subscribe({
       next: (result) => {
         this.skills = (result as any).attributes || [];
+        this.totalRecords = this.skills.length;
+        this.currentPage = 0; // Reset to first page
       },
       error: (err) => {
         console.error('Failed to load skills:', err);
@@ -82,7 +93,7 @@ export class SkillComponent implements OnInit {
   resetForm(): void {
     this.isEditMode = false;
     this.pageTitle = 'Create Skill';
-    this.skillForm.reset();
+    this.skillForm.reset({ experienceYears: 0, experienceMonths: 0 });
     this.skillList = [];
     this.originalFormValue = null;
     this.submitError = '';
@@ -93,27 +104,44 @@ export class SkillComponent implements OnInit {
     this.submitError = '';
     this.submitSuccess = '';
     const skillName = this.skillForm.value.skillName?.trim();
+    const years = this.skillForm.value.experienceYears;
+    const months = this.skillForm.value.experienceMonths;
+
     if (!skillName) {
       this.formError.skillName = 'Skill name is required';
       return;
     }
-    if (this.skillList.includes(skillName)) {
+    if (years === null || years === undefined || years < 0) {
+      this.formError.experienceYears = 'Experience years is required and must be >= 0';
+      return;
+    }
+    if (months === null || months === undefined || months < 0 || months > 11) {
+      this.formError.experienceMonths = 'Experience months must be between 0 and 11';
+      return;
+    }
+
+    // Check if skill already exists
+    const existingSkill = this.skillList.find(s => s.name.toLowerCase() === skillName.toLowerCase());
+    if (existingSkill) {
       this.formError.skillName = 'Skill already added';
       return;
     }
-    this.skillList.push(skillName);
-    this.skillForm.patchValue({ skillName: '' });
+
+    this.skillList.push({ name: skillName, years: years, months: months });
+    this.skillForm.patchValue({ skillName: '', experienceYears: 0, experienceMonths: 0 });
     this.formError = {};
   }
 
-  removeSkill(skillName: string): void {    
+  removeSkill(skill: { name: string; years: number; months: number }): void {    
     this.submitError = '';
     this.submitSuccess = '';
-    this.skillList = this.skillList.filter(s => s !== skillName);
+    this.skillList = this.skillList.filter(s => s !== skill);
   }
 
   onSave(): void {
     this.formError = {};
+    this.submitError = '';
+    this.submitSuccess = '';
 
     if (this.isEditMode) {
       // Update single skill
@@ -136,6 +164,8 @@ export class SkillComponent implements OnInit {
       const payload: SkillRequest = {
         skillId: this.skillForm.value.skillId,
         skillName: this.skillForm.value.skillName,
+        experienceYears: this.skillForm.value.experienceYears,
+        experienceMonths: this.skillForm.value.experienceMonths,
         createdBy: localStorage.getItem('userRole') || '',
         updatedBy: localStorage.getItem('userRole') || ''
       };
@@ -165,8 +195,10 @@ export class SkillComponent implements OnInit {
         return;
       }
 
-      const requests: SkillRequest[] = this.skillList.map(name => ({
-        skillName: name,
+      const requests: SkillRequest[] = this.skillList.map(skill => ({
+        skillName: skill.name,
+        experienceYears: skill.years,
+        experienceMonths: skill.months,
         createdBy: localStorage.getItem('userRole') || '',
         updatedBy: localStorage.getItem('userRole') || ''
       }));
@@ -205,13 +237,17 @@ export class SkillComponent implements OnInit {
     this.pageTitle = 'Edit Skill';
     this.skillForm.patchValue({
       skillId: skill.skillId,
-      skillName: skill.skillName
+      skillName: skill.skillName,
+      experienceYears: skill.experienceYears,
+      experienceMonths: skill.experienceMonths
     });
     this.skillList = []; // for edit, list is empty
     this.originalFormValue = this.skillForm.getRawValue();
   }
 
   onDeleteSkill(skill: SkillMaster): void {
+    this.submitError = '';
+    this.submitSuccess = '';
     const dialogData: ConfirmationDialogData = {
       title: 'Delete Skill',
       message: `Are you sure you want to delete skill "${skill.skillName}"?`,
@@ -233,7 +269,7 @@ export class SkillComponent implements OnInit {
       this.skillService.deleteSkill(skill.skillId).subscribe({
         next: () => {
           this.loadSkillList();
-          this.submitSuccess = 'Skill deleted successfully.';
+          // this.submitSuccess = 'Skill deleted successfully.';
         },
         error: (err) => {
           console.error('Delete skill error', err);
@@ -241,5 +277,16 @@ export class SkillComponent implements OnInit {
         }
       });
     });
+  }
+
+  getPaginatedSkills(): SkillMaster[] {
+    const startIndex = this.currentPage * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.skills.slice(startIndex, endIndex);
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
   }
 }

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { PageEvent } from '@angular/material/paginator';
 import { PlantService } from '../../service/plant.service';
 import { CountryMasterVO, PlantMaster, PlantMasterRequest } from '../../models/plant-master';
 import { CalendarMasterVO } from '../../models/calendar-master';
@@ -26,6 +27,12 @@ export class PlantComponent implements OnInit {
   submitSuccess = '';
   submitError = '';
   isSubmitting = false;
+
+  // Pagination
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
+  totalRecords = 0;
+  currentPage = 0;
 
   constructor(
     private fb: FormBuilder,
@@ -64,6 +71,10 @@ export class PlantComponent implements OnInit {
       error: () => { this.calendars = []; }
     });
 
+    this.plantForm.patchValue({
+        countryId: "",
+        calendarId: ""
+    });
     this.loadPlantList();
     this.loading = false;
   }
@@ -72,6 +83,8 @@ export class PlantComponent implements OnInit {
     this.plantService.getAllPlants().subscribe({
       next: (result) => {
         this.plants = (result as any).attributes || [];
+        this.totalRecords = this.plants.length;
+        this.currentPage = 0; // Reset to first page
       },
       error: (err) => {
         console.error('Failed to load plants:', err);
@@ -83,7 +96,7 @@ export class PlantComponent implements OnInit {
     this.formError = {};
     this.activeTab = tab;
     if (tab === 'create') {
-        this.resetForm();
+      this.resetForm();
       this.pageTitle = this.isEditMode ? 'Edit Plant' : 'Create Plant';
     }
     if (tab === 'list') {
@@ -101,6 +114,10 @@ export class PlantComponent implements OnInit {
     this.originalFormValue = null;
     this.submitError = '';
     this.submitSuccess = '';
+    this.plantForm.patchValue({
+        countryId: "",
+        calendarId: ""
+    });
   }
 
   onSave(): void {
@@ -163,7 +180,8 @@ export class PlantComponent implements OnInit {
           setTimeout(() => {
             this.loadPlantList();
             this.resetForm();
-          });
+            this.activeTab = 'list';
+          }, 2000);
         },
         error: (err) => {
           this.isSubmitting = false;
@@ -229,5 +247,16 @@ export class PlantComponent implements OnInit {
         }
       });
     });
+  }
+
+  getPaginatedPlants(): PlantMaster[] {
+    const startIndex = this.currentPage * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.plants.slice(startIndex, endIndex);
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
   }
 }
