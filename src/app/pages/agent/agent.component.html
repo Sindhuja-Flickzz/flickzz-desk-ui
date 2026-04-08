@@ -59,7 +59,7 @@
         <div class="skill-input-row">
           <div class="skill-name-container">
             <label>Skills</label>
-            <input type="text" formControlName="skillName" (input)="onSkillSearch()" placeholder="Enter skill name" (change)="formError['skillName'] = null;" (keydown.enter)="addSkill()" autocomplete="off" />
+            <input type="text" formControlName="skillName" (input)="onSkillSearch()" placeholder="Start typing to pick skill" (change)="formError['skillName'] = null;" (keydown.enter)="addSkill()" autocomplete="off" />
             <div class="suggestions" *ngIf="filteredSkills.length > 0">
               <div class="suggestion-items">
                 <span class="suggestion" *ngFor="let skill of filteredSkills" (click)="addSkillFromSuggestion(skill)">{{ skill.skillName }}</span>
@@ -75,9 +75,9 @@
             <input type="number" formControlName="experienceMonths" min="0" max="11" placeholder="Months" (change)="formError['experienceMonths'] = null;" />
             
           </div>
-          <div class="months-input-container">
+          <div class="months-input-container" *ngIf="selectedSkill">
             <label><br></label>
-            <button type="button" class="add-skill-btn" (click)="addSkill()" title="Add Skill">
+            <button type="button" class="add-skill-btn" (click)="addSkill()" [disabled]="!selectedSkill" title="Add Skill">
               <span class="add-icon">+</span>
             </button>
           </div>
@@ -89,9 +89,9 @@
       </div>
 
       <div class="selected-skills" *ngIf="skillsList.length > 0">
-        <span class="chip" *ngFor="let skill of skillsList; let i = index">
+        <span class="chip" *ngFor="let skill of skillsList; let i = index" (click)="editSkill(i)" title="Click to edit">
           {{ skill.name }} ({{ skill.years }}y {{ skill.months }}m)
-          <button type="button" class="remove-chip" (click)="removeSkill(i)">×</button>
+          <button type="button" class="remove-chip" (click)="removeSkill(i); $event.stopPropagation()">×</button>
         </span>
       </div>
 
@@ -108,6 +108,11 @@
 
     <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
     <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+    
+    <div class="search-container">
+      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by name, email, or phone..." class="search-input">
+    </div>
+    
     <div class="table-wrapper">
       <table>
         <thead>
@@ -129,7 +134,7 @@
             <td>{{ agent.accessId }}</td>
             <td>{{ agent.phone }}</td>
             <td>{{ agent.organization.companyName }}</td>
-            <td>{{ agentSkillNames[agent.agentId].join(', ') }}</td>
+            <td>{{ agentSkillNames[agent.agentId]?.join(', ') }}</td>
             <td>{{ agent.calendar.calendarCode }}</td>
             <td class="action-buttons">
               <button type="button" (click)="onViewAgent(agent)"><mat-icon>edit</mat-icon></button>

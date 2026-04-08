@@ -62,15 +62,35 @@
       <div class="actions">
         <button type="submit" *ngIf="!isSubmitting" class="save-btn">{{ isEditMode ? 'Update Company' : 'Save Company' }}</button>
         <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>{{ isEditMode ? 'Updating Company' : 'Saving Company' }}</button>
-        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button type="button" *ngIf="!isEditMode" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button type="button" *ngIf="isEditMode" class="reset-btn" (click)="cancelForm()">Cancel</button>
       </div>
     </form>
   </div>
 
   <div *ngIf="activeTab === 'list'" class="list-panel">
-    <h2>Company List</h2>
+    <h2>{{ isRequestor ? 'Requestor' : 'Service Provider' }} List</h2>
     <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
     <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+    <div class="search-container">
+      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="applyFilters()" placeholder="Search by name, registration number, or address..." class="search-input">
+      
+      <div class="type-filters" *ngIf="isRequestor">
+        <label class="filter-label">
+          <input type="radio" name="typeFilter" value="all" [(ngModel)]="typeFilter" (ngModelChange)="onTypeFilterChange()" />
+          All
+        </label>
+        <label class="filter-label">
+          <input type="radio" name="typeFilter" value="both" [(ngModel)]="typeFilter" (ngModelChange)="onTypeFilterChange()" />
+          Both
+        </label>
+        <label class="filter-label">
+          <input type="radio" name="typeFilter" value="requestor" [(ngModel)]="typeFilter" (ngModelChange)="onTypeFilterChange()" />
+          Requestor
+        </label>
+      </div>
+    </div>
 
     <div class="pagination-controls">
       <mat-paginator

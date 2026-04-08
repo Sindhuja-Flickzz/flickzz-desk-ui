@@ -24,6 +24,8 @@ export class CompanyComponent implements OnInit {
   countries: CountryMaster[] = [];
   companies: CompanyMaster[] = [];
   filteredCompanies: CompanyMaster[] = []; // For filtered display
+  searchValue = '';
+  typeFilter = 'all'; // Default to 'all'
   loading = false;
   formError: any = {};
   submitSuccess = '';
@@ -102,18 +104,43 @@ export class CompanyComponent implements OnInit {
   }
 
   applyFilters(): void {
+    let filtered = this.companies;
+
+    // Apply type filter based on route
     if (this.routeType === 'requestor') {
       // Display records where isRequestor = true or isBoth = true
-      this.filteredCompanies = this.companies.filter(c => c.isRequestor || c.isBoth);
+      filtered = filtered.filter(c => c.isRequestor || c.isBoth);
     } else if (this.routeType === 'service-provider') {
       // Display records where isServiceProvider = true
-      this.filteredCompanies = this.companies.filter(c => c.isServiceProvider);
-    } else {
-      // No route type specified, show all
-      this.filteredCompanies = this.companies;
+      filtered = filtered.filter(c => c.isServiceProvider);
     }
+
+    // Apply type filter based on radio button selection
+    if (this.typeFilter !== 'all') {
+      filtered = filtered.filter(c => {
+        if (this.typeFilter === 'both' && c.isBoth) return true;
+        if (this.typeFilter === 'requestor' && c.isRequestor) return true;
+        return false;
+      });
+    }
+
+    // Apply search filter
+    const searchTerm = (this.searchValue || '').trim().toLowerCase();
+    if (searchTerm) {
+      filtered = filtered.filter(c =>
+        c.companyName.toLowerCase().includes(searchTerm) ||
+        (c.registeredNumber && c.registeredNumber.toLowerCase().includes(searchTerm)) ||
+        (c.address && c.address.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    this.filteredCompanies = filtered;
     this.totalRecords = this.filteredCompanies.length;
     this.currentPage = 0; // Reset to first page when filtering
+  }
+
+  onTypeFilterChange(): void {
+    this.applyFilters();
   }
 
   selectTab(tab: 'create' | 'list'): void {
@@ -128,6 +155,7 @@ export class CompanyComponent implements OnInit {
       this.isEditMode = false;
       this.updatePageTitle();
       this.resetForm();
+      this.typeFilter = 'all'; // Reset to 'all' when switching to list tab
       this.loadCompanyList();
     }
   }
@@ -146,6 +174,11 @@ export class CompanyComponent implements OnInit {
     this.submitError = '';
     this.submitSuccess = '';
     this.updateFormValidators();
+  }
+
+  cancelForm(): void {    
+    this.activeTab = 'list';
+    this.isEditMode = false;
   }
 
   updateFormValidators(): void {

@@ -19,7 +19,9 @@ export class SkillComponent implements OnInit {
   originalFormValue: any = null;
 
   skills: SkillMaster[] = [];
-  skillList: { name: string; years: number; months: number }[] = []; // for create tab
+  filteredSkills: SkillMaster[] = [];
+  skillList: { name: string }[] = []; // for create tab
+  searchValue = '';
   loading = false;
   formError: any = {};
   submitSuccess = '';
@@ -39,9 +41,7 @@ export class SkillComponent implements OnInit {
   ) {
     this.skillForm = this.fb.group({
       skillId: [null],
-      skillName: ['', Validators.required],
-      experienceYears: [0, [Validators.required, Validators.min(0), Validators.max(50)]],
-      experienceMonths: [0, [Validators.required, Validators.min(0), Validators.max(11)]]
+      skillName: ['', Validators.required]
     });
   }
 
@@ -67,7 +67,8 @@ export class SkillComponent implements OnInit {
     this.skillService.getAllSkills().subscribe({
       next: (result) => {
         this.skills = (result as any).attributes || [];
-        this.totalRecords = this.skills.length;
+        this.searchValue = '';
+        this.filterBySearch();
         this.currentPage = 0; // Reset to first page
       },
       error: (err) => {
@@ -93,7 +94,6 @@ export class SkillComponent implements OnInit {
   resetForm(): void {
     this.isEditMode = false;
     this.pageTitle = 'Create Skill';
-    this.skillForm.reset({ experienceYears: 0, experienceMonths: 0 });
     this.skillList = [];
     this.originalFormValue = null;
     this.submitError = '';
@@ -104,19 +104,9 @@ export class SkillComponent implements OnInit {
     this.submitError = '';
     this.submitSuccess = '';
     const skillName = this.skillForm.value.skillName?.trim();
-    const years = this.skillForm.value.experienceYears;
-    const months = this.skillForm.value.experienceMonths;
 
     if (!skillName) {
       this.formError.skillName = 'Skill name is required';
-      return;
-    }
-    if (years === null || years === undefined || years < 0) {
-      this.formError.experienceYears = 'Experience years is required and must be >= 0';
-      return;
-    }
-    if (months === null || months === undefined || months < 0 || months > 11) {
-      this.formError.experienceMonths = 'Experience months must be between 0 and 11';
       return;
     }
 
@@ -127,12 +117,12 @@ export class SkillComponent implements OnInit {
       return;
     }
 
-    this.skillList.push({ name: skillName, years: years, months: months });
-    this.skillForm.patchValue({ skillName: '', experienceYears: 0, experienceMonths: 0 });
+    this.skillList.push({ name: skillName });
+    this.skillForm.patchValue({ skillName: '' });
     this.formError = {};
   }
 
-  removeSkill(skill: { name: string; years: number; months: number }): void {    
+  removeSkill(skill: { name: string }): void {    
     this.submitError = '';
     this.submitSuccess = '';
     this.skillList = this.skillList.filter(s => s !== skill);
@@ -164,8 +154,6 @@ export class SkillComponent implements OnInit {
       const payload: SkillRequest = {
         skillId: this.skillForm.value.skillId,
         skillName: this.skillForm.value.skillName,
-        experienceYears: this.skillForm.value.experienceYears,
-        experienceMonths: this.skillForm.value.experienceMonths,
         createdBy: localStorage.getItem('userRole') || '',
         updatedBy: localStorage.getItem('userRole') || ''
       };
@@ -197,8 +185,6 @@ export class SkillComponent implements OnInit {
 
       const requests: SkillRequest[] = this.skillList.map(skill => ({
         skillName: skill.name,
-        experienceYears: skill.years,
-        experienceMonths: skill.months,
         createdBy: localStorage.getItem('userRole') || '',
         updatedBy: localStorage.getItem('userRole') || ''
       }));
@@ -238,8 +224,6 @@ export class SkillComponent implements OnInit {
     this.skillForm.patchValue({
       skillId: skill.skillId,
       skillName: skill.skillName,
-      experienceYears: skill.experienceYears,
-      experienceMonths: skill.experienceMonths
     });
     this.skillList = []; // for edit, list is empty
     this.originalFormValue = this.skillForm.getRawValue();
@@ -285,7 +269,20 @@ export class SkillComponent implements OnInit {
   getPaginatedSkills(): SkillMaster[] {
     const startIndex = this.currentPage * this.pageSize;
     const endIndex = startIndex + this.pageSize;
-    return this.skills.slice(startIndex, endIndex);
+    return this.filteredSkills.slice(startIndex, endIndex);
+  }
+
+  filterBySearch(): void {
+    const term = (this.searchValue || '').trim().toLowerCase();
+    if (!term) {
+      this.filteredSkills = this.skills;
+    } else {
+      this.filteredSkills = this.skills.filter(skill =>
+        skill.skillName.toLowerCase().includes(term)
+      );
+    }
+    this.totalRecords = this.filteredSkills.length;
+    this.currentPage = 0;
   }
 
   onPageChange(event: PageEvent): void {

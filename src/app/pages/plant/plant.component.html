@@ -50,6 +50,11 @@
     <h2>Plant List</h2>
     <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
     <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+    
+    <div class="search-container">
+      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by name or region..." class="search-input">
+    </div>
+    
     <div class="table-wrapper">
       <table>
         <thead>

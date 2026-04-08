@@ -27,10 +27,13 @@ export class AgentComponent implements OnInit {
   skills: SkillMaster[] = [];
   suggestedSkills: SkillMaster[] = [];
   filteredSkills: SkillMaster[] = [];
+  selectedSkill: SkillMaster | null = null;
   skillsList: { name: string, years: number, months: number }[] = [];
 
   agents: AgentMaster[] = [];
+  filteredAgents: AgentMaster[] = [];
   agentSkillNames: { [key: number]: string[] } = {};
+  searchValue = '';
 
   loading = false;
   formError: any = {};
@@ -124,7 +127,8 @@ export class AgentComponent implements OnInit {
     this.agentService.getAgentList().subscribe({
       next: (result) => {
         this.agents = (result as any).attributes || [];
-        this.totalRecords = this.agents.length;
+        this.searchValue = '';
+        this.filterBySearch();
         this.currentPage = 0;
         this.agentSkillNames = {};
 
@@ -138,8 +142,13 @@ export class AgentComponent implements OnInit {
               allSkills.forEach((mappingsResp, idx) => {
                 const agentId = this.agents[idx].agentId;
                 const mappings = (mappingsResp as any).attributes || mappingsResp || [];
-                const names = (mappings || []).map((map: any) => map.skill?.skillName).filter(Boolean);
-                this.agentSkillNames[agentId] = names;
+                const formatted = (mappings || []).map((map: any) => {
+                  const skillName = map.skill?.skillName || '';
+                  const years = map.experienceYears ?? map.skill?.experienceYears ?? 0;
+                  const months = map.experienceMonths ?? map.skill?.experienceMonths ?? 0;
+                  return skillName ? `${skillName} (${years}y ${months}m)` : null;
+                }).filter(Boolean) as string[];
+                this.agentSkillNames[agentId] = formatted;
               });
             },
             error: () => {
@@ -182,23 +191,24 @@ export class AgentComponent implements OnInit {
     this.originalFormValue = null;
     this.submitError = '';
     this.submitSuccess = '';
+    this.selectedSkill = null;
     this.setDefaultOrganizationAndCalendar();
   }
 
   addSkill(): void {
     this.formError = { ...this.formError };
     delete this.formError.skillName;
+    delete this.formError.skill;
     delete this.formError.experienceYears;
     delete this.formError.experienceMonths;
 
-    const skillName = this.agentForm.get('skillName')?.value?.trim();
     const years = this.agentForm.get('experienceYears')?.value || 0;
     const months = this.agentForm.get('experienceMonths')?.value || 0;
 
     let hasError = false;
 
-    if (!skillName) {
-      this.formError.skillName = 'Skill name is required';
+    if (!this.selectedSkill) {
+      this.formError.skillName = 'Select a skill from suggestions';
       hasError = true;
     }
 
@@ -216,14 +226,20 @@ export class AgentComponent implements OnInit {
       return;
     }
 
-    // Check for duplicate skills
-    if (this.skillsList.some(skill => skill.name.toLowerCase() === skillName.toLowerCase())) {
-      this.formError.skillName = 'Skill already added';
+    const skillName = this.selectedSkill!.skillName;
+    const existingIndex = this.skillsList.findIndex(skill => skill.name.toLowerCase() === skillName.toLowerCase());
+
+    if (existingIndex >= 0) {
+      this.skillsList[existingIndex] = { name: skillName, years, months };
+      this.agentForm.patchValue({ skillName: '', experienceYears: 0, experienceMonths: 0 });
+      this.selectedSkill = null;
+      this.filteredSkills = [];
       return;
     }
 
     this.skillsList.push({ name: skillName, years, months });
     this.agentForm.patchValue({ skillName: '', experienceYears: 0, experienceMonths: 0 });
+    this.selectedSkill = null;
     this.filteredSkills = [];
   }
 
@@ -231,16 +247,38 @@ export class AgentComponent implements OnInit {
     const term = (this.agentForm.get('skillName')?.value || '').trim().toLowerCase();
     if (!term) {
       this.filteredSkills = [];
+      this.selectedSkill = null;
       return;
     }
+
+    const currentValue = this.agentForm.get('skillName')?.value || '';
+    if (!this.selectedSkill || this.selectedSkill.skillName.toLowerCase() !== currentValue.toLowerCase()) {
+      this.selectedSkill = null;
+    }
+
     this.filteredSkills = this.suggestedSkills.filter(s => s.skillName.toLowerCase().includes(term));
   }
 
   addSkillFromSuggestion(skill: SkillMaster): void {
     if (!skill) { return; }
+    this.selectedSkill = skill;
     this.agentForm.patchValue({ skillName: skill.skillName });
     this.filteredSkills = [];
     this.formError.skillName = null;
+  }
+
+  editSkill(index: number): void {
+    const skill = this.skillsList[index];
+    const matchedSkill = this.suggestedSkills.find(s => s.skillName.toLowerCase() === skill.name.toLowerCase());
+    
+    if (matchedSkill) {
+      this.selectedSkill = matchedSkill;
+      this.agentForm.patchValue({
+        skillName: skill.name,
+        experienceYears: skill.years,
+        experienceMonths: skill.months
+      });
+    }
   }
 
   removeSkill(index: number): void {
@@ -280,10 +318,23 @@ export class AgentComponent implements OnInit {
     if (this.skillsList.length === 0) {
       this.formError.skill = 'At least one skill must be selected';
     }
-
+    
     if (Object.keys(this.formError).length > 0) {
       return;
     }
+
+    const currentUser = localStorage.getItem('userRole') || '';
+    const skills: SkillMaster[] = this.skillsList.map(item => {
+      const matchedSkill = this.skills.find(skill => skill.skillName.toLowerCase() === item.name.toLowerCase());
+      return {
+        skillId: matchedSkill?.skillId || 0,
+        skillName: item.name,
+        experienceYears: item.years,
+        experienceMonths: item.months,
+        createdBy: currentUser,
+        updatedBy: currentUser
+      };
+    });
 
     const payload: AgentRequest = {
       agentId: this.agentForm.value.agentId,
@@ -292,10 +343,10 @@ export class AgentComponent implements OnInit {
       accessId: this.agentForm.value.accessId,
       phone: this.agentForm.value.phone,
       orgId: Number(this.agentForm.value.orgId),
-      skills: this.skillsList, // Updated to send skillsList with experience
+      skills,
       calendarId: Number(this.agentForm.value.calendarId),
-      createdBy: localStorage.getItem('userRole') || '',
-      updatedBy: localStorage.getItem('userRole') || ''
+      createdBy: currentUser,
+      updatedBy: currentUser
     };
 
     if (this.isEditMode) {
@@ -347,7 +398,28 @@ export class AgentComponent implements OnInit {
       return true;
     }
     const currentValue = this.createCompareSnapshot();
-    return JSON.stringify(currentValue) !== JSON.stringify(this.originalFormValue);
+    
+    // Compare agent fields
+    if (currentValue.agentName !== this.originalFormValue.agentName ||
+        currentValue.mailId !== this.originalFormValue.mailId ||
+        currentValue.accessId !== this.originalFormValue.accessId ||
+        currentValue.phone !== this.originalFormValue.phone ||
+        currentValue.orgId !== this.originalFormValue.orgId ||
+        currentValue.calendarId !== this.originalFormValue.calendarId) {
+      return true;
+    }
+    
+    // Compare skills with experience details
+    if (currentValue.skills.length !== this.originalFormValue.skills.length) {
+      return true;
+    }
+    
+    return currentValue.skills.some((skill: any, idx: number) => {
+      const original = this.originalFormValue.skills[idx];
+      return skill.name !== original.name || 
+             skill.years !== original.years || 
+             skill.months !== original.months;
+    });
   }
 
   createCompareSnapshot(): any {
@@ -359,7 +431,7 @@ export class AgentComponent implements OnInit {
       phone: formValue.phone,
       orgId: formValue.orgId,
       calendarId: formValue.calendarId,
-      skills: this.skillsList
+      skills: JSON.parse(JSON.stringify(this.skillsList))
     };
   }
 
@@ -372,11 +444,10 @@ export class AgentComponent implements OnInit {
     this.agentService.getAgentSkills(agent.agentId).subscribe({
       next: (mappingsResp) => {
         const mappings = (mappingsResp as any).attributes || mappingsResp || [];
-        // Convert existing skills to new format with default experience
         this.skillsList = (mappings || []).map((m: any) => ({
           name: m.skill?.skillName || '',
-          years: 0,
-          months: 0
+          years: m.experienceYears ?? m.skill?.experienceYears ?? 0,
+          months: m.experienceMonths ?? m.skill?.experienceMonths ?? 0
         })).filter((s: any) => s.name);
 
         this.agentForm.patchValue({
@@ -442,7 +513,22 @@ export class AgentComponent implements OnInit {
   getPaginatedAgents(): AgentMaster[] {
     const startIndex = this.currentPage * this.pageSize;
     const endIndex = startIndex + this.pageSize;
-    return this.agents.slice(startIndex, endIndex);
+    return this.filteredAgents.slice(startIndex, endIndex);
+  }
+
+  filterBySearch(): void {
+    const term = (this.searchValue || '').trim().toLowerCase();
+    if (!term) {
+      this.filteredAgents = this.agents;
+    } else {
+      this.filteredAgents = this.agents.filter(agent =>
+        agent.agentName.toLowerCase().includes(term) ||
+        (agent.mailId && agent.mailId.toLowerCase().includes(term)) ||
+        (agent.phone && agent.phone.toLowerCase().includes(term))
+      );
+    }
+    this.totalRecords = this.filteredAgents.length;
+    this.currentPage = 0;
   }
 
   onPageChange(event: PageEvent): void {
