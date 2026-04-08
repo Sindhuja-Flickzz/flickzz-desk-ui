@@ -81,7 +81,9 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
         this.loadCalendarForEdit(code as string);
       } else {
         this.calendarForm.reset();
-        this.holidaysArray.clear()
+        this.holidaysArray.clear();
+        this.fieldErrors = {};
+        this.newHolidayErrors = {};
         this.pageTitle = this.isRequestorPage ? 'Create Requestor Calendar' : 'Create Support Calendar';
         this.calendarForm.get('calendarType')?.setValue(this.isRequestorPage ? 'Requestor' : 'Support');
       }
@@ -201,6 +203,9 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
     this.fieldErrors['validFrom'] = null;
     this.disableValidTo = false;
     this.disableholiday = true;
+    if (this.calendarForm.get('validTo')?.value) {
+      this.calendarForm.get('validTo')?.reset();
+    }
     this.calendarForm.get('validTo')?.reset();
     const validFromControl = this.calendarForm.get('validFrom');
     this.minValidToDate = validFromControl?.value ? this.dateUtils.getNextDate(new Date(validFromControl.value)).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
@@ -419,7 +424,8 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
           return `${key} is required`;
         }
         if (field?.hasError('alphanumeric')) {
-          return 'Calendar code must be alphanumeric';
+          this.fieldErrors[key] = 'Calendar Code can contain only letters and numbers';
+          return this.fieldErrors[key];
         }
         if (field?.hasError('invalidDateFormat')) {
           return 'Date format must be DD.MM.YYYY';

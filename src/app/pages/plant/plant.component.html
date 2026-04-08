@@ -17,7 +17,7 @@
       <div class="field">
         <label>Plant Name</label>
         <input type="text" formControlName="plantName" placeholder="Enter plant name" [readonly]="isEditMode"/>
-        <span *ngIf="formError.plantName" class="error-text">{{ formError.plantName }}</span>
+        <span *ngIf="formError.plantName" class="error-text">{{ formError.plantName | fieldLabel  }}</span>
       </div>
 
       <div class="field">
@@ -26,7 +26,7 @@
           <option value="" disabled>Select region</option>
           <option *ngFor="let c of countries" [value]="c.countryId">{{ c.countryName }}</option>
         </select>
-        <span *ngIf="formError.countryId" class="error-text">{{ formError.countryId }}</span>
+        <span *ngIf="formError.countryId" class="error-text">{{ formError.countryId | fieldLabel  }}</span>
       </div>
 
       <div class="field">
@@ -35,7 +35,7 @@
           <option value="" disabled>Select calendar</option>
           <option *ngFor="let cal of calendars" [value]="cal.calendarId">{{ cal.calendarCode }}</option>
         </select>
-        <span *ngIf="formError.calendarId" class="error-text">{{ formError.calendarId }}</span>
+        <span *ngIf="formError.calendarId" class="error-text">{{ formError.calendarId | fieldLabel  }}</span>
       </div>
       
       <div class="actions">
@@ -48,7 +48,8 @@
 
   <div *ngIf="activeTab === 'list'" class="list-panel">
     <h2>Plant List</h2>
-
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
     <div class="table-wrapper">
       <table>
         <thead>
@@ -67,7 +68,7 @@
             <td>{{ plant.calendar.calendarCode }}</td>
             <td>{{ plant.createdBy }}</td>
             <td class="action-buttons">
-              <button type="button" (click)="onViewPlant(plant)"><mat-icon>visibility</mat-icon></button>
+              <button type="button" (click)="onViewPlant(plant)"><mat-icon>edit</mat-icon></button>
               <button type="button" (click)="onDeletePlant(plant)"><mat-icon>delete</mat-icon></button>
             </td>
           </tr>

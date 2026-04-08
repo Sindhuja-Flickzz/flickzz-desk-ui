@@ -307,6 +307,9 @@ export class CompanyComponent implements OnInit {
         next: () => {
           this.loadCompanyList();
           this.submitSuccess = 'Company deleted successfully.';
+          setTimeout(() => {  
+            this.submitSuccess = '';
+          }, 1500);
         },
         error: (err) => {
           console.error('Delete company error', err);

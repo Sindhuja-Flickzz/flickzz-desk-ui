@@ -27,18 +27,18 @@ export class AgentComponent implements OnInit {
   skills: SkillMaster[] = [];
   suggestedSkills: SkillMaster[] = [];
   filteredSkills: SkillMaster[] = [];
-  selectedSkills: SkillMaster[] = [];
+  skillsList: { name: string, years: number, months: number }[] = [];
 
   agents: AgentMaster[] = [];
   agentSkillNames: { [key: number]: string[] } = {};
 
-  skillSearch = '';
   loading = false;
   formError: any = {};
   submitSuccess = '';
   submitError = '';
   isSubmitting = false;
 
+  alphanumericPattern = '^[a-zA-Z0-9 ]+$';
   pageSize = 10;
   pageSizeOptions = [5, 10, 25, 50];
   totalRecords = 0;
@@ -51,13 +51,15 @@ export class AgentComponent implements OnInit {
   ) {
     this.agentForm = this.fb.group({
       agentId: [null],
-      agentName: ['', Validators.required],
+      agentName: ['', [Validators.required, Validators.pattern(this.alphanumericPattern)]],
       mailId: ['', [Validators.required, Validators.email]],
       accessId: ['', Validators.required],
       phone: ['', [Validators.required, Validators.pattern('^\\+?[0-9]{7,15}$')]],
       orgId: [null, Validators.required],
       calendarId: [null, Validators.required],
-      skillSearch: ['']
+      skillName: ['', Validators.pattern('^[a-zA-Z0-9 ]+$')],
+      experienceYears: [0, [Validators.min(0)]],
+      experienceMonths: [0, [Validators.min(0), Validators.max(11)]]
     });
   }
 
@@ -96,17 +98,26 @@ export class AgentComponent implements OnInit {
       next: (response) => {
         this.skills = (response as any).attributes || [];
         this.suggestedSkills = this.skills;
-        // this.filteredSkills = this.suggestedSkills;
       },
       error: () => {
         this.skills = [];
         this.suggestedSkills = [];
-        this.filteredSkills = [];
       }
     });
 
     this.loadAgentList();
     this.loading = false;
+  }
+
+  checkAgentName() {
+    this.formError['agentName'] = null;
+    this.agentService.getAgentInfoByName(this.agentForm.get('agentName')?.value).subscribe({
+      next: () => {      },
+      error: () => {
+         this.agentForm.patchValue({ agentName: '' });
+        this.formError['agentName'] = 'Agent Name already exists';
+      } 
+    });
   }
 
   loadAgentList(): void {
@@ -166,20 +177,60 @@ export class AgentComponent implements OnInit {
     this.isEditMode = false;
     this.pageTitle = 'Create Agent';
     this.agentForm.reset();
-    this.selectedSkills = [];
-    this.agentForm.patchValue({ skillSearch: '' });
-    // this.filteredSkills = this.skills;
+    this.skillsList = [];
+    this.filteredSkills = [];
     this.originalFormValue = null;
     this.submitError = '';
     this.submitSuccess = '';
     this.setDefaultOrganizationAndCalendar();
   }
 
+  addSkill(): void {
+    this.formError = { ...this.formError };
+    delete this.formError.skillName;
+    delete this.formError.experienceYears;
+    delete this.formError.experienceMonths;
+
+    const skillName = this.agentForm.get('skillName')?.value?.trim();
+    const years = this.agentForm.get('experienceYears')?.value || 0;
+    const months = this.agentForm.get('experienceMonths')?.value || 0;
+
+    let hasError = false;
+
+    if (!skillName) {
+      this.formError.skillName = 'Skill name is required';
+      hasError = true;
+    }
+
+    if (years < 0) {
+      this.formError.experienceYears = 'Years cannot be negative';
+      hasError = true;
+    }
+
+    if (months < 0 || months > 11) {
+      this.formError.experienceMonths = 'Months must be between 0 and 11';
+      hasError = true;
+    }
+
+    if (hasError) {
+      return;
+    }
+
+    // Check for duplicate skills
+    if (this.skillsList.some(skill => skill.name.toLowerCase() === skillName.toLowerCase())) {
+      this.formError.skillName = 'Skill already added';
+      return;
+    }
+
+    this.skillsList.push({ name: skillName, years, months });
+    this.agentForm.patchValue({ skillName: '', experienceYears: 0, experienceMonths: 0 });
+    this.filteredSkills = [];
+  }
+
   onSkillSearch(): void {
-    const term = (this.agentForm.get('skillSearch')?.value || '').trim().toLowerCase();
-    console.log('Searching for skill with term:', term);
+    const term = (this.agentForm.get('skillName')?.value || '').trim().toLowerCase();
     if (!term) {
-      this.filteredSkills = []
+      this.filteredSkills = [];
       return;
     }
     this.filteredSkills = this.suggestedSkills.filter(s => s.skillName.toLowerCase().includes(term));
@@ -187,18 +238,13 @@ export class AgentComponent implements OnInit {
 
   addSkillFromSuggestion(skill: SkillMaster): void {
     if (!skill) { return; }
-    if (this.selectedSkills.some(s => s.skillId === skill.skillId)) {
-      return;
-    }
-    this.selectedSkills.push(skill);
-    this.agentForm.patchValue({ skillSearch: '' });
+    this.agentForm.patchValue({ skillName: skill.skillName });
     this.filteredSkills = [];
-    // this.filteredSkills = this.suggestedSkills.slice(0, 10);
-    this.formError.skill = null;
+    this.formError.skillName = null;
   }
 
-  removeSelectedSkill(skill: SkillMaster): void {
-    this.selectedSkills = this.selectedSkills.filter(s => s.skillId !== skill.skillId);
+  removeSkill(index: number): void {
+    this.skillsList.splice(index, 1);
   }
 
   onSave(): void {
@@ -217,9 +263,21 @@ export class AgentComponent implements OnInit {
       if (key === 'phone' && field?.hasError('pattern')) {
         this.formError[key] = 'Phone number should contain 7-15 digits';
       }
+      if (key === 'agentName' && field?.hasError('pattern')) {
+        this.formError[key] = 'Agent Name can contain only letters and numbers';
+      }
+      if (key === 'skillName' && field?.hasError('pattern')) {
+        this.formError[key] = 'Skill name can contain only letters and numbers';
+      }
+      if (key === 'experienceYears' && field?.hasError('min')) {
+        this.formError[key] = 'Years cannot be negative';
+      }
+      if (key === 'experienceMonths' && (field?.hasError('min') || field?.hasError('max'))) {
+        this.formError[key] = 'Months must be between 0 and 11';
+      }
     });
 
-    if (this.selectedSkills.length === 0) {
+    if (this.skillsList.length === 0) {
       this.formError.skill = 'At least one skill must be selected';
     }
 
@@ -234,7 +292,7 @@ export class AgentComponent implements OnInit {
       accessId: this.agentForm.value.accessId,
       phone: this.agentForm.value.phone,
       orgId: Number(this.agentForm.value.orgId),
-      skills: this.selectedSkills.map(s => s.skillId),
+      skills: this.skillsList, // Updated to send skillsList with experience
       calendarId: Number(this.agentForm.value.calendarId),
       createdBy: localStorage.getItem('userRole') || '',
       updatedBy: localStorage.getItem('userRole') || ''
@@ -301,7 +359,7 @@ export class AgentComponent implements OnInit {
       phone: formValue.phone,
       orgId: formValue.orgId,
       calendarId: formValue.calendarId,
-      skills: this.selectedSkills.map(s => s.skillId)
+      skills: this.skillsList
     };
   }
 
@@ -314,7 +372,12 @@ export class AgentComponent implements OnInit {
     this.agentService.getAgentSkills(agent.agentId).subscribe({
       next: (mappingsResp) => {
         const mappings = (mappingsResp as any).attributes || mappingsResp || [];
-        this.selectedSkills = (mappings || []).map((m: any) => m.skill).filter(Boolean);
+        // Convert existing skills to new format with default experience
+        this.skillsList = (mappings || []).map((m: any) => ({
+          name: m.skill?.skillName || '',
+          years: 0,
+          months: 0
+        })).filter((s: any) => s.name);
 
         this.agentForm.patchValue({
           agentId: agent.agentId,
@@ -329,9 +392,15 @@ export class AgentComponent implements OnInit {
         this.originalFormValue = this.createCompareSnapshot();
       },
       error: () => {
-        this.selectedSkills = [];
+        this.skillsList = [];
       }
     });
+  }
+  
+  cancelEdit() {    
+    this.loadAgentList();
+    this.resetForm();
+    this.activeTab = 'list';
   }
 
   onDeleteAgent(agent: AgentMaster): void {
@@ -358,6 +427,9 @@ export class AgentComponent implements OnInit {
         next: () => {
           this.loadAgentList();
           this.submitSuccess = 'Agent deleted successfully.';
+          setTimeout(() => {  
+            this.submitSuccess = '';
+          }, 1500);
         },
         error: (err) => {
           console.error('Delete agent error', err);
@@ -393,6 +465,9 @@ export class AgentComponent implements OnInit {
       case 'orgId': return 'Organization';
       case 'calendarId': return 'Calendar';
       case 'accessId': return 'Access ID';
+      case 'skillName': return 'Skill Name';
+      case 'experienceYears': return 'Experience Years';
+      case 'experienceMonths': return 'Experience Months';
       default: return key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
     }
   }

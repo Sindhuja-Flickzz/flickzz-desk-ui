@@ -3,7 +3,7 @@
     <h2>{{ pageTitle }}</h2>
   </div>
 
-  <form [formGroup]="calendarForm" (ngSubmit)="onSubmit()" [title]="pageTitle" [attr.aria-label]="pageTitle + ' Form'">
+  <form [formGroup]="calendarForm" (ngSubmit)="onSubmit()" [attr.aria-label]="pageTitle + ' Form'">
     <!-- Success Message -->
     <div *ngIf="submitSuccess" class="alert alert-success">
       ✓ Calendar {{ isEditMode ? 'updated' : 'created' }} successfully!
@@ -28,7 +28,7 @@
             [readonly]="isEditMode"
             (change)="fieldErrors['calendarCode'] = null;"
           />
-          <span *ngIf="fieldErrors.calendarCode" class="error-message">{{ fieldErrors.calendarCode }}</span>
+          <span *ngIf="fieldErrors.calendarCode" class="error-message">{{ fieldErrors.calendarCode | fieldLabel }}</span>
         </div>
 
         <!-- Calendar Type -->
@@ -41,7 +41,7 @@
             class="form-control"
             (change)="fieldErrors['calendarType'] = null;"
           />
-          <span *ngIf="fieldErrors.calendarType" class="error-message">{{ fieldErrors.calendarType }}</span>
+          <span *ngIf="fieldErrors.calendarType" class="error-message">{{ fieldErrors.calendarType | fieldLabel }}</span>
         </div>
       </div>
 
@@ -57,7 +57,7 @@
             [min]="minValidFromDate"
             (change)="calculateValidToDates()"
           />
-          <span *ngIf="fieldErrors.validFrom" class="error-message">{{ fieldErrors.validFrom }}</span>
+          <span *ngIf="fieldErrors.validFrom" class="error-message">{{ fieldErrors.validFrom | fieldLabel }}</span>
         </div>
 
         <div class="form-group">
@@ -72,7 +72,7 @@
             (change)="calculateHolidayDates()"
             [readonly]="disableValidTo"
           />
-          <span *ngIf="fieldErrors.validTo" class="error-message">{{ fieldErrors.validTo }}</span>
+          <span *ngIf="fieldErrors.validTo" class="error-message">{{ fieldErrors.validTo | fieldLabel }}</span>
         </div>
       </div>
     </div>
@@ -91,7 +91,7 @@
           <label [for]="'day-' + i">{{ day }}</label>
         </div>
       </div>
-      <span *ngIf="fieldErrors.workingDays" class="error-message">{{ fieldErrors.workingDays }}</span>
+      <span *ngIf="fieldErrors.workingDays" class="error-message">{{ fieldErrors.workingDays | fieldLabel }}</span>
     </div>
 
     <!-- Work Hours Section -->
@@ -108,7 +108,7 @@
             class="form-control"
             (change)="onTimeChange($event)"
           />
-          <span *ngIf="fieldErrors.timeFrom" class="error-message">{{ fieldErrors.timeFrom }}</span>
+          <span *ngIf="fieldErrors.timeFrom" class="error-message">{{ fieldErrors.timeFrom | fieldLabel }}</span>
         </div>
 
         <div class="form-group">
@@ -121,7 +121,7 @@
             class="form-control"
             (change)="onTimeChange($event)"
           />
-          <span *ngIf="fieldErrors.timeTo" class="error-message">{{ fieldErrors.timeTo }}</span>
+          <span *ngIf="fieldErrors.timeTo" class="error-message">{{ fieldErrors.timeTo | fieldLabel }}</span>
         </div>
         <!-- Timezone -->
         <div class="form-group">
@@ -135,7 +135,7 @@
             <option value="">-- Select Timezone --</option>
             <option *ngFor="let tz of timezones" [value]="tz">{{ tz }}</option>
           </select>
-          <span *ngIf="fieldErrors.timezone" class="error-message">{{ fieldErrors.timezone }}</span>
+          <span *ngIf="fieldErrors.timezone" class="error-message">{{ fieldErrors.timezone | fieldLabel }}</span>
         </div>
       </div>
 
@@ -160,7 +160,7 @@
             [max]="holidayMaxDate"
             [readonly]="disableholiday"
           />
-          <span *ngIf="newHolidayErrors['holidayDate']" class="error-message">{{ newHolidayErrors['holidayDate'] }}</span>
+          <span *ngIf="newHolidayErrors['holidayDate']" class="error-message">{{ newHolidayErrors['holidayDate'] | fieldLabel }}</span>
         </div>
 
         <div class="form-group col-12 col-md-6">
@@ -174,7 +174,7 @@
             (change)="this.newHolidayErrors['description']=''"
             [readonly]="disableholiday"
           />
-          <span *ngIf="newHolidayErrors['description']" class="error-message">{{ newHolidayErrors['description'] }}</span>
+          <span *ngIf="newHolidayErrors['description']" class="error-message">{{ newHolidayErrors['description'] | fieldLabel }}</span>
         </div>
 
         <div class="form-group col-12 col-md-2 d-flex align-items-end">
@@ -205,7 +205,7 @@
         </table>
       </div>
 
-      <div *ngIf="fieldErrors.holidays" class="error-message">{{fieldErrors.holidays}}</div>
+      <div *ngIf="fieldErrors.holidays" class="error-message">{{fieldErrors.holidays | fieldLabel}}</div>
     </div>
 
     <!-- Submit Button -->

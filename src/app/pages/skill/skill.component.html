@@ -29,9 +29,9 @@
           </div>
           <button type="button" *ngIf="!isEditMode" class="add-btn" (click)="addSkill()">+</button>
         </div>
-        <span *ngIf="formError.skillName" class="error-text">{{ formError.skillName }}</span>
-        <span *ngIf="formError.experienceYears" class="error-text">{{ formError.experienceYears }}</span>
-        <span *ngIf="formError.experienceMonths" class="error-text">{{ formError.experienceMonths }}</span>
+        <span *ngIf="formError.skillName" class="error-text">{{ formError.skillName | fieldLabel  }}</span>
+        <span *ngIf="formError.experienceYears" class="error-text">{{ formError.experienceYears | fieldLabel  }}</span>
+        <span *ngIf="formError.experienceMonths" class="error-text">{{ formError.experienceMonths | fieldLabel  }}</span>
       </div>
 
       <div *ngIf="!isEditMode && skillList.length > 0" class="skills-added">

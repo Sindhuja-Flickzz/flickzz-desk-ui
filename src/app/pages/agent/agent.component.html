@@ -14,68 +14,91 @@
 
       <div class="field">
         <label>Agent Name</label>
-        <input type="text" formControlName="agentName" placeholder="Enter agent name" />
-        <span *ngIf="formError.agentName" class="error-text">{{ formError.agentName }}</span>
+        <input type="text" formControlName="agentName" (change)="checkAgentName()" placeholder="Enter agent name" />
+        <span *ngIf="formError.agentName" class="error-text">{{ formError.agentName | fieldLabel  }}</span>
       </div>
 
       <div class="field">
         <label>Mail ID</label>
-        <input type="email" formControlName="mailId" placeholder="Enter email" />
-        <span *ngIf="formError.mailId" class="error-text">{{ formError.mailId }}</span>
+        <input type="email" formControlName="mailId" (change)="formError['mailId'] = null;" placeholder="Enter email" />
+        <span *ngIf="formError.mailId" class="error-text">{{ formError.mailId | fieldLabel  }}</span>
       </div>
 
       <div class="field">
         <label>Access ID</label>
-        <input type="text" formControlName="accessId" placeholder="Enter access ID" />
-        <span *ngIf="formError.accessId" class="error-text">{{ formError.accessId }}</span>
+        <input type="text" formControlName="accessId" (change)="formError['accessId'] = null;" placeholder="Enter access ID" />
+        <span *ngIf="formError.accessId" class="error-text">{{ formError.accessId | fieldLabel  }}</span>
       </div>
 
       <div class="field">
         <label>Phone</label>
-        <input type="text" formControlName="phone" placeholder="Enter contact number" />
-        <span *ngIf="formError.phone" class="error-text">{{ formError.phone }}</span>
+        <input type="text" formControlName="phone" (change)="formError['phone'] = null;" placeholder="Enter contact number" />
+        <span *ngIf="formError.phone" class="error-text">{{ formError.phone | fieldLabel  }}</span>
       </div>
 
       <div class="field">
         <label>Organization</label>
-        <select formControlName="orgId" title="Organization">
+        <select formControlName="orgId" title="Organization" (change)="formError['orgId'] = null;">
           <option value="" disabled>Select organization</option>
           <option *ngFor="let org of companies" [value]="org.companyId">{{ org.companyName }}</option>
         </select>
-        <span *ngIf="formError.orgId" class="error-text">{{ formError.orgId }}</span>
+        <span *ngIf="formError.orgId" class="error-text">{{ formError.orgId  | fieldLabel }}</span>
       </div>
 
       <div class="field">
         <label>Calendar</label>
-        <select formControlName="calendarId" title="Calendar">
+        <select formControlName="calendarId" title="Calendar" (change)="formError['calendarId'] = null;">
           <option value="" disabled>Select calendar</option>
           <option *ngFor="let cal of calendars" [value]="cal.calendarId">{{ cal.calendarCode }}</option>
         </select>
-        <span *ngIf="formError.calendarId" class="error-text">{{ formError.calendarId }}</span>
+        <span *ngIf="formError.calendarId" class="error-text">{{ formError.calendarId | fieldLabel }}</span>
       </div>
 
       <div class="field">
-        <label>Skill</label>
-        <input type="text" formControlName="skillSearch" (input)="onSkillSearch()" placeholder="Search and select skill" autocomplete="off" />
-        <span *ngIf="formError.skill" class="error-text">{{ formError.skill }}</span>
-      </div>
-
-      <div class="suggestions" *ngIf="filteredSkills.length > 0">
-        <div class="suggestion-items">
-          <span class="suggestion" *ngFor="let skill of filteredSkills" (click)="addSkillFromSuggestion(skill)">{{ skill.skillName }}</span>
+        <!-- <label>Skills</label> -->
+        <div class="skill-input-row">
+          <div class="skill-name-container">
+            <label>Skills</label>
+            <input type="text" formControlName="skillName" (input)="onSkillSearch()" placeholder="Enter skill name" (change)="formError['skillName'] = null;" (keydown.enter)="addSkill()" autocomplete="off" />
+            <div class="suggestions" *ngIf="filteredSkills.length > 0">
+              <div class="suggestion-items">
+                <span class="suggestion" *ngFor="let skill of filteredSkills" (click)="addSkillFromSuggestion(skill)">{{ skill.skillName }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="years-input-container">
+            <label>Years</label>
+            <input type="number" formControlName="experienceYears" min="0" placeholder="Years" (change)="formError['experienceYears'] = null;" />
+          </div>
+          <div class="months-input-container">
+            <label>Months</label>
+            <input type="number" formControlName="experienceMonths" min="0" max="11" placeholder="Months" (change)="formError['experienceMonths'] = null;" />
+            
+          </div>
+          <div class="months-input-container">
+            <label><br></label>
+            <button type="button" class="add-skill-btn" (click)="addSkill()" title="Add Skill">
+              <span class="add-icon">+</span>
+            </button>
+          </div>
         </div>
+        <span *ngIf="formError.skillName" class="error-text">{{ formError.skillName | fieldLabel }}</span>
+        <span *ngIf="formError.experienceYears" class="error-text">{{ formError.experienceYears | fieldLabel }}</span>
+        <span *ngIf="formError.experienceMonths" class="error-text">{{ formError.experienceMonths | fieldLabel }}</span>
+        <span *ngIf="formError.skill" class="error-text">{{ formError.skill | fieldLabel }}</span>
       </div>
 
-      <div class="selected-skills" *ngIf="selectedSkills.length > 0">
-        <span class="chip" *ngFor="let skill of selectedSkills">
-          {{ skill.skillName }}
-          <button type="button" class="remove-chip" (click)="removeSelectedSkill(skill)">×</button>
+      <div class="selected-skills" *ngIf="skillsList.length > 0">
+        <span class="chip" *ngFor="let skill of skillsList; let i = index">
+          {{ skill.name }} ({{ skill.years }}y {{ skill.months }}m)
+          <button type="button" class="remove-chip" (click)="removeSkill(i)">×</button>
         </span>
       </div>
 
       <div class="actions">
         <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isEditMode ? (isSubmitting ? 'Updating Agent...' : 'Update Agent') : (isSubmitting ? 'Saving Agent...' : 'Save Agent') }}</button>
-        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
       </div>
     </form>
   </div>
@@ -83,6 +106,8 @@
   <div *ngIf="activeTab === 'list'" class="list-panel">
     <h2>Agent List</h2>
 
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
     <div class="table-wrapper">
       <table>
         <thead>
@@ -107,7 +132,7 @@
             <td>{{ agentSkillNames[agent.agentId].join(', ') }}</td>
             <td>{{ agent.calendar.calendarCode }}</td>
             <td class="action-buttons">
-              <button type="button" (click)="onViewAgent(agent)"><mat-icon>visibility</mat-icon></button>
+              <button type="button" (click)="onViewAgent(agent)"><mat-icon>edit</mat-icon></button>
               <button type="button" (click)="onDeleteAgent(agent)"><mat-icon>delete</mat-icon></button>
             </td>
           </tr>

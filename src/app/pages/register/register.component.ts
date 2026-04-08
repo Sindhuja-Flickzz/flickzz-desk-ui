@@ -29,6 +29,7 @@ export class RegisterComponent {
   };
   message = '';
   otpCode = '';
+  showPassword = false;
 
   constructor(
     private authService: AuthenticationService,
@@ -66,13 +67,17 @@ export class RegisterComponent {
     this.authService.verifyCode(verifyRequest)
       .subscribe({
         next: (response) => {
-          this.message = 'Account created successfully\nYou will be redirected to the Welcome page in 3 seconds';
+          this.message = 'Account created successfully\nYou will be redirected to the Login page in 3 seconds';
           setTimeout(() => {
-            localStorage.setItem('token', response.attributes.accessToken as string);
-            localStorage.setItem('refreshToken', response.attributes.refreshToken as string);
-            this.router.navigate(['welcome']);
+            // localStorage.setItem('token', response.attributes.accessToken as string);
+            // localStorage.setItem('refreshToken', response.attributes.refreshToken as string);
+            this.router.navigate(['login']);
           }, 3000);
         }
       });
+  }
+  
+  togglePassword() {
+    this.showPassword = !this.showPassword;
   }
 }

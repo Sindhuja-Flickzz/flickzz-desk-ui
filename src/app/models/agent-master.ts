@@ -9,7 +9,7 @@ export interface AgentRequest {
   accessId: string;
   phone: string;
   orgId: number;
-  skills: number[];
+  skills: { name: string, years: number, months: number }[];
   calendarId: number;
   createdBy: string;
   updatedBy: string;

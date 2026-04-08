@@ -16,6 +16,7 @@ import { PlantComponent } from './pages/plant/plant.component';
 import { SkillComponent } from './pages/skill/skill.component';
 import { CompanyComponent } from './pages/company/company.component';
 import { AgentComponent } from './pages/agent/agent.component';
+import { FieldLabelPipe } from './pipes/field-label.pipe';
 import {HttpClient, HttpClientModule, HTTP_INTERCEPTORS} from "@angular/common/http";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import { AuthInterceptor } from './service/auth.interceptor';
@@ -42,7 +43,8 @@ import { MatPaginatorModule } from '@angular/material/paginator';
     PlantComponent,
     SkillComponent,
     CompanyComponent,
-    AgentComponent
+    AgentComponent,
+    FieldLabelPipe
   ],
   imports: [
     BrowserModule,

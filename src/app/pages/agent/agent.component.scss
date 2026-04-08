@@ -1,5 +1,5 @@
 .agent-page {
-  max-width: 950px;
+  max-width: 90%;
   margin: 20px auto;
   padding: 14px;
   background: #ffffff;
@@ -128,45 +128,6 @@
     }
   }
 
-  .suggestions {
-    background: #f7fbff;
-    border: 1px solid #d9e6f6;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 10px;
-
-    .suggestions-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      font-weight: 700;
-      color: #23395d;
-      .close-btn {
-        border: none;
-        background: transparent;
-        font-size: 18px;
-        cursor: pointer;
-      }
-    }
-
-    .suggestion-items {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .suggestion {
-      background: #ffffff;
-      border: 1px solid #9c9c9c;
-      border-radius: 20px;
-      padding: 5px 12px;
-      cursor: pointer;
-      font-weight: 600;
-      color: #2b2b2b;
-    }
-  }
-
   .selected-skills {
     margin: 8px 0;
     .chip {
@@ -182,6 +143,151 @@
         background: transparent;
         margin-left: 6px;
         cursor: pointer;
+      }
+    }
+  }
+
+  .skill-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+
+    .skill-name-container {
+      display: grid;
+      flex: 1;
+      position: relative;
+
+      input {
+        width: 100%;
+        border: 1px solid #ccd6e8;
+        border-radius: 10px;
+        padding: 11px 12px;
+        outline: none;
+        font-size: 14px;
+        transition: border-color .2s ease;
+
+        &:focus {
+          border-color: #0f5bba;
+        }
+      }
+
+      .suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #f7fbff;
+        border: 1px solid #d9e6f6;
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 2px;
+        z-index: 10;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+        .suggestion-items {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .suggestion {
+          background: #ffffff;
+          border: 1px solid #9c9c9c;
+          border-radius: 20px;
+          padding: 5px 12px;
+          cursor: pointer;
+          font-weight: 600;
+          color: #2b2b2b;
+          transition: background-color 0.2s ease;
+
+          &:hover {
+            background: #f0f0f0;
+          }
+        }
+      }
+    }
+
+    input[type="number"] {
+      flex: 0 0 80px;
+      border: 1px solid #ccd6e8;
+      border-radius: 10px;
+      padding: 11px 12px;
+      outline: none;
+      font-size: 14px;
+      transition: border-color .2s ease;
+
+      &:focus {
+        border-color: #0f5bba;
+      }
+    }
+
+    .years-input-container {
+      display: grid;
+      align-items: center;
+      position: relative;
+
+      input {
+        flex: 0 0 80px;
+      }
+    }
+    
+    .add-skill-btn {
+      border: none;
+      background: #00246B;
+      color: #fff;
+      border-radius: 10px;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 8px;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background: #003d99;
+      }
+
+      .add-icon {
+        font-size: 18px;
+        font-weight: bold;
+        line-height: 1;
+      }
+    }
+
+    .months-input-container {
+      display: grid;
+      align-items: center;
+      position: relative;
+
+      input {
+        flex: 0 0 80px;
+      }
+
+      .add-skill-btn {
+        border: none;
+        background: #00246B;
+        color: #fff;
+        border-radius: 10px;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 8px;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background: #003d99;
+        }
+
+        .add-icon {
+          font-size: 18px;
+          font-weight: bold;
+          line-height: 1;
+        }
       }
     }
   }

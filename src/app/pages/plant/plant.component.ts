@@ -28,6 +28,8 @@ export class PlantComponent implements OnInit {
   submitError = '';
   isSubmitting = false;
 
+  alphanumericPattern = '^[a-zA-Z0-9 ]+$';
+
   // Pagination
   pageSize = 10;
   pageSizeOptions = [5, 10, 25, 50];
@@ -41,7 +43,7 @@ export class PlantComponent implements OnInit {
   ) {
     this.plantForm = this.fb.group({
       plantId: [null],
-      plantName: ['', Validators.required],
+      plantName: ['', [Validators.required, Validators.pattern(this.alphanumericPattern)]],
       countryId: [null, Validators.required],
       calendarId: [null, Validators.required]
     });
@@ -127,7 +129,10 @@ export class PlantComponent implements OnInit {
     Object.keys(this.plantForm.controls).forEach(key => {
         const field = this.plantForm.get(key);
         if (field?.hasError('required')) {
-          this.formError[key] = `${key} is required`;
+          this.formError[key] = key === 'plantName' ? 'Plant Name is required' : `${key} is required`;
+        }
+        if (key === 'plantName' && field?.hasError('pattern')) {
+          this.formError[key] = 'Plant Name can contain only letters and numbers';
         }
         return;
     });
@@ -240,6 +245,9 @@ export class PlantComponent implements OnInit {
         next: () => {
           this.loadPlantList();
           this.submitSuccess = 'Plant deleted successfully.';
+          setTimeout(() => {  
+            this.submitSuccess = '';
+          }, 1500);
         },
         error: (err) => {
           console.error('Delete plant error', err);

@@ -269,7 +269,10 @@ export class SkillComponent implements OnInit {
       this.skillService.deleteSkill(skill.skillId).subscribe({
         next: () => {
           this.loadSkillList();
-          // this.submitSuccess = 'Skill deleted successfully.';
+          this.submitSuccess = 'Skill deleted successfully.';
+          setTimeout(() => {  
+            this.submitSuccess = '';
+          }, 1500);
         },
         error: (err) => {
           console.error('Delete skill error', err);

@@ -36,6 +36,10 @@ export class AgentService {
     return this.http.get(`${this.baseUrl}/agent/list`);
   }
 
+  getAgentInfoByName(agentName: string): Observable<AgentMaster> {
+    return this.http.get<AgentMaster>(`${this.baseUrl}/agent/get/${agentName}`);
+  }
+
   getAgentSkills(agentId: number): Observable<AgentSkillsMapping[]> {
     return this.http.get<AgentSkillsMapping[]>(`${this.baseUrl}/agent/skills/${agentId}`);
   }
