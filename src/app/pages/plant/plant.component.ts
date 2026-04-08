@@ -22,11 +22,15 @@ export class PlantComponent implements OnInit {
   countries: CountryMasterVO[] = [];
   calendars: CalendarMasterVO[] = [];
   plants: PlantMaster[] = [];
+  filteredPlants: PlantMaster[] = [];
+  searchValue = '';
   loading = false;
   formError: any = {};
   submitSuccess = '';
   submitError = '';
   isSubmitting = false;
+
+  alphanumericPattern = '^[a-zA-Z0-9 ]+$';
 
   // Pagination
   pageSize = 10;
@@ -41,7 +45,7 @@ export class PlantComponent implements OnInit {
   ) {
     this.plantForm = this.fb.group({
       plantId: [null],
-      plantName: ['', Validators.required],
+      plantName: ['', [Validators.required, Validators.pattern(this.alphanumericPattern)]],
       countryId: [null, Validators.required],
       calendarId: [null, Validators.required]
     });
@@ -83,7 +87,8 @@ export class PlantComponent implements OnInit {
     this.plantService.getAllPlants().subscribe({
       next: (result) => {
         this.plants = (result as any).attributes || [];
-        this.totalRecords = this.plants.length;
+        this.searchValue = '';
+        this.filterBySearch();
         this.currentPage = 0; // Reset to first page
       },
       error: (err) => {
@@ -127,7 +132,10 @@ export class PlantComponent implements OnInit {
     Object.keys(this.plantForm.controls).forEach(key => {
         const field = this.plantForm.get(key);
         if (field?.hasError('required')) {
-          this.formError[key] = `${key} is required`;
+          this.formError[key] = key === 'plantName' ? 'Plant Name is required' : `${key} is required`;
+        }
+        if (key === 'plantName' && field?.hasError('pattern')) {
+          this.formError[key] = 'Plant Name can contain only letters and numbers';
         }
         return;
     });
@@ -240,6 +248,9 @@ export class PlantComponent implements OnInit {
         next: () => {
           this.loadPlantList();
           this.submitSuccess = 'Plant deleted successfully.';
+          setTimeout(() => {  
+            this.submitSuccess = '';
+          }, 1500);
         },
         error: (err) => {
           console.error('Delete plant error', err);
@@ -252,7 +263,22 @@ export class PlantComponent implements OnInit {
   getPaginatedPlants(): PlantMaster[] {
     const startIndex = this.currentPage * this.pageSize;
     const endIndex = startIndex + this.pageSize;
-    return this.plants.slice(startIndex, endIndex);
+    return this.filteredPlants.slice(startIndex, endIndex);
+  }
+
+  filterBySearch(): void {
+    const term = (this.searchValue || '').trim().toLowerCase();
+    if (!term) {
+      this.filteredPlants = this.plants;
+    } else {
+      this.filteredPlants = this.plants.filter(plant =>
+        plant.plantName.toLowerCase().includes(term) ||
+        plant.calendar?.calendarCode.toLowerCase().includes(term) ||
+        (plant.region && plant.region.countryName && plant.region.countryName.toLowerCase().includes(term))
+      );
+    }
+    this.totalRecords = this.filteredPlants.length;
+    this.currentPage = 0;
   }
 
   onPageChange(event: PageEvent): void {

@@ -33,6 +33,10 @@ export class AppComponent implements OnInit, OnDestroy {
   activeNodeId?: number;
   showSidebar = false;
 
+  isPopupOpen = false;
+  activePopupBranch: MenuNode[] = [];
+  private popupCloseTimeout?: any;
+
   settingsOnlyMode = false;
   settingsNodeId?: number;
 
@@ -220,6 +224,104 @@ export class AppComponent implements OnInit, OnDestroy {
 
   setActive(nodeId: number) {
     this.activeNodeId = nodeId;
+  }
+
+  get menuPopupRows(): MenuNode[][] {
+    const rows: MenuNode[][] = [];
+    rows.push(this.menuTree);
+
+    for (let i = 0; i < this.activePopupBranch.length; i++) {
+      const node = this.activePopupBranch[i];
+      if (node.children && node.children.length) {
+        rows.push(node.children);
+      } else {
+        break;
+      }
+    }
+
+    return rows;
+  }
+
+  isPopupSelected(node: MenuNode, level: number): boolean {
+    return this.activePopupBranch[level]?.id === node.id;
+  }
+
+  openPopup() {
+    this.isPopupOpen = true;
+    this.activePopupBranch = [];
+    if (this.popupCloseTimeout) {
+      clearTimeout(this.popupCloseTimeout);
+      this.popupCloseTimeout = undefined;
+    }
+  }
+
+  closePopup() {
+    this.isPopupOpen = false;
+    this.activePopupBranch = [];
+    if (this.popupCloseTimeout) {
+      clearTimeout(this.popupCloseTimeout);
+      this.popupCloseTimeout = undefined;
+    }
+  }
+
+  closePopupWithDelay() {
+    if (this.popupCloseTimeout) {
+      clearTimeout(this.popupCloseTimeout);
+    }
+    this.popupCloseTimeout = setTimeout(() => {
+      this.closePopup();
+    }, 250);
+  }
+
+  onPopupAreaHover() {
+    if (this.popupCloseTimeout) {
+      clearTimeout(this.popupCloseTimeout);
+      this.popupCloseTimeout = undefined;
+    }
+  }
+
+  setPopupBranch(node: MenuNode, level: number) {
+    this.activePopupBranch = this.activePopupBranch.slice(0, level);
+    this.activePopupBranch[level] = node;
+  }
+
+  onPopupItemHover(node: MenuNode, level: number) {
+    if (!node.isActive) {
+      return;
+    }
+    this.setPopupBranch(node, level);
+  }
+
+  onPopupItemClick(node: MenuNode, level: number, event?: MouseEvent) {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!node.isActive) {
+      return;
+    }
+
+    this.setPopupBranch(node, level);
+
+    if (!node.children || !node.children.length) {
+      if (node.route) {
+        if (node.route === '/calendar/create-calendar') {
+          const type = node.name?.toLowerCase().includes('requestor') ? 'requestor' : 'support';
+          this.router.navigate([node.route], { queryParams: { type } });
+        } else {
+          this.router.navigate([node.route]);
+        }
+      }
+      this.closePopup();
+      return;
+    }
+  }
+
+  togglePopup() {
+    if (this.isPopupOpen) {
+      this.closePopup();
+    } else {
+      this.openPopup();
+    }
   }
 
   toggleExpansion(node: MenuNode) {

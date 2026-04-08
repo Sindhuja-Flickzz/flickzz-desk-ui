@@ -788,6 +788,132 @@
   font-weight: 700;
 }
 
+.popup-hamburger,
+.mobile-hamburger {
+  border: none;
+  background: #00246B;
+  color: white;
+  font-size: 20px;
+  border-radius: 5px;
+  width: 40px;
+  height: 40px;
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.popup-hamburger {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+.popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 16, 26, 0.22);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding: 80px 16px 16px 16px;
+}
+
+.popup-panel {
+  background: #ffffff;
+  border: 1px solid #d3dce6;
+  border-radius: 14px;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.20);
+  width: min(98vw, 890px);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: popupFade 0.16s ease-out;
+}
+
+.popup-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+.popup-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 155px;
+  padding: 11px 14px;
+  border: 1px solid #d8e0ea;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.popup-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.11);
+}
+
+.popup-card.active {
+  border-color: #0074ff;
+  background: #eaf3ff;
+  font-weight: 700;
+}
+
+.popup-card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.popup-card-icon {
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+}
+
+.popup-card-label {
+  font-size: 14px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes popupFade {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 860px) {
+  .popup-panel {
+    width: min(96vw, 760px);
+  }
+}
+
+@media (max-width: 520px) {
+  .popup-panel {
+    width: min(96vw, 380px);
+    padding: 10px;
+  }
+  .popup-card {
+    min-width: 120px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+
 .menu-list li.disabled .menu-entry {
   opacity: 0.5;
   cursor: not-allowed;

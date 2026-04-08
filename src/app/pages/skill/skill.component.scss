@@ -1,5 +1,5 @@
 .skill-page {
-  max-width: 950px;
+  max-width: 90%;
   margin: 20px auto;
   padding: 14px;
   background: #ffffff;
@@ -201,6 +201,30 @@
 
   .error-text { color: #d32f2f; margin-top: 10px; }
   .success-text { color: #2e7d32; margin-top: 10px; }
+
+  .search-container {
+    margin: 15px 0;
+    display: flex;
+    gap: 10px;
+
+    .search-input {
+      flex: 1;
+      border: 1px solid #ccd6e8;
+      border-radius: 10px;
+      padding: 11px 12px;
+      outline: none;
+      font-size: 14px;
+      transition: border-color .2s ease;
+
+      &:focus {
+        border-color: #0f5bba;
+      }
+
+      &::placeholder {
+        color: #999;
+      }
+    }
+  }
 
   .table-wrapper {
     overflow-x: auto;

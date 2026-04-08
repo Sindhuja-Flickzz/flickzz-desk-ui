@@ -20,7 +20,7 @@
       <div class="field">
         <label>Company Name</label>
         <input type="text" formControlName="companyName" placeholder="Enter company name" [readonly]="isEditMode"/>
-        <span *ngIf="formError.companyName" class="error-text">{{ formError.companyName }}</span>
+        <span *ngIf="formError.companyName" class="error-text">{{ formError.companyName | fieldLabel  }}</span>
       </div>
 
       <h3>Billing Information</h3>
@@ -28,7 +28,7 @@
       <div class="field">
         <label>Registered Number</label>
         <input type="text" formControlName="registeredNumber" placeholder="Enter registered number" [readonly]="isEditMode"/>
-        <span *ngIf="formError.registeredNumber" class="error-text">{{ formError.registeredNumber }}</span>
+        <span *ngIf="formError.registeredNumber" class="error-text">{{ formError.registeredNumber | fieldLabel  }}</span>
       </div>
 
       <div class="field">
@@ -37,19 +37,19 @@
           <option value="" disabled>Select currency</option>
           <option *ngFor="let c of countries" [value]="c.countryId">{{ c.currency }}</option>
         </select>
-        <span *ngIf="formError.countryId" class="error-text">{{ formError.countryId }}</span>
+        <span *ngIf="formError.countryId" class="error-text">{{ formError.countryId | fieldLabel  }}</span>
       </div>
 
       <div class="field">
         <label>Address</label>
         <input type="text" formControlName="address" placeholder="Enter address"/>
-        <span *ngIf="formError.address" class="error-text">{{ formError.address }}</span>
+        <span *ngIf="formError.address" class="error-text">{{ formError.address | fieldLabel  }}</span>
       </div>
 
       <div class="field">
         <label>Mail</label>
         <input type="email" formControlName="mail" placeholder="Enter email"/>
-        <span *ngIf="formError.mail" class="error-text">{{ formError.mail }}</span>
+        <span *ngIf="formError.mail" class="error-text">{{ formError.mail | fieldLabel  }}</span>
       </div>
 
       <div *ngIf="isRequestor" class="field">
@@ -62,15 +62,35 @@
       <div class="actions">
         <button type="submit" *ngIf="!isSubmitting" class="save-btn">{{ isEditMode ? 'Update Company' : 'Save Company' }}</button>
         <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>{{ isEditMode ? 'Updating Company' : 'Saving Company' }}</button>
-        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button type="button" *ngIf="!isEditMode" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button type="button" *ngIf="isEditMode" class="reset-btn" (click)="cancelForm()">Cancel</button>
       </div>
     </form>
   </div>
 
   <div *ngIf="activeTab === 'list'" class="list-panel">
-    <h2>Company List</h2>
+    <h2>{{ isRequestor ? 'Requestor' : 'Service Provider' }} List</h2>
     <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
     <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+    <div class="search-container">
+      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="applyFilters()" placeholder="Search by name, registration number, or address..." class="search-input">
+      
+      <div class="type-filters" *ngIf="isRequestor">
+        <label class="filter-label">
+          <input type="radio" name="typeFilter" value="all" [(ngModel)]="typeFilter" (ngModelChange)="onTypeFilterChange()" />
+          All
+        </label>
+        <label class="filter-label">
+          <input type="radio" name="typeFilter" value="both" [(ngModel)]="typeFilter" (ngModelChange)="onTypeFilterChange()" />
+          Both
+        </label>
+        <label class="filter-label">
+          <input type="radio" name="typeFilter" value="requestor" [(ngModel)]="typeFilter" (ngModelChange)="onTypeFilterChange()" />
+          Requestor
+        </label>
+      </div>
+    </div>
 
     <div class="pagination-controls">
       <mat-paginator
@@ -106,7 +126,7 @@
             <td>{{ getCompanyType(company) }}</td>
             <td>{{ company.createdBy }}</td>
             <td class="action-buttons">
-              <button type="button" (click)="onViewCompany(company)"><mat-icon>visibility</mat-icon></button>
+              <button type="button" (click)="onViewCompany(company)"><mat-icon>edit</mat-icon></button>
               <button type="button" (click)="onDeleteCompany(company)"><mat-icon>delete</mat-icon></button>
             </td>
           </tr>

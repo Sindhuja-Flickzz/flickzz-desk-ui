@@ -17,28 +17,16 @@
         <label>Skill Name</label>
         <div class="skill-input-row">
           <input type="text" formControlName="skillName" placeholder="Enter skill name" [readonly]="isEditMode"/>
-          <div class="experience-fields">
-            <div class="experience-field">
-              <label>Years</label>
-              <input type="number" formControlName="experienceYears" placeholder="0" min="0" max="50" [readonly]="isEditMode"/>
-            </div>
-            <div class="experience-field">
-              <label>Months</label>
-              <input type="number" formControlName="experienceMonths" placeholder="0" min="0" max="11" [readonly]="isEditMode"/>
-            </div>
-          </div>
           <button type="button" *ngIf="!isEditMode" class="add-btn" (click)="addSkill()">+</button>
         </div>
-        <span *ngIf="formError.skillName" class="error-text">{{ formError.skillName }}</span>
-        <span *ngIf="formError.experienceYears" class="error-text">{{ formError.experienceYears }}</span>
-        <span *ngIf="formError.experienceMonths" class="error-text">{{ formError.experienceMonths }}</span>
+        <span *ngIf="formError.skillName" class="error-text">{{ formError.skillName | fieldLabel  }}</span>
       </div>
 
       <div *ngIf="!isEditMode && skillList.length > 0" class="skills-added">
         <h3>Skills to Create:</h3>
         <div class="skills-chips">
           <button type="button" *ngFor="let skill of skillList" class="skill-chip" (click)="removeSkill(skill)">
-            {{ skill.name }} ({{ skill.years }}y {{ skill.months }}m)
+            {{ skill.name }} 
             <span class="remove-icon">×</span>
           </button>
         </div>
@@ -56,12 +44,16 @@
     <h2>Skill List</h2>
     <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>    
     <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+    
+    <div class="search-container">
+      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by skill name..." class="search-input">
+    </div>
+    
     <div class="table-wrapper">
       <table>
         <thead>
           <tr>
             <th>Skill Name</th>
-            <th>Experience</th>
             <th>Created By</th>
             <th>Actions</th>
           </tr>
@@ -69,10 +61,8 @@
         <tbody>
           <tr *ngFor="let skill of getPaginatedSkills()">
             <td>{{ skill.skillName }}</td>
-            <td>{{ skill.experienceYears }}y {{ skill.experienceMonths }}m</td>
             <td>{{ skill.createdBy }}</td>
             <td class="action-buttons">
-              <!-- <button type="button" (click)="onViewSkill(skill)"><mat-icon>visibility</mat-icon></button> -->
               <button type="button" (click)="onDeleteSkill(skill)"><mat-icon>delete</mat-icon></button>
             </td>
           </tr>
