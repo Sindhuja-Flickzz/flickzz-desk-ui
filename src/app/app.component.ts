@@ -169,7 +169,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   loadMenu() {
-    this.menuItems = MENU_INFO.filter(m => m.isActive);
+    this.menuItems = this.filterMenuByRole(MENU_INFO, this.getCurrentUserRole()) as MenuItem[];
     this.allMenuTree = this.menuItems.map(m => this.normalizeToNode(m));
     this.menuTree = [...this.allMenuTree];
 
@@ -480,6 +480,39 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     }
     return undefined;
+  }
+
+  private getCurrentUserRole(): string | null {
+    const role = localStorage.getItem('userRole');
+    return role ? role.trim() : null;
+  }
+
+  private isMenuVisibleForRole(item: { enableForRoles?: string[] }, role: string | null): boolean {
+    if (!item.enableForRoles || !item.enableForRoles.length) {
+      return true;
+    }
+    return role !== null && item.enableForRoles.includes(role);
+  }
+
+  private filterMenuByRole(
+    items: any[],
+    role: string | null
+  ): any[] {
+    return items
+      .filter(item => item.isActive !== false && this.isMenuVisibleForRole(item, role))
+      .map(item => {
+        const filteredItem = { ...item } as any;
+
+        if (Array.isArray(item.subMenus)) {
+          filteredItem.subMenus = this.filterMenuByRole(item.subMenus, role);
+        }
+
+        if (Array.isArray(item.childSubMenus)) {
+          filteredItem.childSubMenus = this.filterMenuByRole(item.childSubMenus, role);
+        }
+
+        return filteredItem;
+      });
   }
 
   enterSettingsMode(settingsNode?: MenuNode) {

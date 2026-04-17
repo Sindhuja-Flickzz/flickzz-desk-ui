@@ -1,0 +1,123 @@
+<div class="priority-page">
+  <div class="tabs">
+    <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
+    <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <h2>{{ pageTitle }}</h2>
+
+    <form [formGroup]="priorityForm" (ngSubmit)="onSave()">
+
+      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+      <div class="field">
+        <label>Priority Name</label>
+        <input type="text" formControlName="priorityName" placeholder="Enter priority name" [readonly]="isEditMode"/>
+        <span *ngIf="formError.priorityName" class="error-text">{{ formError.priorityName | fieldLabel  }}</span>
+      </div>
+
+      <div class="field">
+        <label>Organization</label>
+        <select formControlName="orgId" [disabled]="isEditMode">
+          <option value="" disabled>Select organization</option>
+          <option *ngFor="let c of companies" [value]="c.companyId">{{ c.companyName }}</option>
+        </select>
+        <span *ngIf="formError.orgId" class="error-text">{{ formError.orgId | fieldLabel  }}</span>
+      </div>
+
+      <div class="field">
+        <label>Rank</label>
+        <input type="number" formControlName="rank" placeholder="Enter rank" min="1"/>
+        <span *ngIf="formError.rank" class="error-text">{{ formError.rank | fieldLabel  }}</span>
+      </div>
+
+      <div class="field">
+        <label>Color Code</label>
+        <!-- <input type="color" formControlName="colorCode" placeholder="Select or enter color code"/> -->
+        <input 
+            type="color" 
+            [value]="priorityForm.get('colorCode')?.value"
+            (input)="onColorPickerChange($event)" />
+
+        <!-- Manual Input -->
+        <input 
+            type="text" 
+            formControlName="colorCode" 
+            placeholder="#FF0000" 
+            maxlength="7" />
+        <span *ngIf="formError.colorCode" class="error-text">{{ formError.colorCode | fieldLabel  }}</span>
+      </div>
+
+      <div class="field">
+        <label>Response SLA (minutes)</label>
+        <input type="number" formControlName="responseSla" placeholder="Enter response SLA in minutes" min="1"/>
+        <span *ngIf="formError.responseSla" class="error-text">{{ formError.responseSla | fieldLabel  }}</span>
+      </div>
+
+      <div class="field">
+        <label>Resolution SLA (minutes)</label>
+        <input type="number" formControlName="resolutionSla" placeholder="Enter resolution SLA in minutes" min="1"/>
+        <span *ngIf="formError.resolutionSla" class="error-text">{{ formError.resolutionSla | fieldLabel  }}</span>
+      </div>
+
+      <div class="actions">
+        <button type="submit" *ngIf="!isSubmitting" class="save-btn">{{ isEditMode ? 'Update Priority' : 'Save Priority' }}</button>
+        <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>{{ isEditMode ? 'Updating Priority' : 'Saving Priority' }}</button>
+        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <h2>Priority List</h2>
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+    <div class="search-container">
+      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by name or organization..." class="search-input">
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Priority Name</th>
+            <th>Organization</th>
+            <th>Rank</th>
+            <th>Color Code</th>
+            <th>Response SLA</th>
+            <th>Resolution SLA</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let priority of getPaginatedPriorities()">
+            <td>{{ priority.priorityName }}</td>
+            <td>{{ priority.organization.companyName }}</td>
+            <td>{{ priority.rank }}</td>
+            <td><span [style.background-color]="priority.colorCode" class="color-box"></span> {{ priority.colorCode }}</td>
+            <td>{{ priority.responseSla }}</td>
+            <td>{{ priority.resolutionSla }}</td>
+            <td class="action-buttons">
+              <button type="button" (click)="onViewPriority(priority)"><mat-icon>edit</mat-icon></button>
+              <button type="button" (click)="onDeletePriority(priority)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-controls">
+      <mat-paginator
+        [length]="totalRecords"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+    </div>
+  </div>
+</div>

@@ -3,31 +3,27 @@ import { MenuItem } from '../models/menu';
 export const MENU_INFO: MenuItem[] = [
     {
         "menuId": 1,
-        "menuName": "Ticketing",
+        "menuName": "ServiceCentral",
         "isActive": true,
+        "enableForRoles": ["Admin", "Agent"],
         "icon" : "🗐",
         "isParent": true,
         "subMenus": [
             {
                 "subMenuId": 101,
-                "subMenuName": "Create Ticket",
+                "subMenuName": "RITM",
                 "isActive": true,
-                "childSubMenus": [
-                    {
-                        "subMenuId": 10101,
-                        "subMenuName": "Incident Ticket",
-                        "route": "/welcome",
-                        "isActive": true,
-                        "childSubMenus": []
-                    },
-                    {
-                        "subMenuId": 10102,
-                        "subMenuName": "Service Request",
-                        "route": "/welcome",
-                        "isActive": true,
-                        "childSubMenus": []
-                    }
-                ]
+                "enableForRoles": ["Admin"],
+                "route": "/welcome",
+                "childSubMenus": []
+            },
+            {
+                "subMenuId": 102,
+                "subMenuName": "Incident",
+                "isActive": true,
+                "enableForRoles": ["Admin", "Agent"],
+                "route": "/welcome",
+                "childSubMenus": []
             }
         ]
     },
@@ -35,6 +31,7 @@ export const MENU_INFO: MenuItem[] = [
         "menuId": 2,
         "menuName": "Settings",
         "isActive": true,
+        "enableForRoles": ["Admin"],
         "icon": "⚙️",
         "isParent": true,
         "subMenus": [
@@ -42,6 +39,7 @@ export const MENU_INFO: MenuItem[] = [
             "subMenuId": 201,
             "subMenuName": "General",
             "isActive": true,
+            "enableForRoles": ["Admin"],
             "childSubMenus": [
             {
                 "subMenuId": 20101,
@@ -52,17 +50,20 @@ export const MENU_INFO: MenuItem[] = [
                     "subMenuId": 2010101,
                     "subMenuName": "Define",
                     "isActive": true,
+                    "enableForRoles": ["Admin"],
                     "childSubMenus": [
                     {
                         "subMenuId": 201010101,
                         "subMenuName": "Company",
                         "isActive": true,
+                        "enableForRoles": ["Admin"],
                         "childSubMenus": [
                         {
                             "subMenuId": 20101010101,
                             "subMenuName": "Requestor",
                             "route": "/company/requestor",
                             "isActive": true,
+                            "enableForRoles": ["Admin"],
                             "childSubMenus": []
                         },
                         {
@@ -70,6 +71,7 @@ export const MENU_INFO: MenuItem[] = [
                             "subMenuName": "Service Provider",
                             "route": "/company/service-provider",
                             "isActive": true,
+                            "enableForRoles": ["Admin"],
                             "childSubMenus": []
                         }
                         ]
@@ -79,6 +81,7 @@ export const MENU_INFO: MenuItem[] = [
                         "subMenuName": "Plant",
                         "route": "/plant",
                         "isActive": true,
+                        "enableForRoles": ["Admin"],
                         "childSubMenus": []
                     },
                     {
@@ -86,6 +89,7 @@ export const MENU_INFO: MenuItem[] = [
                         "subMenuName": "Skills",
                         "route": "/skill",
                         "isActive": true,
+                        "enableForRoles": ["Admin"],
                         "childSubMenus": []
                     }
                     ]
@@ -96,29 +100,34 @@ export const MENU_INFO: MenuItem[] = [
                 "subMenuId": 20102,
                 "subMenuName": "Master",
                 "isActive": true,
+                "enableForRoles": ["Admin"],
                 "childSubMenus": [
                 {
                     "subMenuId": 2010201,
                     "subMenuName": "Agent",
                     "route": "/agent",
                     "isActive": true,
+                    "enableForRoles": ["Admin"],
                     "childSubMenus": []
                 },
                 {
                     "subMenuId": 2010202,
                     "subMenuName": "Calendar",
                     "isActive": true,
+                    "enableForRoles": ["Admin"],
                     "childSubMenus": [
                     {
                         "subMenuId": 201020201,
                         "subMenuName": "Define",
                         "isActive": true,
+                        "enableForRoles": ["Admin"],
                         "childSubMenus": [
                         {
                             "subMenuId": 20102020101,
                             "subMenuName": "Create Support Calendar",
                             "route": "/calendar/create-calendar",
                             "isActive": true,
+                            "enableForRoles": ["Admin"],
                             "childSubMenus": []
                         },
                         {
@@ -126,6 +135,7 @@ export const MENU_INFO: MenuItem[] = [
                             "subMenuName": "Create Requestor Calendar",
                             "route": "/calendar/create-calendar",
                             "isActive": true,
+                            "enableForRoles": ["Admin"],
                             "childSubMenus": []
                         },
                         {
@@ -133,11 +143,20 @@ export const MENU_INFO: MenuItem[] = [
                             "subMenuName": "List",
                             "route": "/calendar/list",
                             "isActive": true,
+                            "enableForRoles": ["Admin"],
                             "childSubMenus": []
                         }
                         ]
                     }
                     ]
+                },
+                {
+                    "subMenuId": 2010203,
+                    "subMenuName": "Priority",
+                    "isActive": true,
+                    route: "/priority",
+                    "enableForRoles": ["Admin"],
+                    "childSubMenus": []
                 }
                 ]
             }
@@ -146,7 +165,6 @@ export const MENU_INFO: MenuItem[] = [
         ]
     }
 ];
-
 
 export const APP_CONSTANTS = {
   APP_NAME: 'FlickzzDesk',

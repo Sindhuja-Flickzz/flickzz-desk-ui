@@ -355,9 +355,9 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
     }
 
     const holidays: CalendarHolidayVO[] = this.holidaysArray.value;
-    if (holidays.length === 0) {
-      this.fieldErrors['holidays'] = 'Please add at least one holiday';
-    }
+    // if (holidays.length === 0) {
+    //   this.fieldErrors['holidays'] = 'Please add at least one holiday';
+    // }
 
     if (Object.keys(this.fieldErrors).length === 0) {
       console.log('No errors');
@@ -418,7 +418,7 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
     this.formSubmitted = false; // Reset formSubmitted to avoid showing errors on initial load
     Object.keys(this.calendarForm.controls).forEach(key => {
       const field = this.calendarForm.get(key);
-      if (key != 'holidayDate' && key != 'description') {
+      if (key != 'holidayDate' && key != 'description' && key != 'holidays') {
         if (field?.hasError('required')) {
           this.fieldErrors[key] = `${key} is required`;
           return `${key} is required`;

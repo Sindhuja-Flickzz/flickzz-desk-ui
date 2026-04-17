@@ -9,6 +9,7 @@ import {PlantComponent} from "./pages/plant/plant.component";
 import {SkillComponent} from "./pages/skill/skill.component";
 import {CompanyComponent} from "./pages/company/company.component";
 import {AgentComponent} from "./pages/agent/agent.component";
+import {PriorityComponent} from "./pages/priority/priority.component";
 import {authGuard} from "./service/auth/auth.guard";
 
 const routes: Routes = [
@@ -43,6 +44,11 @@ const routes: Routes = [
   {
     path: 'plant',
     component: PlantComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'priority',
+    component: PriorityComponent,
     canActivate: [authGuard]
   },
   {

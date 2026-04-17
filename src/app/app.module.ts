@@ -29,6 +29,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { PriorityComponent } from './pages/priority/priority.component';
 
 @NgModule({
   declarations: [
@@ -44,7 +47,8 @@ import { MatPaginatorModule } from '@angular/material/paginator';
     SkillComponent,
     CompanyComponent,
     AgentComponent,
-    FieldLabelPipe
+    FieldLabelPipe,
+    PriorityComponent
   ],
   imports: [
     BrowserModule,
@@ -61,7 +65,9 @@ import { MatPaginatorModule } from '@angular/material/paginator';
     MatCardModule,
     MatGridListModule,
     MatTableModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    MatFormFieldModule,
+    MatSelectModule
   ],
   providers: [
     HttpClient,

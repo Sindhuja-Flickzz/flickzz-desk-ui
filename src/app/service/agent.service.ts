@@ -24,6 +24,10 @@ export class AgentService {
     return this.http.get(`${this.baseUrl}/skills/list`);
   }
 
+  getCountryList(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/country/list`);
+  }
+
   createAgent(request: AgentRequest): Observable<any> {
     return this.http.post(`${this.baseUrl}/agent/create`, request);
   }

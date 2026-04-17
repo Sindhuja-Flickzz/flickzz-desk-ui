@@ -19,7 +19,8 @@ export class LoginComponent implements OnInit{
 
   registerLoginRequest: RegisterLoginRequest = {
     email: '',
-    password: ''
+    password: '',
+    mfaEnabled: false
   };
   otpCode = '';
   commonResponse: FlickzzDeskResponse = {
@@ -37,6 +38,7 @@ export class LoginComponent implements OnInit{
 
   showPassword = false;
   isVerifying = false;
+  isLoginMode = true;
 
   constructor(
     private fb: FormBuilder,
@@ -87,13 +89,7 @@ export class LoginComponent implements OnInit{
       .subscribe({
         next: (response) => {
           this.commonResponse = response;
-          if (!this.commonResponse.attributes.mfaEnabled) {
-            localStorage.setItem('token', response.attributes.accessToken as string);
-            localStorage.setItem('refreshToken', response.attributes.refreshToken as string);
-            localStorage.setItem('userId', this.registerLoginRequest.email as string);
-            localStorage.setItem('userRole', response.attributes.userRole as string);
-            this.router.navigate(['welcome']);
-          }
+          this.isLoginMode = false;
         },
         error: (err) => {
           console.error('Login error', err);
@@ -121,6 +117,12 @@ export class LoginComponent implements OnInit{
     if (this.isVerifying) return;
     this.isVerifying = true;
     this.submitError = '';
+
+    if (this.otpCode.length < 6) {
+      this.submitError = 'Validation code must be 6 digits';
+      return;
+    }
+
     const verifyRequest: VerificationRequest = {
       email: this.registerLoginRequest.email,
       code: parseInt(this.otpCode)

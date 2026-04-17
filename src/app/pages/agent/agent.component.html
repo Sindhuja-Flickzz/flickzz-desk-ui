@@ -32,8 +32,30 @@
 
       <div class="field">
         <label>Phone</label>
-        <input type="text" formControlName="phone" (change)="formError['phone'] = null;" placeholder="Enter contact number" />
-        <span *ngIf="formError.phone" class="error-text">{{ formError.phone | fieldLabel  }}</span>
+        <div class="phone-input-container">
+          <mat-form-field appearance="outline" class="country-dropdown">
+            <mat-select formControlName="countryCode" placeholder="Country">
+              <mat-select-trigger>
+                <img *ngIf="selectedCountry" [src]="getCountryFlagUrl(selectedCountry.isoCode)" [alt]="selectedCountry.countryName + ' flag'" class="flag-icon selected-flag" />
+              </mat-select-trigger>
+              <mat-option *ngFor="let country of countries" [value]="country.isoCode" >
+                <img [src]="getCountryFlagUrl(country.isoCode)" [alt]="country.countryName + ' flag'" class="flag-icon" />
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          <div class="phone-code-display" *ngIf="selectedCountry">
+            <!-- <img [src]="getCountryFlagUrl(selectedCountry.isoCode)" [alt]="selectedCountry.countryName + ' flag'" class="flag-icon" /> -->
+            {{ selectedCountry.phoneCode }}
+          </div>
+          <input
+            type="text"
+            formControlName="phoneNumber"
+            placeholder="Enter phone number"
+            class="phone-number-input"
+            (input)="formError['phoneNumber'] = null;" />
+        </div>
+        <span *ngIf="formError.countryCode" class="error-text">{{ formError.countryCode | fieldLabel }}</span>
+        <span *ngIf="formError.phoneNumber" class="error-text">{{ formError.phoneNumber | fieldLabel }}</span>
       </div>
 
       <div class="field">

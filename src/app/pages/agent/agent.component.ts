@@ -6,7 +6,7 @@ import { forkJoin } from 'rxjs';
 import { AgentService } from '../../service/agent.service';
 import { AgentMaster, AgentRequest, AgentSkillsMapping } from '../../models/agent-master';
 import { CalendarMasterVO } from '../../models/calendar-master';
-import { CompanyMaster } from '../../models/company-master';
+import { CompanyMaster, CountryMaster } from '../../models/company-master';
 import { SkillMaster } from '../../models/skill-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 
@@ -25,9 +25,11 @@ export class AgentComponent implements OnInit {
   companies: CompanyMaster[] = [];
   calendars: CalendarMasterVO[] = [];
   skills: SkillMaster[] = [];
+  countries: CountryMaster[] = [];
   suggestedSkills: SkillMaster[] = [];
   filteredSkills: SkillMaster[] = [];
   selectedSkill: SkillMaster | null = null;
+  selectedCountry: CountryMaster | null = null;
   skillsList: { name: string, years: number, months: number }[] = [];
 
   agents: AgentMaster[] = [];
@@ -57,7 +59,8 @@ export class AgentComponent implements OnInit {
       agentName: ['', [Validators.required, Validators.pattern(this.alphanumericPattern)]],
       mailId: ['', [Validators.required, Validators.email]],
       accessId: ['', Validators.required],
-      phone: ['', [Validators.required, Validators.pattern('^\\+?[0-9]{7,15}$')]],
+      countryCode: ['', Validators.required],
+      phoneNumber: ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
       orgId: [null, Validators.required],
       calendarId: [null, Validators.required],
       skillName: ['', Validators.pattern('^[a-zA-Z0-9 ]+$')],
@@ -75,6 +78,16 @@ export class AgentComponent implements OnInit {
       }
       this.submitError = '';
       this.submitSuccess = '';
+    });
+
+    // Handle country selection changes
+    this.agentForm.get('countryCode')?.valueChanges.subscribe(countryCode => {
+      if (countryCode) {
+        const country = this.getCountryByCode(countryCode);
+        if (country) {
+          this.onCountrySelect(country);
+        }
+      }
     });
   }
 
@@ -105,6 +118,16 @@ export class AgentComponent implements OnInit {
       error: () => {
         this.skills = [];
         this.suggestedSkills = [];
+      }
+    });
+
+    this.agentService.getCountryList().subscribe({
+      next: (response) => {
+        this.countries = (response as any).attributes || [];
+        this.setDefaultCountry();
+      },
+      error: () => {
+        this.countries = [];
       }
     });
 
@@ -193,6 +216,7 @@ export class AgentComponent implements OnInit {
     this.submitSuccess = '';
     this.selectedSkill = null;
     this.setDefaultOrganizationAndCalendar();
+    this.setDefaultCountry();
   }
 
   addSkill(): void {
@@ -301,6 +325,15 @@ export class AgentComponent implements OnInit {
       if (key === 'phone' && field?.hasError('pattern')) {
         this.formError[key] = 'Phone number should contain 7-15 digits';
       }
+      if (key === 'phoneNumber' && field?.hasError('pattern')) {
+        this.formError[key] = 'Phone number should contain only digits';
+      }
+      if (key === 'phoneNumber' && field?.hasError('minlength')) {
+        this.formError[key] = `Phone number should be at least ${field.errors?.['minlength']?.requiredLength} digits`;
+      }
+      if (key === 'phoneNumber' && field?.hasError('maxlength')) {
+        this.formError[key] = `Phone number should not exceed ${field.errors?.['maxlength']?.requiredLength} digits`;
+      }
       if (key === 'agentName' && field?.hasError('pattern')) {
         this.formError[key] = 'Agent Name can contain only letters and numbers';
       }
@@ -341,7 +374,7 @@ export class AgentComponent implements OnInit {
       agentName: this.agentForm.value.agentName,
       mailId: this.agentForm.value.mailId,
       accessId: this.agentForm.value.accessId,
-      phone: this.agentForm.value.phone,
+      phone: this.selectedCountry ? `${this.selectedCountry.phoneCode}${this.agentForm.value.phoneNumber}` : this.agentForm.value.phoneNumber,
       orgId: Number(this.agentForm.value.orgId),
       skills,
       calendarId: Number(this.agentForm.value.calendarId),
@@ -403,7 +436,8 @@ export class AgentComponent implements OnInit {
     if (currentValue.agentName !== this.originalFormValue.agentName ||
         currentValue.mailId !== this.originalFormValue.mailId ||
         currentValue.accessId !== this.originalFormValue.accessId ||
-        currentValue.phone !== this.originalFormValue.phone ||
+        currentValue.countryCode !== this.originalFormValue.countryCode ||
+        currentValue.phoneNumber !== this.originalFormValue.phoneNumber ||
         currentValue.orgId !== this.originalFormValue.orgId ||
         currentValue.calendarId !== this.originalFormValue.calendarId) {
       return true;
@@ -428,7 +462,8 @@ export class AgentComponent implements OnInit {
       agentName: formValue.agentName,
       mailId: formValue.mailId,
       accessId: formValue.accessId,
-      phone: formValue.phone,
+      countryCode: formValue.countryCode,
+      phoneNumber: formValue.phoneNumber,
       orgId: formValue.orgId,
       calendarId: formValue.calendarId,
       skills: JSON.parse(JSON.stringify(this.skillsList))
@@ -459,6 +494,9 @@ export class AgentComponent implements OnInit {
           orgId: agent.organization?.companyId || null,
           calendarId: agent.calendar?.calendarId || null
         });
+
+        // Parse phone number for editing
+        this.parsePhoneForEdit(agent.phone);
 
         this.originalFormValue = this.createCompareSnapshot();
       },
@@ -544,6 +582,90 @@ export class AgentComponent implements OnInit {
     orgId: '',
     calendarId: ''
     });
+  }
+
+  setDefaultCountry(): void {
+    if (this.isEditMode) {
+      return;
+    }
+    // Default to India
+    const defaultCountry = this.countries.find(c => c.isoCode === 'IN');
+    if (defaultCountry) {
+      this.selectedCountry = defaultCountry;
+      this.agentForm.patchValue({ countryCode: defaultCountry.isoCode });
+      this.updatePhoneValidators();
+    }
+  }
+
+  onCountrySelect(country: CountryMaster | undefined): void {
+    if (!country) return;
+    this.selectedCountry = country;
+    this.agentForm.patchValue({ countryCode: country.isoCode });
+    this.updatePhoneValidators();
+    this.formError.countryCode = null;
+    this.formError.phoneNumber = null;
+  }
+
+  updatePhoneValidators(): void {
+    const phoneControl = this.agentForm.get('phoneNumber');
+    if (!phoneControl || !this.selectedCountry) return;
+
+    // Remove existing validators
+    phoneControl.clearValidators();
+    phoneControl.setValidators([Validators.required, Validators.pattern('^[0-9]+$')]);
+
+    // Add length validators based on country (default 10 digits if not specified)
+    const minLength = 10; // Default
+    const maxLength = 15; // Default
+
+    phoneControl.setValidators([
+      Validators.required,
+      Validators.pattern('^[0-9]+$'),
+      Validators.minLength(minLength),
+      Validators.maxLength(maxLength)
+    ]);
+
+    phoneControl.updateValueAndValidity();
+  }
+
+  parsePhoneForEdit(fullPhone: string): void {
+    if (!fullPhone) return;
+
+    // Try to match phone code and extract number
+    for (const country of this.countries) {
+      if (fullPhone.startsWith(country.phoneCode)) {
+        this.selectedCountry = country;
+        const phoneNumber = fullPhone.substring(country.phoneCode.length);
+        this.agentForm.patchValue({
+          countryCode: country.isoCode,
+          phoneNumber: phoneNumber
+        });
+        this.updatePhoneValidators();
+        return;
+      }
+    }
+
+    // If no match found, default to India and use full phone as number
+    const defaultCountry = this.countries.find(c => c.isoCode === 'IN');
+    if (defaultCountry) {
+      this.selectedCountry = defaultCountry;
+      this.agentForm.patchValue({
+        countryCode: defaultCountry.isoCode,
+        phoneNumber: fullPhone.replace(/^\+/, '') // Remove leading + if present
+      });
+      this.updatePhoneValidators();
+    }
+  }
+
+  getCountryFlagUrl(countryCode?: string): string {
+    if (!countryCode) {
+      return '';
+    }
+    return `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`;
+  }
+
+  getCountryByCode(code?: string): CountryMaster | undefined {
+    return this.countries.find(c => c.isoCode === code);
   }
 
   beautifyFieldName(key: string): string {
