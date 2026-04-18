@@ -32,6 +32,11 @@ export class AuthenticationService {
     return this.http.post<FlickzzDeskResponse>
     (`${APP_CONSTANTS.API_BASE_URL}/verify`, verificationRequest);
   }
+
+  resetPassword(registerLoginRequest: RegisterLoginRequest) {
+    return this.http.post<FlickzzDeskResponse>
+    (`${APP_CONSTANTS.API_BASE_URL}/reset/password`, registerLoginRequest);
+  }
   
   logout(logoutRequest: LogoutRequest): Observable<FlickzzDeskResponse> {
     return this.http.post<FlickzzDeskResponse>(

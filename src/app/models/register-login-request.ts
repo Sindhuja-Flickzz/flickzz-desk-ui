@@ -7,4 +7,5 @@ export interface RegisterLoginRequest {
   role?: string;
   mfaEnabled?: boolean;
   createdBy?: string;
+  oldPassword?: string;
 }
