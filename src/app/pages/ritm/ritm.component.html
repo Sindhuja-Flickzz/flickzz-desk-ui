@@ -1,0 +1,218 @@
+<div class="ritm-page">
+  <div class="page-header">
+    <div>
+      <h1>RITM Request</h1>
+      <p class="subtitle">Create and review request item details with notes, workflow and approvals.</p>
+    </div>
+    <div *ngIf="loading" class="loading-panel">
+      <mat-spinner diameter="36"></mat-spinner>
+    </div>
+  </div>
+
+  <div *ngIf="submitSuccess" class="alert alert-success">{{ submitSuccess }}</div>
+  <div *ngIf="submitError" class="alert alert-error">{{ submitError }}</div>
+
+  <mat-card class="form-card">
+    <form [formGroup]="ritmForm" (ngSubmit)="onSubmit()" aria-label="RITM form">
+      <div class="grid-container">
+        <mat-form-field appearance="outline">
+          <mat-label>RITM Number</mat-label>
+          <input matInput formControlName="ritmNumber" readonly />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Opened By</mat-label>
+          <input matInput formControlName="openedBy" readonly />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Requested For</mat-label>
+          <mat-select formControlName="requestedFor" (selectionChange)="setRequestedForLocation($event.value)">
+            <mat-option *ngFor="let user of users" [value]="user.userId">
+              {{ user.firstName }} {{ user.lastName }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Location</mat-label>
+          <input matInput formControlName="location" readonly />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Configuration Item</mat-label>
+          <input matInput formControlName="configurationItem" placeholder="Enter configuration item" />
+          <mat-error *ngIf="ritmForm.get('configurationItem')?.hasError('required')">Configuration Item is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Category</mat-label>
+          <input matInput formControlName="category" placeholder="Enter category" />
+          <mat-error *ngIf="ritmForm.get('category')?.hasError('required')">Category is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Opened</mat-label>
+          <input matInput type="datetime-local" formControlName="openedDate" readonly />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>State</mat-label>
+          <input matInput formControlName="state" [readonly]="isFieldDisabled('state')" placeholder="New / In Progress / Closed" />
+          <mat-error *ngIf="ritmForm.get('state')?.hasError('required')">State is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Assignment Group</mat-label>
+          <input matInput formControlName="assignmentGroup" [readonly]="isFieldDisabled('assignmentGroup')" placeholder="Enter assignment group" />
+          <mat-error *ngIf="ritmForm.get('assignmentGroup')?.hasError('required')">Assignment Group is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Priority</mat-label>
+          <mat-select formControlName="priority">
+            <mat-option *ngFor="let priority of priorities" [value]="priority.priorityId">
+              {{ priority.priorityName }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="ritmForm.get('priority')?.hasError('required')">Priority is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Work Start</mat-label>
+          <input matInput [matDatepicker]="workStartPicker" formControlName="workStart" placeholder="Select work start" />
+          <mat-datepicker-toggle matSuffix [for]="workStartPicker"></mat-datepicker-toggle>
+          <mat-datepicker #workStartPicker></mat-datepicker>
+          <mat-error *ngIf="ritmForm.get('workStart')?.hasError('required')">Work start is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Work End</mat-label>
+          <input matInput [matDatepicker]="workEndPicker" formControlName="workEnd" placeholder="Select work end" />
+          <mat-datepicker-toggle matSuffix [for]="workEndPicker"></mat-datepicker-toggle>
+          <mat-datepicker #workEndPicker></mat-datepicker>
+          <mat-error *ngIf="ritmForm.get('workEnd')?.hasError('required')">Work end is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Customer Resolution</mat-label>
+          <input matInput formControlName="customerResolution" readonly />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Work Duration</mat-label>
+          <input matInput formControlName="workDuration" readonly />
+        </mat-form-field>
+      </div>
+
+      <div class="form-actions">
+        <button mat-flat-button color="primary" type="submit" [disabled]="submitting || loading">
+          {{ submitting ? 'Saving...' : (isEditMode ? 'Update RITM' : 'Create RITM') }}
+        </button>
+        <button mat-stroked-button type="button" (click)="onCancel()">Cancel</button>
+      </div>
+    </form>
+  </mat-card>
+
+  <mat-card class="tab-card">
+    <mat-tab-group class="tab-group" animationDuration="0ms">
+      <mat-tab label="Work Notes">
+        <div class="notes-list">
+          <div *ngFor="let note of notes" class="note-item" [class.current-user]="note.userId === currentUserId">
+            <div class="note-header">
+              <strong>{{ note.userId }}</strong>
+              <span>{{ note.createdAt | date:'medium' }}</span>
+            </div>
+            <p>{{ note.comment }}</p>
+          </div>
+          <p *ngIf="notes.length === 0" class="empty-state">No notes found.</p>
+        </div>
+      </mat-tab>
+      <mat-tab label="Log">
+        <div class="log-list">
+          <div *ngFor="let log of logs" class="log-entry">
+            <span class="log-time">{{ log.timestamp | date:'short' }}</span>
+            <span>{{ log.message }}</span>
+          </div>
+          <p *ngIf="logs.length === 0" class="empty-state">No logs available yet.</p>
+        </div>
+      </mat-tab>
+      <mat-tab label="Workflow">
+        <div class="workflow-list">
+          <div *ngFor="let stage of workflowStages" class="workflow-stage">
+            <div class="stage-header">
+              <span>{{ stage.step }}</span>
+              <span class="status">{{ stage.status }}</span>
+            </div>
+            <div class="stage-meta">Owned by {{ stage.owner }} • {{ stage.updatedAt | date:'short' }}</div>
+          </div>
+          <p *ngIf="workflowStages.length === 0" class="empty-state">Workflow details not available.</p>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+
+  <mat-card class="tab-card">
+    <mat-tab-group class="tab-group" animationDuration="0ms">
+      <mat-tab label="Catalog Tasks">
+        <div class="task-panel">
+          <form [formGroup]="taskForm" class="task-form" (ngSubmit)="addCatalogTask()">
+            <mat-form-field appearance="outline">
+              <mat-label>Task Title</mat-label>
+              <input matInput formControlName="title" placeholder="Task title" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Assign To</mat-label>
+              <input matInput formControlName="assignedTo" placeholder="User or group" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Due Date</mat-label>
+              <input matInput type="date" formControlName="dueDate" />
+            </mat-form-field>
+            <button mat-flat-button color="primary" type="submit">Add Task</button>
+          </form>
+
+          <div class="catalog-task-list">
+            <div *ngFor="let task of catalogTasks" class="catalog-task-card">
+              <div class="task-title">{{ task.title }}</div>
+              <div>Assigned to {{ task.assignedTo }}</div>
+              <div>Due {{ task.dueDate }}</div>
+              <div class="task-status">{{ task.status }}</div>
+            </div>
+            <p *ngIf="catalogTasks.length === 0" class="empty-state">No catalog tasks created.</p>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Approvers">
+        <div class="approvers-list">
+          <div *ngFor="let approver of approvers" class="approver-row">
+            <span>{{ approver.name }}</span>
+            <span class="badge">{{ approver.status }}</span>
+            <div *ngIf="approver.comment" class="comment">{{ approver.comment }}</div>
+          </div>
+          <p *ngIf="approvers.length === 0" class="empty-state">No approver details found.</p>
+        </div>
+      </mat-tab>
+      <mat-tab label="Task SLA(s)">
+        <div class="task-sla-list">
+          <div *ngFor="let sla of taskSlas" class="task-sla-row">
+            <strong>{{ sla.metric }}</strong>
+            <span>{{ sla.threshold }}</span>
+            <span>{{ sla.status }}</span>
+          </div>
+          <p *ngIf="taskSlas.length === 0" class="empty-state">No task SLA details available.</p>
+        </div>
+      </mat-tab>
+      <mat-tab label="Change Request">
+        <div class="change-request-list">
+          <div *ngFor="let change of changeRequests" class="change-row">
+            <strong>{{ change.title }}</strong>
+            <span class="badge">{{ change.status }}</span>
+            <div>Requested by {{ change.requestedBy }}</div>
+          </div>
+          <p *ngIf="changeRequests.length === 0" class="empty-state">No change requests linked.</p>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+</div>

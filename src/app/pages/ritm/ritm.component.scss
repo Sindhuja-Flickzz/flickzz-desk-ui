@@ -1,0 +1,149 @@
+.ritm-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: #6e6e6e;
+}
+
+.loading-panel {
+  display: flex;
+  align-items: center;
+}
+
+.alert {
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+
+.alert-success {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+}
+
+.alert-error {
+  background-color: #ffebee;
+  color: #b71c1c;
+}
+
+.form-card,
+.tab-card {
+  margin-bottom: 24px;
+  padding: 18px;
+  border-radius: 16px;
+}
+
+.grid-container {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.tab-group {
+  margin-top: 14px;
+}
+
+.notes-list,
+.log-list,
+.workflow-list,
+.approvers-list,
+.task-sla-list,
+.change-request-list,
+.catalog-task-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.note-item,
+.log-entry,
+.workflow-stage,
+.approver-row,
+.task-sla-row,
+.change-row,
+.catalog-task-card {
+  padding: 14px;
+  border-radius: 12px;
+  background: #fafafa;
+  border: 1px solid #eee;
+}
+
+.note-item.current-user {
+  border-color: #1976d2;
+  background: #e3f2fd;
+}
+
+.note-header,
+.stage-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.stage-meta,
+.comment {
+  color: #616161;
+  font-size: 13px;
+}
+
+.badge {
+  padding: 4px 10px;
+  background: #e0e0e0;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.empty-state {
+  color: #757575;
+  font-size: 13px;
+}
+
+.task-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.task-form {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: end;
+}
+
+.catalog-task-card {
+  display: grid;
+  gap: 6px;
+}
+
+.task-status {
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

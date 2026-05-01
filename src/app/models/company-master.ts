@@ -2,7 +2,10 @@ export interface CountryMaster {
   countryId: number;
   countryName: string;
   isoCode: string;
-  currency: string;
+  phoneCode: string;
+  currencyCode: string;
+  currencyName: string;
+  timezone: string;
 }
 
 export interface CompanyMaster {

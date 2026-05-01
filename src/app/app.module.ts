@@ -29,6 +29,18 @@ import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { PriorityComponent } from './pages/priority/priority.component';
+import { RitmComponent } from './pages/ritm/ritm.component';
+import { BusinessOfferingComponent } from './pages/business-offering/business-offering.component';
+import { NumberRangeComponent } from './pages/number-range/number-range.component';
 
 @NgModule({
   declarations: [
@@ -44,7 +56,11 @@ import { MatPaginatorModule } from '@angular/material/paginator';
     SkillComponent,
     CompanyComponent,
     AgentComponent,
-    FieldLabelPipe
+    FieldLabelPipe,
+    PriorityComponent,
+    RitmComponent,
+    BusinessOfferingComponent,
+    NumberRangeComponent
   ],
   imports: [
     BrowserModule,
@@ -61,7 +77,15 @@ import { MatPaginatorModule } from '@angular/material/paginator';
     MatCardModule,
     MatGridListModule,
     MatTableModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatSlideToggleModule,
+    MatTabsModule,
+    MatProgressSpinnerModule
   ],
   providers: [
     HttpClient,

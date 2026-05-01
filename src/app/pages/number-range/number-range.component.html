@@ -1,0 +1,126 @@
+<div class="number-range-page">
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ isEditMode ? 'Edit' : 'Create' }}</button>
+    <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <h2>{{ pageTitle }}</h2>
+
+    <form [formGroup]="numberRangeForm" (ngSubmit)="onSave()">
+      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Request Type</label>
+          <select formControlName="requestType" [disabled]="isEditMode" title="Request Type">
+            <option value="" disabled>Select request type</option>
+            <option *ngFor="let type of requestTypes" [value]="type">{{ type }}</option>
+          </select>
+          <span *ngIf="formError.requestType" class="error-text">{{ formError.requestType }}</span>
+        </div>
+
+        <div class="field">
+          <label>Request Prefix</label>
+          <input type="text" formControlName="requestPrefix" placeholder="Enter request prefix" [readonly]="isEditMode" />
+          <span *ngIf="formError.requestPrefix" class="error-text">{{ formError.requestPrefix }}</span>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Revision</label>
+          <input type="number" formControlName="revision" readonly title="Revision" />
+        </div>
+
+        <div class="field">
+          <label>Plant</label>
+          <select formControlName="plant" [disabled]="isEditMode"  title="Plant">
+            <option [ngValue]="null" disabled>Select plant</option>
+            <option *ngFor="let plant of plants" [ngValue]="plant">{{ plant.plantName }}</option>
+          </select>
+          <span *ngIf="formError.plant" class="error-text">{{ formError.plant }}</span>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Range From</label>
+          <input type="number" formControlName="rangeFrom" placeholder="Enter start range" />
+          <span *ngIf="formError.rangeFrom" class="error-text">{{ formError.rangeFrom }}</span>
+        </div>
+
+        <div class="field">
+          <label>Range To</label>
+          <input type="number" formControlName="rangeTo" placeholder="Enter end range" />
+          <span *ngIf="formError.rangeTo" class="error-text">{{ formError.rangeTo }}</span>
+        </div>
+      </div>
+
+      <div class="field switch-field">
+        <label>Calculate Backward</label>
+        <mat-slide-toggle formControlName="calculateBackward">Enabled</mat-slide-toggle>
+      </div>
+
+      <div class="actions">
+        <button type="submit" [disabled]="isSubmitting" class="save-btn">{{ isEditMode ? 'Update' : 'Save' }}</button>
+        <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <h2>Number Range List</h2>
+
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+    <div class="search-container">
+      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by type, prefix, or plant..." class="search-input" />
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Request Type</th>
+            <th>Prefix</th>
+            <th>Revision</th>
+            <th>Range From</th>
+            <th>Range To</th>
+            <th>Backward</th>
+            <th>Plant</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let config of getPaginatedConfigs()">
+            <td>{{ config.requestType }}</td>
+            <td>{{ config.requestPrefix }}</td>
+            <td>{{ config.revision }}</td>
+            <td>{{ config.rangeFrom }}</td>
+            <td>{{ config.rangeTo }}</td>
+            <td>{{ config.calculateBackward ? 'Yes' : 'No' }}</td>
+            <td>{{ config.plant?.plantName }}</td>
+            <td class="action-buttons">
+              <button type="button" (click)="onViewConfig(config)"><mat-icon>edit</mat-icon></button>
+              <button type="button" (click)="onDeleteConfig(config)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-controls">
+      <mat-paginator
+        [length]="totalRecords"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+    </div>
+  </div>
+</div>

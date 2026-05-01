@@ -34,7 +34,8 @@ label {
 }
 
 input[type="text"],
-input[type="password"] {
+input[type="password"],
+input[type="email"] {
   width: 100%;
   padding: 10px;
   font-size: 16px;
@@ -122,4 +123,30 @@ button:hover {
   cursor: pointer;
   font-size: 18px;
   user-select: none;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+
+  .form-group {
+    margin-bottom: 0;
+  }
+}
+
+select {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+}
+
+.error-text {
+  color: #d32f2f;
+  margin-top: 5px;
+  display: block;
+  text-align: left;
 }

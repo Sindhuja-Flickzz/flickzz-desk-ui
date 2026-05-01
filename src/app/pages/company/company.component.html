@@ -35,7 +35,7 @@
         <label>Currency</label>
         <select formControlName="countryId">
           <option value="" disabled>Select currency</option>
-          <option *ngFor="let c of countries" [value]="c.countryId">{{ c.currency }}</option>
+          <option *ngFor="let c of countries" [value]="c.countryId">{{ c.currencyCode }}</option>
         </select>
         <span *ngIf="formError.countryId" class="error-text">{{ formError.countryId | fieldLabel  }}</span>
       </div>
@@ -120,7 +120,7 @@
           <tr *ngFor="let company of getPaginatedCompanies()">
             <td>{{ company.companyName }}</td>
             <td>{{ company.registeredNumber }}</td>
-            <td>{{ company.country.currency }}</td>
+            <td>{{ company.country.currencyCode }}</td>
             <td>{{ company.address }}</td>
             <td>{{ company.mail }}</td>
             <td>{{ getCompanyType(company) }}</td>
