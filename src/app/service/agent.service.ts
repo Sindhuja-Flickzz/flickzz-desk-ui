@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
-import { AgentRequest, AgentMaster, AgentSkillsMapping } from '../models/agent-master';
+import { AgentRequest, AgentMaster, AgentSkillsMapping, CountryMasterVO } from '../models/agent-master';
 
 @Injectable({
   providedIn: 'root'
@@ -23,9 +23,15 @@ export class AgentService {
   getSkillsList(): Observable<any> {
     return this.http.get(`${this.baseUrl}/skills/list`);
   }
+  getCountryList(): Observable<CountryMasterVO[]> {
+    return this.http.get<CountryMasterVO[]>(`${this.baseUrl}/country/list`);
+  }
+  getCityList(countryId: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/city/list/${countryId}`);
+  }
 
-  getCountryList(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/country/list`);
+  getLanguageList(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/language/list`);
   }
 
   createAgent(request: AgentRequest): Observable<any> {

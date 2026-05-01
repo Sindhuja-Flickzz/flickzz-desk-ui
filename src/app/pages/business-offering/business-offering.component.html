@@ -1,0 +1,99 @@
+<div class="business-offering-page">
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ isEditMode ? 'Edit' : 'Create' }}</button>
+    <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <h2>{{ pageTitle }}</h2>
+
+    <form [formGroup]="businessServiceForm" (ngSubmit)="onSave()">
+      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+      <div class="field">
+        <label>Business Service</label>
+        <input type="text" formControlName="serviceName" [readonly]="isEditMode" placeholder="Enter business service" />
+        <span *ngIf="formError.serviceName" class="error-text">{{ formError.serviceName }}</span>
+      </div>
+
+      <div class="field">
+        <label>Service Offering</label>
+        <div class="service-offering-input">
+          <input
+            type="text"
+            [(ngModel)]="currentOfferingName"
+            [ngModelOptions]="{standalone: true}"
+            placeholder="Enter service offering"
+            (change)="formError.serviceOfferings = ''"
+            (keyup.enter)="addServiceOffering()"
+          />
+          <button type="button" class="add-btn" (click)="addServiceOffering()">+ Add</button>
+        </div>
+        <span *ngIf="formError.serviceOfferings" class="error-text">{{ formError.serviceOfferings }}</span>
+
+        <div class="offerings-list" *ngIf="businessServiceForm.get('serviceOfferings')?.value?.length > 0">
+          <div *ngFor="let offering of businessServiceForm.get('serviceOfferings')?.value; let i = index" class="offering-badge">
+            <span>{{ offering.offeringName }}</span>
+            <button type="button" class="remove-btn" (click)="removeServiceOffering(i)">×</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isEditMode ? 'Update Business Service' : 'Save Business Service' }}</button>
+        <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <h2>Business Service List</h2>
+
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+    <div class="search-container">
+      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by service or offering..." class="search-input" />
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Business Service</th>
+            <th>Service Offering</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let service of getPaginatedServices()">
+            <td>{{ service.serviceName }}</td>
+            <td>
+              <div class="offerings-column">
+                <span *ngFor="let offering of service.serviceOfferings; let last = last" class="offering-tag">
+                  {{ offering.offeringName }}<span *ngIf="!last">,</span>
+                </span>
+              </div>
+            </td>
+            <td class="action-buttons">
+              <button type="button" (click)="onViewBusinessService(service)"><mat-icon>edit</mat-icon></button>
+              <button type="button" (click)="onDeleteBusinessService(service)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-controls">
+      <mat-paginator
+        [length]="totalRecords"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+    </div>
+  </div>
+</div>

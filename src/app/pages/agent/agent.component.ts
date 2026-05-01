@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { PageEvent } from '@angular/material/paginator';
@@ -8,6 +8,7 @@ import { AgentMaster, AgentRequest, AgentSkillsMapping } from '../../models/agen
 import { CalendarMasterVO } from '../../models/calendar-master';
 import { CompanyMaster, CountryMaster } from '../../models/company-master';
 import { SkillMaster } from '../../models/skill-master';
+import { CityMaster, LanguageMaster } from '../../models/city-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
@@ -26,10 +27,16 @@ export class AgentComponent implements OnInit {
   calendars: CalendarMasterVO[] = [];
   skills: SkillMaster[] = [];
   countries: CountryMaster[] = [];
+  cities: CityMaster[] = [];
+  languages: LanguageMaster[] = [];
   suggestedSkills: SkillMaster[] = [];
   filteredSkills: SkillMaster[] = [];
   selectedSkill: SkillMaster | null = null;
   selectedCountry: CountryMaster | null = null;
+  selectedCity: CityMaster | null = null;
+  selectedTimezone: string | null = null;
+  timezoneTimer: any = null;
+  localTime: string = '';
   skillsList: { name: string, years: number, months: number }[] = [];
 
   agents: AgentMaster[] = [];
@@ -63,6 +70,9 @@ export class AgentComponent implements OnInit {
       phoneNumber: ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
       orgId: [null, Validators.required],
       calendarId: [null, Validators.required],
+      countryId: [null, Validators.required],
+      cityId: [null, Validators.required],
+      languageId: [null, Validators.required],
       skillName: ['', Validators.pattern('^[a-zA-Z0-9 ]+$')],
       experienceYears: [0, [Validators.min(0)]],
       experienceMonths: [0, [Validators.min(0), Validators.max(11)]]
@@ -89,6 +99,32 @@ export class AgentComponent implements OnInit {
         }
       }
     });
+
+    // Handle country selection for location
+    this.agentForm.get('countryId')?.valueChanges.subscribe(countryId => {
+      if (countryId) {
+        this.onLocationCountrySelect(countryId);
+      } else {
+        this.cities = [];
+        this.selectedCity = null;
+        this.localTime = '';
+        this.agentForm.patchValue({ cityId: null });
+      }
+    });
+
+    // Handle city selection
+    this.agentForm.get('cityId')?.valueChanges.subscribe(cityId => {
+      if (cityId) {
+        this.onCitySelect(cityId);
+      } else {
+        this.clearLocalTimeInterval();
+        this.localTime = '';
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.clearLocalTimeInterval();
   }
 
   loadAllData(): void {
@@ -131,6 +167,15 @@ export class AgentComponent implements OnInit {
       }
     });
 
+    this.agentService.getLanguageList().subscribe({
+      next: (response) => {
+        this.languages = (response as any).attributes || [];
+      },
+      error: () => {
+        this.languages = [];
+      }
+    });
+
     this.loadAgentList();
     this.loading = false;
   }
@@ -150,6 +195,14 @@ export class AgentComponent implements OnInit {
     this.agentService.getAgentList().subscribe({
       next: (result) => {
         this.agents = (result as any).attributes || [];
+        // Calculate local time for each agent
+        this.agents.forEach(agent => {
+          if (agent.city?.timezone) {
+            agent.localTime = this.getLocalTime(agent.city.timezone);
+          } else {
+            agent.localTime = '';
+          }
+        });
         this.searchValue = '';
         this.filterBySearch();
         this.currentPage = 0;
@@ -215,6 +268,9 @@ export class AgentComponent implements OnInit {
     this.submitError = '';
     this.submitSuccess = '';
     this.selectedSkill = null;
+    this.cities = [];
+    this.selectedCity = null;
+    this.localTime = '';
     this.setDefaultOrganizationAndCalendar();
     this.setDefaultCountry();
   }
@@ -317,7 +373,7 @@ export class AgentComponent implements OnInit {
     Object.keys(this.agentForm.controls).forEach(key => {
       const field = this.agentForm.get(key);
       if (field?.hasError('required')) {
-        this.formError[key] = `${this.beautifyFieldName(key)} is required`;
+        this.formError[key] = `${(key)} is required`;
       }
       if (key === 'mailId' && field?.hasError('email')) {
         this.formError[key] = 'Invalid email format';
@@ -378,6 +434,9 @@ export class AgentComponent implements OnInit {
       orgId: Number(this.agentForm.value.orgId),
       skills,
       calendarId: Number(this.agentForm.value.calendarId),
+      countryId: Number(this.agentForm.value.countryId),
+      cityId: Number(this.agentForm.value.cityId),
+      languageId: Number(this.agentForm.value.languageId),
       createdBy: currentUser,
       updatedBy: currentUser
     };
@@ -403,7 +462,7 @@ export class AgentComponent implements OnInit {
         error: (err) => {
           this.isSubmitting = false;
           console.error('Update agent error', err);
-          this.submitError = err.error?.message || 'Failed to update agent.';
+          this.submitError = err.error?.description || 'Failed to update agent.';
         }
       });
     } else {
@@ -420,7 +479,7 @@ export class AgentComponent implements OnInit {
         error: (err) => {
           this.isSubmitting = false;
           console.error('Create agent error', err);
-          this.submitError = err.error?.message || 'Failed to create agent.';
+          this.submitError = err.error?.description || 'Failed to create agent.';
         }
       });
     }
@@ -439,7 +498,10 @@ export class AgentComponent implements OnInit {
         currentValue.countryCode !== this.originalFormValue.countryCode ||
         currentValue.phoneNumber !== this.originalFormValue.phoneNumber ||
         currentValue.orgId !== this.originalFormValue.orgId ||
-        currentValue.calendarId !== this.originalFormValue.calendarId) {
+        currentValue.calendarId !== this.originalFormValue.calendarId ||
+        currentValue.countryId !== this.originalFormValue.countryId ||
+        currentValue.cityId !== this.originalFormValue.cityId ||
+        currentValue.languageId !== this.originalFormValue.languageId) {
       return true;
     }
     
@@ -466,6 +528,9 @@ export class AgentComponent implements OnInit {
       phoneNumber: formValue.phoneNumber,
       orgId: formValue.orgId,
       calendarId: formValue.calendarId,
+      countryId: formValue.countryId,
+      cityId: formValue.cityId,
+      languageId: formValue.languageId,
       skills: JSON.parse(JSON.stringify(this.skillsList))
     };
   }
@@ -492,8 +557,16 @@ export class AgentComponent implements OnInit {
           accessId: agent.accessId,
           phone: agent.phone,
           orgId: agent.organization?.companyId || null,
-          calendarId: agent.calendar?.calendarId || null
+          calendarId: agent.calendar?.calendarId || null,
+          countryId: agent.country?.countryId || null,
+          cityId: agent.city?.cityId || null,
+          languageId: agent.language?.languageId || null
         });
+
+        // Load cities if country is selected, then restore city/time
+        if (agent.country?.countryId) {
+          this.onLocationCountrySelect(agent.country.countryId, agent.city.cityId);
+        }
 
         // Parse phone number for editing
         this.parsePhoneForEdit(agent.phone);
@@ -542,7 +615,7 @@ export class AgentComponent implements OnInit {
         },
         error: (err) => {
           console.error('Delete agent error', err);
-          this.submitError = err.error?.message || 'Failed to delete agent.';
+          this.submitError = err.error?.description || 'Failed to delete agent.';
         }
       });
     });
@@ -562,7 +635,10 @@ export class AgentComponent implements OnInit {
       this.filteredAgents = this.agents.filter(agent =>
         agent.agentName.toLowerCase().includes(term) ||
         (agent.mailId && agent.mailId.toLowerCase().includes(term)) ||
-        (agent.phone && agent.phone.toLowerCase().includes(term))
+        (agent.phone && agent.phone.toLowerCase().includes(term)) ||
+        (agent.country?.countryName && agent.country.countryName.toLowerCase().includes(term)) ||
+        (agent.city?.cityName && agent.city.cityName.toLowerCase().includes(term)) ||
+        (agent.language?.languageName && agent.language.languageName.toLowerCase().includes(term))
       );
     }
     this.totalRecords = this.filteredAgents.length;
@@ -595,6 +671,7 @@ export class AgentComponent implements OnInit {
       this.agentForm.patchValue({ countryCode: defaultCountry.isoCode });
       this.updatePhoneValidators();
     }
+    this.agentForm.patchValue({ countryId: '' , cityId: '', languageId: ''});
   }
 
   onCountrySelect(country: CountryMaster | undefined): void {
@@ -668,15 +745,100 @@ export class AgentComponent implements OnInit {
     return this.countries.find(c => c.isoCode === code);
   }
 
-  beautifyFieldName(key: string): string {
-    switch (key) {
-      case 'orgId': return 'Organization';
-      case 'calendarId': return 'Calendar';
-      case 'accessId': return 'Access ID';
-      case 'skillName': return 'Skill Name';
-      case 'experienceYears': return 'Experience Years';
-      case 'experienceMonths': return 'Experience Months';
-      default: return key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+  onLocationCountrySelect(countryId: number, selectedCityId?: number): void {
+    this.clearLocalTimeInterval();
+    this.selectedTimezone = null;
+    this.agentService.getCityList(countryId).subscribe({
+      next: (response) => {
+        this.cities = (response as any).attributes || [];
+        this.selectedCity = null;
+        this.localTime = '';
+        this.agentForm.patchValue({ cityId: '' }, { emitEvent: false });
+
+        if (selectedCityId != null) {
+          const cityExists = this.cities.some(city => {
+            return city.cityId === selectedCityId;
+          });
+          if (cityExists) {
+            this.agentForm.patchValue({ cityId: selectedCityId }, { emitEvent: false });
+            this.onCitySelect(selectedCityId);
+          }
+        }
+      },
+      error: () => {
+        this.cities = [];
+        this.selectedCity = null;
+        this.localTime = '';
+        this.agentForm.patchValue({ cityId: '' }, { emitEvent: false });
+      }
+    });
+  }
+
+  onCitySelect(cityId: number): void {
+    cityId = Number(cityId);
+    this.selectedCity = this.cities.find(c => c.cityId === cityId) || null;
+    if (this.selectedCity && this.selectedCity.country.timezone) {
+      this.selectedTimezone = this.selectedCity.country.timezone;
+      this.updateLocalTime();
+      this.startLocalTimeTicker();
+    } else {
+      this.selectedTimezone = null;
+      this.clearLocalTimeInterval();
+      this.localTime = '';
+    }
+  }
+
+  updateLocalTime(): void {
+    if (!this.selectedTimezone) {
+      this.localTime = '';
+      return;
+    }
+
+    try {
+      const now = new Date();
+      this.localTime = now.toLocaleString('en-US', {
+        timeZone: this.selectedTimezone,
+        hour12: true,
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      console.log('Updated local time:', this.localTime);
+    } catch (error) {
+      console.error('Error getting local time:', error);
+      this.localTime = '';
+    }
+  }
+
+  startLocalTimeTicker(): void {
+    this.clearLocalTimeInterval();
+    this.timezoneTimer = setInterval(() => this.updateLocalTime(), 1000);
+  }
+
+  clearLocalTimeInterval(): void {
+    if (this.timezoneTimer) {
+      clearInterval(this.timezoneTimer);
+      this.timezoneTimer = null;
+    }
+  }
+
+  getLocalTime(timezone: string): string {
+    try {
+      const now = new Date();
+      const timeString = now.toLocaleString('en-US', {
+        timeZone: timezone,
+        hour12: true,
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      return timeString;
+    } catch (error) {
+      console.error('Error getting local time:', error);
+      return '';
     }
   }
 }

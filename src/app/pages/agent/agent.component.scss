@@ -63,6 +63,17 @@
     }
   }
 
+  .field-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 14px;
+
+    .field {
+      flex: 1;
+      margin-bottom: 0;
+    }
+  }
+
   .phone-input-container {
     display: flex;
     align-items: center;

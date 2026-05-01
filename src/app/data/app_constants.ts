@@ -14,7 +14,7 @@ export const MENU_INFO: MenuItem[] = [
                 "subMenuName": "RITM",
                 "isActive": true,
                 "enableForRoles": ["Admin"],
-                "route": "/welcome",
+                "route": "/ritm",
                 "childSubMenus": []
             },
             {
@@ -35,60 +35,126 @@ export const MENU_INFO: MenuItem[] = [
         "icon": "⚙️",
         "isParent": true,
         "subMenus": [
-        {
-            "subMenuId": 201,
-            "subMenuName": "General",
-            "isActive": true,
-            "enableForRoles": ["Admin"],
-            "childSubMenus": [
             {
-                "subMenuId": 20101,
-                "subMenuName": "Organisation Setup",
+                "subMenuId": 201,
+                "subMenuName": "General",
                 "isActive": true,
+                "enableForRoles": ["Admin"],
                 "childSubMenus": [
                 {
-                    "subMenuId": 2010101,
-                    "subMenuName": "Define",
+                    "subMenuId": 20101,
+                    "subMenuName": "Organisation Setup",
                     "isActive": true,
-                    "enableForRoles": ["Admin"],
                     "childSubMenus": [
                     {
-                        "subMenuId": 201010101,
-                        "subMenuName": "Company",
+                        "subMenuId": 2010101,
+                        "subMenuName": "Define",
                         "isActive": true,
                         "enableForRoles": ["Admin"],
                         "childSubMenus": [
                         {
-                            "subMenuId": 20101010101,
-                            "subMenuName": "Requestor",
-                            "route": "/company/requestor",
+                            "subMenuId": 201010101,
+                            "subMenuName": "Company",
+                            "isActive": true,
+                            "enableForRoles": ["Admin"],
+                            "childSubMenus": [
+                            {
+                                "subMenuId": 20101010101,
+                                "subMenuName": "Requestor",
+                                "route": "/company/requestor",
+                                "isActive": true,
+                                "enableForRoles": ["Admin"],
+                                "childSubMenus": []
+                            },
+                            {
+                                "subMenuId": 20101010102,
+                                "subMenuName": "Service Provider",
+                                "route": "/company/service-provider",
+                                "isActive": true,
+                                "enableForRoles": ["Admin"],
+                                "childSubMenus": []
+                            }
+                            ]
+                        },
+                        {
+                            "subMenuId": 201010102,
+                            "subMenuName": "Plant",
+                            "route": "/plant",
                             "isActive": true,
                             "enableForRoles": ["Admin"],
                             "childSubMenus": []
                         },
                         {
-                            "subMenuId": 20101010102,
-                            "subMenuName": "Service Provider",
-                            "route": "/company/service-provider",
+                            "subMenuId": 201010103,
+                            "subMenuName": "Skills",
+                            "route": "/skill",
                             "isActive": true,
                             "enableForRoles": ["Admin"],
                             "childSubMenus": []
                         }
                         ]
-                    },
+                    }
+                    ]
+                },
+                {
+                    "subMenuId": 20102,
+                    "subMenuName": "Master",
+                    "isActive": true,
+                    "enableForRoles": ["Admin"],
+                    "childSubMenus": [
                     {
-                        "subMenuId": 201010102,
-                        "subMenuName": "Plant",
-                        "route": "/plant",
+                        "subMenuId": 2010201,
+                        "subMenuName": "Agent",
+                        "route": "/agent",
                         "isActive": true,
                         "enableForRoles": ["Admin"],
                         "childSubMenus": []
                     },
                     {
-                        "subMenuId": 201010103,
-                        "subMenuName": "Skills",
-                        "route": "/skill",
+                        "subMenuId": 2010202,
+                        "subMenuName": "Calendar",
                         "isActive": true,
+                        "enableForRoles": ["Admin"],
+                        "childSubMenus": [
+                        {
+                            "subMenuId": 201020201,
+                            "subMenuName": "Define",
+                            "isActive": true,
+                            "enableForRoles": ["Admin"],
+                            "childSubMenus": [
+                            {
+                                "subMenuId": 20102020101,
+                                "subMenuName": "Create Support Calendar",
+                                "route": "/calendar/create-calendar",
+                                "isActive": true,
+                                "enableForRoles": ["Admin"],
+                                "childSubMenus": []
+                            },
+                            {
+                                "subMenuId": 20102020102,
+                                "subMenuName": "Create Requestor Calendar",
+                                "route": "/calendar/create-calendar",
+                                "isActive": true,
+                                "enableForRoles": ["Admin"],
+                                "childSubMenus": []
+                            },
+                            {
+                                "subMenuId": 20102020103,
+                                "subMenuName": "List",
+                                "route": "/calendar/list",
+                                "isActive": true,
+                                "enableForRoles": ["Admin"],
+                                "childSubMenus": []
+                            }
+                            ]
+                        }
+                        ]
+                    },
+                    {
+                        "subMenuId": 2010203,
+                        "subMenuName": "Priority",
+                        "isActive": true,
+                        route: "/priority",
                         "enableForRoles": ["Admin"],
                         "childSubMenus": []
                     }
@@ -97,71 +163,37 @@ export const MENU_INFO: MenuItem[] = [
                 ]
             },
             {
-                "subMenuId": 20102,
-                "subMenuName": "Master",
+                "subMenuId": 202,
+                "subMenuName": "Service Config",
                 "isActive": true,
                 "enableForRoles": ["Admin"],
                 "childSubMenus": [
-                {
-                    "subMenuId": 2010201,
-                    "subMenuName": "Agent",
-                    "route": "/agent",
-                    "isActive": true,
-                    "enableForRoles": ["Admin"],
-                    "childSubMenus": []
-                },
-                {
-                    "subMenuId": 2010202,
-                    "subMenuName": "Calendar",
-                    "isActive": true,
-                    "enableForRoles": ["Admin"],
-                    "childSubMenus": [
                     {
-                        "subMenuId": 201020201,
-                        "subMenuName": "Define",
+                        "subMenuId": 20201,
+                        "subMenuName": "Business Offering",
+                        "route": "/business-offering",
                         "isActive": true,
                         "enableForRoles": ["Admin"],
-                        "childSubMenus": [
-                        {
-                            "subMenuId": 20102020101,
-                            "subMenuName": "Create Support Calendar",
-                            "route": "/calendar/create-calendar",
-                            "isActive": true,
-                            "enableForRoles": ["Admin"],
-                            "childSubMenus": []
-                        },
-                        {
-                            "subMenuId": 20102020102,
-                            "subMenuName": "Create Requestor Calendar",
-                            "route": "/calendar/create-calendar",
-                            "isActive": true,
-                            "enableForRoles": ["Admin"],
-                            "childSubMenus": []
-                        },
-                        {
-                            "subMenuId": 20102020103,
-                            "subMenuName": "List",
-                            "route": "/calendar/list",
-                            "isActive": true,
-                            "enableForRoles": ["Admin"],
-                            "childSubMenus": []
-                        }
-                        ]
+                        "childSubMenus": []
                     }
-                    ]
-                },
-                {
-                    "subMenuId": 2010203,
-                    "subMenuName": "Priority",
-                    "isActive": true,
-                    route: "/priority",
-                    "enableForRoles": ["Admin"],
-                    "childSubMenus": []
-                }
                 ]
-            }
-            ]
-        }        
+            },
+            {
+                "subMenuId": 203,
+                "subMenuName": "Task",
+                "isActive": true,
+                "enableForRoles": ["Admin"],
+                "childSubMenus": [
+                    {
+                        "subMenuId": 20301,
+                        "subMenuName": "Number Range",
+                        "route": "/number-range",
+                        "isActive": true,
+                        "enableForRoles": ["Admin"],
+                        "childSubMenus": []
+                    }
+                ]
+            }  
         ]
     }
 ];

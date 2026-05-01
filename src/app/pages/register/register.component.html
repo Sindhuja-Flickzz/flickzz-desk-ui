@@ -46,6 +46,41 @@
       <span *ngIf="formError.password" class="error-text">{{ formError.password }}</span>
     </div>
 
+    <div class="form-group">
+      <label for="phone">Phone</label>
+      <input id="phone" type="text" formControlName="phone" placeholder="Enter phone number (digits only)">
+      <span *ngIf="formError.phone" class="error-text">{{ formError.phone }}</span>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="country">Country</label>
+        <select id="country" formControlName="countryId" (change)="onCountryChange()">
+          <option value="" disabled>Select country</option>
+          <option *ngFor="let country of countries" [value]="country.countryId">{{ country.countryName }}</option>
+        </select>
+        <span *ngIf="formError.countryId" class="error-text">{{ formError.countryId }}</span>
+      </div>
+
+      <div class="form-group">
+        <label for="city">City</label>
+        <select id="city" formControlName="cityId" [disabled]="cities.length === 0" (change)="onCityChange()">
+          <option value="" disabled>Select city</option>
+          <option *ngFor="let city of cities" [value]="city.cityId">{{ city.cityName }}</option>
+        </select>
+        <span *ngIf="formError.cityId" class="error-text">{{ formError.cityId }}</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="language">Language</label>
+      <select id="language" formControlName="languageId" (change)="onLanguageChange()">
+        <option value="" disabled>Select language</option>
+        <option *ngFor="let lang of languages" [value]="lang.languageId">{{ lang.languageName }}</option>
+      </select>
+      <span *ngIf="formError.languageId" class="error-text">{{ formError.languageId }}</span>
+    </div>
+
     <button type="submit">Register</button>
     <a routerLink="/login">Login</a>
   </form>

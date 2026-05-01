@@ -8,4 +8,8 @@ export interface RegisterLoginRequest {
   mfaEnabled?: boolean;
   createdBy?: string;
   oldPassword?: string;
+  phone?: string;
+  countryId?: number;
+  cityId?: number;
+  languageId?: number;
 }

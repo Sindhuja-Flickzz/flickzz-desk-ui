@@ -10,6 +10,9 @@ import {SkillComponent} from "./pages/skill/skill.component";
 import {CompanyComponent} from "./pages/company/company.component";
 import {AgentComponent} from "./pages/agent/agent.component";
 import {PriorityComponent} from "./pages/priority/priority.component";
+import {RitmComponent} from "./pages/ritm/ritm.component";
+import {BusinessOfferingComponent} from "./pages/business-offering/business-offering.component";
+import {NumberRangeComponent} from "./pages/number-range/number-range.component";
 import {authGuard} from "./service/auth/auth.guard";
 
 const routes: Routes = [
@@ -47,8 +50,23 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'number-range',
+    component: NumberRangeComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'business-offering',
+    component: BusinessOfferingComponent,
+    canActivate: [authGuard]
+  },
+  {
     path: 'priority',
     component: PriorityComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'ritm',
+    component: RitmComponent,
     canActivate: [authGuard]
   },
   {
