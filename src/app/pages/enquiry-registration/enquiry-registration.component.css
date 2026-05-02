@@ -1,0 +1,155 @@
+.container {
+  max-width: 760px;
+  margin: 40px auto;
+  padding: 32px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+}
+
+h2 {
+  margin-bottom: 24px;
+  font-size: 28px;
+  color: #212121;
+}
+
+.form-row {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  flex: 1 1 300px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group select {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.phone-group .phone-wrapper {
+  display: flex;
+  gap: 10px;
+}
+
+.phone-code {
+  min-width: 80px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e3f2fd;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  color: #0d47a1;
+}
+
+button {
+  margin-top: 10px;
+  min-width: 140px;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  background: #0d47a1;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+button:disabled {
+  background: #90a4ae;
+  cursor: not-allowed;
+}
+
+.error-text {
+  margin-top: 8px;
+  color: #c62828;
+  font-size: 13px;
+}
+
+.success-screen {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: #f4f7ff;
+}
+
+.success-card {
+  width: 100%;
+  max-width: 560px;
+  text-align: center;
+  padding: 32px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
+}
+
+.success-card h2 {
+  color: #153e75;
+  margin-bottom: 16px;
+}
+
+.success-card p {
+  color: #455a64;
+  line-height: 1.7;
+}
+
+.success-message {
+  margin-top: 18px;
+  color: #1b5e20;
+  font-weight: 600;
+}
+
+.celebration {
+  position: absolute;
+  width: 100%;
+  top: 30px;
+  display: flex;
+  justify-content: center;
+  gap: 80px;
+}
+
+.cracker {
+  width: 18px;
+  height: 60px;
+  background: linear-gradient(45deg, #ffca28 0%, #ff7043 100%);
+  transform-origin: top center;
+  animation: pop 1.2s ease-out infinite;
+}
+
+.cracker-left {
+  transform: rotate(-20deg);
+}
+
+.cracker-right {
+  transform: rotate(20deg);
+  animation-delay: 0.2s;
+}
+
+.cancel-btn {
+  margin-left: 10px;
+}
+
+@keyframes pop {
+  0%, 100% {
+    transform: scaleY(1) rotate(0deg);
+  }
+  50% {
+    transform: scaleY(1.2) rotate(0deg);
+  }
+}

@@ -1,0 +1,111 @@
+.verify-shell {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  background: #f4f6f8;
+}
+
+.verify-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 32px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.verify-logo {
+  display: block;
+  width: 120px;
+  margin: 0 auto 24px;
+}
+
+h2 {
+  margin: 0 0 16px;
+  font-size: 28px;
+  color: #212121;
+}
+
+.username-label {
+  margin: 0 0 20px;
+  color: #555;
+  font-size: 15px;
+}
+
+.message {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.message.success {
+  background: #eef7ed;
+  color: #1f7a32;
+}
+
+.message.error {
+  background: #fdecea;
+  color: #a8231d;
+}
+
+.verify-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-field {
+  text-align: left;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 600;
+}
+
+.form-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.field-error {
+  margin-top: 8px;
+  color: #c62828;
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+}
+
+.actions button {
+  min-width: 120px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #0d47a1;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.actions button:disabled {
+  background: #90a4ae;
+  cursor: not-allowed;
+}
+
+.spinner {
+  display: flex;
+  justify-content: center;
+}

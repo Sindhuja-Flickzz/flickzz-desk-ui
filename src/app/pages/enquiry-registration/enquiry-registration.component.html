@@ -1,0 +1,113 @@
+<div class="container" *ngIf="!registrationSuccess">
+  <h2>Enquiry Registration</h2>
+
+  <form [formGroup]="registrationForm" (ngSubmit)="saveEnquiry()">
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="firstName">First Name *</label>
+        <input id="firstName" type="text" formControlName="firstName" />
+        <span *ngIf="firstNameControl?.touched && firstNameControl?.hasError('required')" class="error-text">
+          First Name is required
+        </span>
+      </div>
+      <div class="form-group">
+        <label for="middleName">Middle Name</label>
+        <input id="middleName" type="text" formControlName="middleName" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="lastName">Last Name *</label>
+        <input id="lastName" type="text" formControlName="lastName" />
+        <span *ngIf="lastNameControl?.touched && lastNameControl?.hasError('required')" class="error-text">
+          Last Name is required
+        </span>
+      </div>
+      <div class="form-group">
+        <label for="email">Email *</label>
+        <input id="email" type="email" formControlName="email" />
+        <span *ngIf="emailControl?.touched && emailControl?.hasError('required')" class="error-text">
+          Email is required
+        </span>
+        <span *ngIf="emailControl?.touched && emailControl?.hasError('email')" class="error-text">
+          Invalid email format
+        </span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="orgName">Organisation Name *</label>
+      <input id="orgName" type="text" formControlName="orgName" />
+      <span *ngIf="orgNameControl?.touched && orgNameControl?.hasError('required')" class="error-text">
+        Organisation Name is required
+      </span>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="countryId">Country *</label>
+        <select id="countryId" formControlName="countryId" (change)="onCountryChange()">
+          <option value="" disabled>Select country</option>
+          <option *ngFor="let country of countries" [value]="country.countryId">{{ country.countryName }}</option>
+        </select>
+        <span *ngIf="countryControl?.touched && countryControl?.hasError('required')" class="error-text">
+          Country is required
+        </span>
+      </div>
+
+      <div class="form-group phone-group">
+        <label for="phoneNumber">Phone Number *</label>
+        <div class="phone-wrapper">
+          <span class="phone-code">{{ countryCode }}</span>
+          <input
+            id="phoneNumber"
+            type="text"
+            formControlName="phoneNumber"
+            [disabled]="!selectedCountry"
+            placeholder="Enter number"
+          />
+        </div>
+        <span *ngIf="phoneNumberControl?.touched && phoneNumberControl?.hasError('required')" class="error-text">
+          Phone Number is required
+        </span>
+        <span *ngIf="phoneNumberControl?.touched && phoneNumberControl?.hasError('pattern')" class="error-text">
+          Phone number must contain digits only
+        </span>
+        <span *ngIf="phoneNumberControl?.touched && (phoneNumberControl?.hasError('minlength') || phoneNumberControl?.hasError('maxlength'))" class="error-text">
+          Enter a valid phone number for the selected country
+        </span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="employeeSize">Employee Size *</label>
+      <input id="employeeSize" type="number" min="1" formControlName="employeeSize" />
+      <span *ngIf="employeeSizeControl?.touched && employeeSizeControl?.hasError('required')" class="error-text">
+        Employee Size is required
+      </span>
+      <span *ngIf="employeeSizeControl?.touched && employeeSizeControl?.hasError('min')" class="error-text">
+        Employee Size must be greater than 0
+      </span>
+    </div>
+
+    <button type="submit" [disabled]="registrationForm.invalid || loading">
+      {{ loading ? 'Saving...' : 'Save' }}
+    </button>
+    <button type="button" class="cancel-btn" (click)="cancelRegistration()">Cancel</button>
+  </form>
+</div>
+
+<div class="success-screen" *ngIf="registrationSuccess">
+  <div class="celebration">
+    <div class="cracker cracker-left"></div>
+    <div class="cracker cracker-right"></div>
+  </div>
+  <div class="success-card">
+    <h2>FlickDesk enquiry registration successful</h2>
+    <p>Please verify your email within 3 hours to proceed further.</p>
+    <!-- <div class="success-message">{{ successMessage }}</div> -->
+  </div>
+</div>

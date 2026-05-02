@@ -66,7 +66,8 @@
       <div class="actions">
         <button type="submit" *ngIf="!isSubmitting" class="save-btn">{{ isEditMode ? 'Update Priority' : 'Save Priority' }}</button>
         <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>{{ isEditMode ? 'Updating Priority' : 'Saving Priority' }}</button>
-        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
       </div>
     </form>
   </div>

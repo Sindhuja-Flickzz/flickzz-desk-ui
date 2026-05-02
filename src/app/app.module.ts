@@ -38,9 +38,13 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { PriorityComponent } from './pages/priority/priority.component';
+import { ImpactComponent } from './pages/impact/impact.component';
 import { RitmComponent } from './pages/ritm/ritm.component';
 import { BusinessOfferingComponent } from './pages/business-offering/business-offering.component';
 import { NumberRangeComponent } from './pages/number-range/number-range.component';
+import { VerifyComponent } from './pages/verify/verify.component';
+import { EnquiryRegistrationComponent } from './pages/enquiry-registration/enquiry-registration.component';
+import { SettingsComponent } from './pages/settings/settings.component';
 
 @NgModule({
   declarations: [
@@ -58,9 +62,13 @@ import { NumberRangeComponent } from './pages/number-range/number-range.componen
     AgentComponent,
     FieldLabelPipe,
     PriorityComponent,
+    ImpactComponent,
     RitmComponent,
     BusinessOfferingComponent,
-    NumberRangeComponent
+    NumberRangeComponent,
+    VerifyComponent,
+    EnquiryRegistrationComponent,
+    SettingsComponent
   ],
   imports: [
     BrowserModule,

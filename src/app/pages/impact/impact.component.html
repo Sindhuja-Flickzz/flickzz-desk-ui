@@ -1,0 +1,101 @@
+<div class="impact-page">
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">
+      {{ isEditMode ? 'Edit' : 'Create' }}
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <h2>{{ pageTitle }}</h2>
+
+    <form [formGroup]="impactForm" (ngSubmit)="onSave()">
+      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+      <div class="field">
+        <label>Impact Code</label>
+        <input type="text" formControlName="impactCode" placeholder="Enter impact code" [readonly]="isEditMode" />
+        <span *ngIf="formError.impactCode" class="error-text">{{ formError.impactCode | fieldLabel }}</span>
+      </div>
+
+      <div class="field">
+        <label>Organization</label>
+        <select formControlName="orgId" [disabled]="isEditMode">
+          <option value="" disabled>Select organization</option>
+          <option *ngFor="let company of companies" [value]="company.companyId">{{ company.companyName }}</option>
+        </select>
+        <span *ngIf="formError.orgId" class="error-text">{{ formError.orgId | fieldLabel }}</span>
+      </div>
+
+      <div class="field">
+        <label>Rank</label>
+        <input type="number" formControlName="rank" placeholder="Enter rank" min="1" />
+        <span *ngIf="formError.rank" class="error-text">{{ formError.rank | fieldLabel }}</span>
+      </div>
+
+      <div class="field">
+        <label>SLA Multiplier</label>
+        <input type="number" formControlName="slaMultiplier" placeholder="Enter SLA multiplier" step="0.01" min="0" />
+        <span *ngIf="formError.slaMultiplier" class="error-text">{{ formError.slaMultiplier | fieldLabel }}</span>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">
+          {{ isEditMode ? (isSubmitting ? 'Updating Impact' : 'Update Impact') : (isSubmitting ? 'Saving Impact' : 'Save Impact') }}
+        </button>
+        <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <h2>Impact List</h2>
+
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+    <div class="search-container">
+      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by code or organization..." class="search-input" />
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Impact ID</th>
+            <th>Impact Code</th>
+            <th>Rank</th>
+            <th>SLA Multiplier</th>
+            <th>Organization</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let impact of getPaginatedImpacts()">
+            <td>{{ impact.impactId }}</td>
+            <td>{{ impact.impactCode }}</td>
+            <td>{{ impact.impactLevel }}</td>
+            <td>{{ impact.slaMultiplier | number:'1.2-2' }}</td>
+            <td>{{ impact.organization?.companyName }}</td>
+            <td class="action-buttons">
+              <button type="button" (click)="onViewImpact(impact)"><mat-icon>edit</mat-icon></button>
+              <button type="button" (click)="onDeleteImpact(impact)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-controls">
+      <mat-paginator
+        [length]="totalRecords"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+    </div>
+  </div>
+</div>

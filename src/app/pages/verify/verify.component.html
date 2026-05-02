@@ -1,0 +1,35 @@
+<div class="verify-shell">
+  <div class="verify-card">
+    <img src="assets/logo.png" alt="Company Logo" class="verify-logo" />
+    <h2>Secure Access</h2>
+    <p class="username-label">Username: <strong>{{ username || 'Unknown user' }}</strong></p>
+
+    <div *ngIf="message" class="message" [ngClass]="{ success: isSuccess, error: !isSuccess }">
+      {{ message }}
+    </div>
+
+    <form [formGroup]="verifyForm" (ngSubmit)="onSubmit()" class="verify-form" *ngIf="showForm">
+      <div class="form-field">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          [disabled]="invalidLink || loading"
+          autocomplete="new-password"
+        />
+        <div class="field-error" *ngIf="passwordControl?.touched && passwordControl?.hasError('required')">
+          Password is required.
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" [disabled]="verifyForm.invalid || invalidLink || loading">Submit</button>
+      </div>
+
+      <div class="spinner" *ngIf="loading">
+        <mat-progress-spinner diameter="36" mode="indeterminate"></mat-progress-spinner>
+      </div>
+    </form>
+  </div>
+</div>

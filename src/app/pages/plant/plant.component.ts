@@ -97,6 +97,11 @@ export class PlantComponent implements OnInit {
     });
   }
 
+  cancelEdit(): void {
+    this.resetForm();
+    this.activeTab = 'list';  
+  }
+
   selectTab(tab: 'create' | 'list'): void {
     this.formError = {};
     this.activeTab = tab;

@@ -29,6 +29,7 @@ export class RegisterComponent implements OnInit {
       mfaEnabled: false,
       refreshToken: '',
       secretImageUri: '',
+      userOrganization: '',
       userRole: ''
     }
   };

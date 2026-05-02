@@ -37,6 +37,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       mfaEnabled: false,
       refreshToken: '',
       secretImageUri: '',
+      userOrganization: '',
       userRole: ''
     }
   };
@@ -102,7 +103,15 @@ export class LoginComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           this.commonResponse = response;
-          if (response.attributes.mfaEnabled) {
+          if(response.attributes.enquiryUser) {
+            this.isLoginMode = false;
+            this.isVerifying = false;
+            localStorage.setItem('token', response.attributes.accessToken as string);
+            localStorage.setItem('refreshToken', response.attributes.refreshToken as string);
+            localStorage.setItem('userId', this.registerLoginRequest.email as string);
+            localStorage.setItem('userRole', response.attributes.userRole as string);
+            this.router.navigate(['settings']);
+          } else if (response.attributes.mfaEnabled) {
             this.isLoginMode = false;
             this.isMfaSetupMode = true;
           } else {
@@ -216,6 +225,7 @@ export class LoginComponent implements OnInit, OnDestroy {
           localStorage.setItem('refreshToken', response.attributes.refreshToken as string);
           localStorage.setItem('userId', this.registerLoginRequest.email as string);
           localStorage.setItem('userRole', response.attributes.userRole as string);
+          localStorage.setItem('userOrg', response.attributes.userOrganization as string);
           this.router.navigate(['welcome']);
         },
         error: (err) => {

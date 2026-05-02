@@ -22,6 +22,7 @@ export interface MenuItem {
   isActive: boolean;
   enableForRoles?: string[];
   icon?: string;
+  route?: string;
   isParent: boolean;
   subMenus: SubMenu[];
 }

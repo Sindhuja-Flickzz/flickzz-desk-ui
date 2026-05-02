@@ -10,9 +10,13 @@ import {SkillComponent} from "./pages/skill/skill.component";
 import {CompanyComponent} from "./pages/company/company.component";
 import {AgentComponent} from "./pages/agent/agent.component";
 import {PriorityComponent} from "./pages/priority/priority.component";
+import {ImpactComponent} from "./pages/impact/impact.component";
 import {RitmComponent} from "./pages/ritm/ritm.component";
 import {BusinessOfferingComponent} from "./pages/business-offering/business-offering.component";
 import {NumberRangeComponent} from "./pages/number-range/number-range.component";
+import {VerifyComponent} from './pages/verify/verify.component';
+import {EnquiryRegistrationComponent} from './pages/enquiry-registration/enquiry-registration.component';
+import {SettingsComponent} from './pages/settings/settings.component';
 import {authGuard} from "./service/auth/auth.guard";
 
 const routes: Routes = [
@@ -32,6 +36,11 @@ const routes: Routes = [
   {
     path: 'welcome',
     component: WelcomeComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'settings',
+    component: SettingsComponent,
     canActivate: [authGuard]
   },
   {
@@ -65,6 +74,11 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'impact',
+    component: ImpactComponent,
+    canActivate: [authGuard]
+  },
+  {
     path: 'ritm',
     component: RitmComponent,
     canActivate: [authGuard]
@@ -95,6 +109,14 @@ const routes: Routes = [
     path: 'agent',
     component: AgentComponent,
     canActivate: [authGuard]
+  },
+  {
+    path: 'enquiry/register',
+    component: EnquiryRegistrationComponent
+  },
+  {
+    path: 'enquiry/verify',
+    component: VerifyComponent
   },
   {
     path: '**',
