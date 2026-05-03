@@ -8,18 +8,18 @@ import { Router } from '@angular/router';
 })
 export class SettingsComponent {
   tiles = [
-    { title: 'Requestor', route: '/company/requestor' },
-    { title: 'Service Provider', route: '/company/service-provider' },
+    { title: 'Company', route: '/company/requestor' },
     { title: 'Plant', route: '/plant' },
+    { title: 'Calendar', route: '/calendar' },
     { title: 'Skills', route: '/skill' },
-    { title: 'Agent', route: '/agent' },
-    { title: 'Support Calendar', route: '/calendar/create-calendar', queryParams: { type: 'support' } },
-    { title: 'Requestor Calendar', route: '/calendar/create-calendar', queryParams: { type: 'requestor' } },
-    { title: 'Calendar List', route: '/calendar/list' },
-    { title: 'Priority', route: '/priority' },
-    { title: 'Business Offering', route: '/business-offering' },
-    { title: 'Number Range', route: '/number-range' },
-    { title: 'Impact', route: '/impact' }
+    { title: 'Agent', route: '/agent' }
+    // { title: 'Support Calendar', route: '/calendar/create-calendar', queryParams: { type: 'support' } },
+    // { title: 'Requestor Calendar', route: '/calendar/create-calendar', queryParams: { type: 'requestor' } },
+    // { title: 'Calendar List', route: '/calendar/list' },
+    // { title: 'Priority', route: '/priority' },
+    // { title: 'Business Offering', route: '/business-offering' },
+    // { title: 'Number Range', route: '/number-range' },
+    // { title: 'Impact', route: '/impact' }
   ];
 
   constructor(private router: Router) {}

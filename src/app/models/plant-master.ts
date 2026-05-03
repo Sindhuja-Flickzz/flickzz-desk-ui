@@ -28,4 +28,5 @@ export interface PlantMasterRequest {
   calendarId: number;
   createdBy: string;
   updatedBy: string;
+  companyId: number;
 }

@@ -3,16 +3,20 @@ import { FormBuilder, FormGroup, Validators, FormArray, FormControl } from '@ang
 import { ActivatedRoute, Router } from '@angular/router';
 import { CalendarService } from '../../../service/calendar.service';
 import { DateUtilsService } from '../../../service/date.util.Service ';
-import { CalendarRequest, CalendarMasterVO } from '../../../models/calendar-master';
+import { CalendarRequest, CalendarMasterVO, CalendarType } from '../../../models/calendar-master';
 import { CalendarHolidayVO } from '../../../models/calendar-holiday';
 import { DAYS_OF_WEEK, TIMEZONES } from 'src/app/data/app_constants';
 
 @Component({
-  selector: 'app-create-support-calendar',
-  templateUrl: './create-calendar.component.html',
-  styleUrls: ['./create-calendar.component.scss']
+  selector: 'app-calendar',
+  templateUrl: './calendar.component.html',
+  styleUrls: ['./calendar.component.scss']
 })
-export class CreateCalendarComponent implements OnInit, OnDestroy {
+export class CalendarComponent implements OnInit {
+  activeTab: 'create' | 'list' = 'create';
+  calendarTypes: CalendarType[] = [];
+  pendingCalendarTypeValue: string | number | null = null;
+
   calendarForm!: FormGroup;
   submitting = false;
   submitError = '';
@@ -27,10 +31,7 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
   isUpdateEnabled = false;
   private originalFormValue: any = null;
 
-  // Page mode (support/requestor)
-  isSupportPage = true;
-  isRequestorPage = false;
-  pageTitle = 'Create Support Calendar';
+  pageTitle = 'Create Calendar';
 
   daysOfWeek = DAYS_OF_WEEK;
   timezones = TIMEZONES;
@@ -57,11 +58,13 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
    }
   ngOnDestroy(): void {
     this.formSubmitted = false;
+    this.isEditMode = false;
     this.calendarForm.reset();
   }
 
   ngOnInit(): void {
     this.initializeForm();
+    this.loadCalendarTypes();
     this.configurePageModeFromParams();
   }
 
@@ -69,23 +72,21 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
     this.route.queryParams.subscribe(params => {
       const mode = params['mode'];
       const code = params['code'];
-      const pageType = (params['type'] || '').toString().toLowerCase();
 
       this.isEditMode = mode === 'edit' && !!code;
       this.editingCalendarCode = this.isEditMode ? code : '';
+      this.activeTab = this.isEditMode ? 'create' : this.activeTab;
 
-      this.isRequestorPage = pageType === 'requestor';
-      this.isSupportPage = !this.isRequestorPage;
       if (this.isEditMode) {
-        this.pageTitle = this.isRequestorPage ? 'Edit Requestor Calendar' : 'Edit Support Calendar';
+        this.pageTitle = 'Edit Calendar';
         this.loadCalendarForEdit(code as string);
       } else {
         this.calendarForm.reset();
         this.holidaysArray.clear();
         this.fieldErrors = {};
         this.newHolidayErrors = {};
-        this.pageTitle = this.isRequestorPage ? 'Create Requestor Calendar' : 'Create Support Calendar';
-        this.calendarForm.get('calendarType')?.setValue(this.isRequestorPage ? 'Requestor' : 'Support');
+        this.pageTitle = 'Create Calendar';
+        // this.calendarForm.get('calendarType')?.setValue(this.isRequestorPage ? 'Requestor' : 'Support');
       }
     });
   }
@@ -112,6 +113,57 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
     }
   }
 
+  private loadCalendarTypes(): void {
+    const orgId = Number(localStorage.getItem('userOrgId')) || 0;
+    if (!orgId) {
+      this.submitError = 'Unable to load calendar types. Missing org ID.';
+      return;
+    }
+
+    this.calendarService.getCalendarTypes(orgId).subscribe({
+      next: (result) => {
+        const calendarTypes = (result as any).attributes || result;
+        this.calendarTypes = Array.isArray(calendarTypes) ? calendarTypes : [];
+
+        if (this.pendingCalendarTypeValue != null) {
+          const selectedTypeId = this.getCalendarTypeId(this.pendingCalendarTypeValue);
+          if (selectedTypeId != null) {
+            this.calendarForm.get('calendarType')?.setValue(selectedTypeId);
+            this.pendingCalendarTypeValue = null;
+          }
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load calendar types:', err);
+        this.submitError = 'Failed to load calendar types. Please refresh the page.';
+        this.calendarTypes = [];
+      }
+    });
+  }
+
+  private getCalendarTypeId(typeValue: string | number): number | null {
+    if (typeValue == null || typeValue === '') {
+      return null;
+    }
+
+    if (typeof typeValue === 'number') {
+      return typeValue;
+    }
+
+    const normalizedValue = typeValue.toString().trim().toLowerCase();
+    const matchedType = this.calendarTypes.find(type =>
+      type.calendarTypeId === Number(typeValue) ||
+      type.typeName?.toString().toLowerCase() === normalizedValue
+    );
+
+    if (matchedType) {
+      return matchedType.calendarTypeId;
+    }
+
+    this.pendingCalendarTypeValue = typeValue;
+    return null;
+  }
+
   private prefillForm(calendar: CalendarMasterVO): void {
     this.calendarForm.patchValue({
       validFrom: this.dateUtils.formatToYYYYMMDD(new Date(calendar.validFrom)),
@@ -124,7 +176,7 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
     // Set basic fields
     this.calendarForm.patchValue({
       calendarCode: calendar.calendarCode,
-      calendarType: calendar.calendarType,
+      calendarType: this.getCalendarTypeId(calendar.calendarType.calendarTypeId),
       validFrom: this.dateUtils.formatToYYYYMMDD(new Date(calendar.validFrom)),
       validTo: this.dateUtils.formatToYYYYMMDD(new Date(calendar.validTo)),
       timeFrom: calendar.workFrom,
@@ -161,7 +213,7 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
   initializeForm(): void {
     this.calendarForm = this.fb.group({
       calendarCode: ['', [Validators.required, this.alphanumericValidator.bind(this)]],
-      calendarType: ['Support', Validators.required],
+      calendarType: [null, Validators.required],
       validFrom: ['', [Validators.required, this.dateValidator.bind(this)]],
       validTo: ['', [Validators.required, this.dateValidator.bind(this)]],
       workingDays: this.fb.array(this.createDaysCheckboxes()),
@@ -373,11 +425,10 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
       validTo: this.dateUtils.formatToDDMMYYYY(new Date(this.calendarForm.get('validTo')?.value)),
       workingDays: selectedDays,
       holidays: holidays,
+      company: Number(localStorage.getItem('userOrgId')) || 0,
       workFrom: this.calendarForm.get('timeFrom')?.value,
       workTo: this.calendarForm.get('timeTo')?.value,
       timezone: this.calendarForm.get('timezone')?.value,
-      isSupport: this.isSupportPage,
-      isRequestor: this.isRequestorPage,
       createdBy: localStorage.getItem('userRole') || '',
       updatedBy: localStorage.getItem('userRole') || ''
     };
@@ -397,13 +448,16 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
         this.submitError = '';
         // Reset form after successful submission or navigate back to list
         setTimeout(() => {
-          if (this.isEditMode) {            
-          this.submitting = false;
-            this.router.navigate(['/calendar/list']);
-          } else {            
+          if (this.isEditMode) {
+            this.submitting = false;
+            this.activeTab = 'list';
+            this.router.navigate(['/calendar']);
+          } else {
             this.submitting = false;
             this.calendarForm.reset();
             this.initializeForm();
+            this.activeTab = 'list';
+            this.router.navigate(['/calendar']);
           }
         }, 2000);
       },
@@ -420,6 +474,10 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
       const field = this.calendarForm.get(key);
       if (key != 'holidayDate' && key != 'description' && key != 'holidays') {
         if (field?.hasError('required')) {
+          if (key === 'calendarType') {
+            this.fieldErrors[key] = 'Please select a calendar type';
+            return this.fieldErrors[key];
+          }
           this.fieldErrors[key] = `${key} is required`;
           return `${key} is required`;
         }
@@ -444,6 +502,36 @@ export class CreateCalendarComponent implements OnInit, OnDestroy {
   }
   
   onCancel(): void {
-    this.router.navigate(['/calendar/list']);
+    this.selectTab('list');
+  }
+
+  selectTab(tab: 'create' | 'list'): void {
+    this.submitError = '';
+    this.submitSuccess = false;
+    this.fieldErrors = {};
+    this.newHolidayErrors = {};
+    this.calendarForm.reset();
+    this.holidaysArray.clear();
+    this.isEditMode = false;
+    this.editingCalendarCode = '';
+    this.pageTitle = 'Create Calendar';
+    this.activeTab = tab;
+
+    if (tab === 'list') {
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { mode: null, code: null, type: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true
+      });
+    }
+  }
+ 
+  openCalendarTypeDialog(): void {
+    this.router.navigate(['/calendar-type']);
+  }
+
+  cancelForm(): void {
+    this.router.navigate(['/settings']);
   }
 }

@@ -58,14 +58,14 @@
         <span *ngIf="formError.phoneNumber" class="error-text">{{ formError.phoneNumber | fieldLabel }}</span>
       </div>
 
-      <div class="field">
+      <!-- <div class="field">
         <label>Organization</label>
         <select formControlName="orgId" title="Organization" (change)="formError['orgId'] = null;">
           <option value="" disabled>Select organization</option>
           <option *ngFor="let org of companies" [value]="org.companyId">{{ org.companyName }}</option>
         </select>
         <span *ngIf="formError.orgId" class="error-text">{{ formError.orgId  | fieldLabel }}</span>
-      </div>
+      </div> -->
 
       <div class="field">
         <label>Calendar</label>

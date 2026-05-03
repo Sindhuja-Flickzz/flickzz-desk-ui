@@ -43,6 +43,7 @@ export class AgentComponent implements OnInit {
   filteredAgents: AgentMaster[] = [];
   agentSkillNames: { [key: number]: string[] } = {};
   searchValue = '';
+  userOrgId: string = '';
 
   loading = false;
   formError: any = {};
@@ -77,6 +78,7 @@ export class AgentComponent implements OnInit {
       experienceYears: [0, [Validators.min(0)]],
       experienceMonths: [0, [Validators.min(0), Validators.max(11)]]
     });
+    this.userOrgId = localStorage.getItem('userOrgId') || '';
   }
 
   ngOnInit(): void {
@@ -130,15 +132,7 @@ export class AgentComponent implements OnInit {
   loadAllData(): void {
     this.loading = true;
 
-    this.agentService.getCompanyList().subscribe({
-      next: (response) => {
-        this.companies = (response as any).attributes || [];
-        this.setDefaultOrganizationAndCalendar();
-      },
-      error: () => { this.companies = []; }
-    });
-
-    this.agentService.getCalendarList().subscribe({
+    this.agentService.getCalendarList(this.userOrgId).subscribe({
       next: (response) => {
         this.calendars = (response as any).attributes || [];
         this.setDefaultOrganizationAndCalendar();
@@ -146,7 +140,7 @@ export class AgentComponent implements OnInit {
       error: () => { this.calendars = []; }
     });
 
-    this.agentService.getSkillsList().subscribe({
+    this.agentService.getSkillsList(this.userOrgId).subscribe({
       next: (response) => {
         this.skills = (response as any).attributes || [];
         this.suggestedSkills = this.skills;
@@ -192,7 +186,7 @@ export class AgentComponent implements OnInit {
   }
 
   loadAgentList(): void {
-    this.agentService.getAgentList().subscribe({
+    this.agentService.getAgentList(this.userOrgId).subscribe({
       next: (result) => {
         this.agents = (result as any).attributes || [];
         // Calculate local time for each agent

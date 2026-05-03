@@ -43,6 +43,7 @@
         <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>{{ isEditMode ? 'Updating Plant' : 'Saving Plant' }}</button>
         <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
         <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
+        <button type="button" class="reset-btn" (click)="backToHome()">Back</button>
       </div>
     </form>
   </div>
@@ -82,6 +83,10 @@
       </table>
     </div>
 
+    <!-- Empty State -->
+    <div *ngIf="!loading && !error && plants.length === 0" class="empty-state">
+      No Plants found.
+    </div>
     <div class="pagination-controls">
       <mat-paginator
         [length]="totalRecords"

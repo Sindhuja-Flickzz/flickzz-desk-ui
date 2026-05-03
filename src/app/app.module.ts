@@ -6,11 +6,11 @@ import { CommonModule } from '@angular/common';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { LoginComponent } from './pages/login/login.component';
-import { RegisterComponent } from './pages/register/register.component';
 import { WelcomeComponent } from './pages/welcome/welcome.component';
-import { CreateCalendarComponent } from './pages/calendar/create-calendar/create-calendar.component';
 import { CalendarListPageComponent } from './pages/calendar/calendar-list/calendar-list.component';
 import { CalendarDetailsModalComponent } from './pages/calendar/calendar-details-modal/calendar-details-modal.component';
+import { CalendarComponent } from './pages/calendar/calendar.component/calendar.component';
+import { CalendarTypeComponent } from './pages/calendar/type/calendar-type.component';
 import { ConfirmationDialogComponent } from './shared/confirmation-dialog/confirmation-dialog.component';
 import { PlantComponent } from './pages/plant/plant.component';
 import { SkillComponent } from './pages/skill/skill.component';
@@ -50,11 +50,11 @@ import { SettingsComponent } from './pages/settings/settings.component';
   declarations: [
     AppComponent,
     LoginComponent,
-    RegisterComponent,
     WelcomeComponent,
-    CreateCalendarComponent,
     CalendarListPageComponent,
     CalendarDetailsModalComponent,
+    CalendarComponent,
+    CalendarTypeComponent,
     ConfirmationDialogComponent,
     PlantComponent,
     SkillComponent,

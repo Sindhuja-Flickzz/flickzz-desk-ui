@@ -17,13 +17,6 @@ export class AuthenticationService {
 
   constructor(private http: HttpClient) { }
 
-  register(
-    registerRequest: RegisterLoginRequest
-  ) {
-    return this.http.post<FlickzzDeskResponse>
-    (`${APP_CONSTANTS.API_BASE_URL}/register`, registerRequest);
-  }
-
   login(
     registerLoginRequest: RegisterLoginRequest
   ) {

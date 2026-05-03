@@ -16,12 +16,12 @@ export class AgentService {
     return this.http.get(`${this.baseUrl}/company/list`);
   }
 
-  getCalendarList(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/settings/calendar/list`);
+  getCalendarList(userOrgId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/calendar/list/${userOrgId}`);
   }
 
-  getSkillsList(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/skills/list`);
+  getSkillsList(userOrgId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/skills/list/${userOrgId}`);
   }
   getCountryList(): Observable<CountryMasterVO[]> {
     return this.http.get<CountryMasterVO[]>(`${this.baseUrl}/country/list`);
@@ -42,8 +42,8 @@ export class AgentService {
     return this.http.post(`${this.baseUrl}/agent/update`, request);
   }
 
-  getAgentList(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/agent/list`);
+  getAgentList(userOrgId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/agent/list/${userOrgId}`);
   }
 
   getAgentInfoByName(agentName: string): Observable<AgentMaster> {

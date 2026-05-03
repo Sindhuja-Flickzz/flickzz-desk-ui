@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthenticationService } from '../../service/authentication.service';
 import { EnquiryRequest } from '../../models/enquiry-request';
 
@@ -22,7 +22,8 @@ export class VerifyComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
-    private authService: AuthenticationService
+    private authService: AuthenticationService,
+    private router: Router,
   ) {
     this.verifyForm = this.fb.group({
       password: ['', [Validators.required]]
@@ -94,8 +95,11 @@ export class VerifyComponent implements OnInit {
       next: response => {
         this.loading = false;
         this.isSuccess = true;
-        this.message = 'Secure access confirmed. \n Please login to FlickzzDesk with your credentials.';
+        this.message = 'Secure access confirmed. \n You will be redirected to the login page in 3 seconds. \n Please login to FlickzzDesk with your credentials.';
         this.verifyForm.disable({ emitEvent: false });
+        setTimeout(() => {
+            this.router.navigate(['/login']);
+          }, 5000);
       },
       error: err => {
         this.loading = false;

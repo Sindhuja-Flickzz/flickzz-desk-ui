@@ -11,7 +11,6 @@ import { FlickzzDeskResponse } from '../models/authentication-response';
 })
 export class PlantService {
   private baseUrl = APP_CONSTANTS.API_BASE_URL;
-  private settingsUrl = `${this.baseUrl}/settings`;
 
   constructor(private http: HttpClient) { }
 
@@ -19,12 +18,12 @@ export class PlantService {
     return this.http.get<CountryMasterVO[]>(`${this.baseUrl}/country/list`);
   }
 
-  getAllCalendars(): Observable<CalendarMasterVO[]> {
-    return this.http.get<CalendarMasterVO[]>(`${this.settingsUrl}/calendar/list`);
+  getAllCalendars(userOrgId: string): Observable<CalendarMasterVO[]> {
+    return this.http.get<CalendarMasterVO[]>(`${this.baseUrl}/calendar/list/${userOrgId}`);
   }
 
-  getAllPlants(): Observable<PlantMaster[]> {
-    return this.http.get<PlantMaster[]>(`${this.baseUrl}/plant/list`);
+  getAllPlants(userOrgId: string): Observable<PlantMaster[]> {
+    return this.http.get<PlantMaster[]>(`${this.baseUrl}/plant/list/${userOrgId}`);
   }
 
   createPlant(request: PlantMasterRequest): Observable<any> {

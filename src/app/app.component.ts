@@ -63,7 +63,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     const currentUrl = this.router.url;
-    this.showSidebar = !!localStorage.getItem('token') && !currentUrl.startsWith('/login') && !currentUrl.startsWith('/register');
+    this.showSidebar = !!localStorage.getItem('token') && !currentUrl.startsWith('/login') ;
     if (this.showSidebar) {
       this.loadMenu();
     }
@@ -75,7 +75,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.activeRoute = event.url;
 
         // Show sidebar for authenticated routes only
-        const show = !!localStorage.getItem('token') && !event.url.startsWith('/login') && !event.url.startsWith('/register');
+        const show = !!localStorage.getItem('token') && !event.url.startsWith('/login') ;
         this.showSidebar = show;
         if (show) {
           this.loadMenu();

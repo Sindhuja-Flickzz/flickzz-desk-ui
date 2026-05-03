@@ -33,7 +33,7 @@ export class EnquiryRegistrationComponent implements OnInit {
       middleName: [''],
       lastName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      orgName: ['', Validators.required],
+      orgName: ['', [Validators.required, this.alphanumericValidator.bind(this)]],
       countryId: ['', Validators.required],
       phoneNumber: ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
       employeeSize: ['', [Validators.required, Validators.min(1)]]
@@ -82,6 +82,15 @@ export class EnquiryRegistrationComponent implements OnInit {
         this.countries = [];
       }
     });
+  }
+
+  // Custom Validators
+  alphanumericValidator(control: any): { [key: string]: any } | null {
+    if (!control.value) {
+      return null;
+    }
+    const regex = /^[a-zA-Z0-9 ]+$/;
+    return regex.test(control.value) ? null : { 'alphanumeric': { value: control.value } };
   }
 
   onCountryChange(): void {

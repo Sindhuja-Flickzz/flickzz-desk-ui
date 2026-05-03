@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
-import { CountryMaster, CompanyMaster, CompanyRequest } from '../models/company-master';
+import { CountryMaster, CompanyMaster, CompanyRequest, EnquiryRegistration } from '../models/company-master';
 
 @Injectable({
   providedIn: 'root'
@@ -18,6 +18,10 @@ export class CompanyService {
 
   getAllCompanies(): Observable<CompanyMaster[]> {
     return this.http.get<CompanyMaster[]>(`${this.baseUrl}/company/list`);
+  }
+
+  getEnquiryByUserEmail(userEmail: string): Observable<EnquiryRegistration> {
+    return this.http.get<EnquiryRegistration>(`${this.baseUrl}/enquiry/${userEmail}`);
   }
 
   createCompany(request: CompanyRequest): Observable<any> {

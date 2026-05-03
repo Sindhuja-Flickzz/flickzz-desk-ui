@@ -1,0 +1,242 @@
+<div class="calendar-page">
+  <div class="tabs">
+    <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
+    <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <div class="calendar-header">
+      <h2>{{ pageTitle }}</h2>
+    </div>
+
+    <form [formGroup]="calendarForm" (ngSubmit)="onSubmit()" [attr.aria-label]="pageTitle + ' Form'">
+      <!-- Success Message -->
+      <div *ngIf="submitSuccess" class="success-text">
+        ✓ Calendar {{ isEditMode ? 'updated' : 'created' }} successfully!
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="submitError" class="error-text">
+        ✗ {{ submitError }}
+      </div>
+
+      <div class="form-section">
+        <!-- Calendar Code -->
+        <div class="form-row">
+            <div class="form-group">
+            <label for="calendarCode">Calendar Code <span class="required">*</span></label>
+            <input
+                id="calendarCode"
+                type="text"
+                formControlName="calendarCode"
+                placeholder="Calendar Code"
+                class="form-control"
+                [readonly]="isEditMode"
+                (change)="fieldErrors['calendarCode'] = null;"
+            />
+            <span *ngIf="fieldErrors.calendarCode" class="error-message">{{ fieldErrors.calendarCode | fieldLabel }}</span>
+            </div>
+
+            <!-- Calendar Type -->
+            <div class="form-group">
+            <label for="calendarType">Calendar Type <span class="required">*</span>
+                <button type="button" class="gear-icon" (click)="openCalendarTypeDialog()" title="Add new calendar type">
+                    <span class="gear">⚙️</span>
+                </button>
+            </label>
+            <select
+                id="calendarType"
+                formControlName="calendarType"
+                class="form-control"
+                (change)="fieldErrors['calendarType'] = null;"
+            >
+                <option [ngValue]="null">select calendar type</option>
+                <option *ngFor="let type of calendarTypes" [ngValue]="type.calendarTypeId">{{ type.typeName }}</option>
+            </select>
+            <span *ngIf="fieldErrors.calendarType" class="error-message">{{ fieldErrors.calendarType | fieldLabel }}</span>
+            </div>
+        </div>
+
+        <!-- Valid From and Valid To Years -->
+        <div class="form-row">
+            <div class="form-group">
+            <label for="validFrom">Valid From <span class="required">*</span></label>
+            <input
+                id="validFrom"
+                type="date"
+                formControlName="validFrom"
+                class="form-control"
+                [min]="minValidFromDate"
+                (change)="calculateValidToDates()"
+            />
+            <span *ngIf="fieldErrors.validFrom" class="error-message">{{ fieldErrors.validFrom | fieldLabel }}</span>
+            </div>
+
+            <div class="form-group">
+            <label for="validTo">Valid To <span class="required">*</span></label>
+            <input
+                id="validTo"
+                type="date"
+                formControlName="validTo"
+                [min]="minValidToDate"
+                [max]="maxValidToDate"
+                class="form-control"
+                (change)="calculateHolidayDates()"
+                [readonly]="disableValidTo"
+            />
+            <span *ngIf="fieldErrors.validTo" class="error-message">{{ fieldErrors.validTo | fieldLabel }}</span>
+            </div>
+        </div>
+        </div>
+
+        <!-- Working Days Section -->
+        <div class="form-section">
+        <h3>Working Days <span class="required">*</span></h3>
+        <div class="days-container">
+            <div *ngFor="let day of daysOfWeek; let i = index" class="day-checkbox">
+            <input
+                [id]="'day-' + i"
+                type="checkbox"
+                (change)="fieldErrors['workingDays'] = null;"
+                [formControl]="getDayControl(i)"
+            />
+            <label [for]="'day-' + i">{{ day }}</label>
+            </div>
+        </div>
+        <span *ngIf="fieldErrors.workingDays" class="error-message">{{ fieldErrors.workingDays | fieldLabel }}</span>
+        </div>
+
+        <!-- Work Hours Section -->
+        <div class="form-section">
+        <h3>Work Hours <span class="required">*</span></h3>
+        <div class="form-row">
+            <div class="form-group">
+            <label for="timeFrom">From <span class="required">*</span></label>
+            <input
+                id="timeFrom"
+                type="time"
+                formControlName="timeFrom"
+                placeholder="HH:MM"
+                class="form-control"
+                (change)="onTimeChange($event)"
+            />
+            <span *ngIf="fieldErrors.timeFrom" class="error-message">{{ fieldErrors.timeFrom | fieldLabel }}</span>
+            </div>
+
+            <div class="form-group">
+            <label for="timeTo">To <span class="required">*</span></label>
+            <input
+                id="timeTo"
+                type="time"
+                formControlName="timeTo"
+                placeholder="HH:MM"
+                class="form-control"
+                (change)="onTimeChange($event)"
+            />
+            <span *ngIf="fieldErrors.timeTo" class="error-message">{{ fieldErrors.timeTo | fieldLabel }}</span>
+            </div>
+            <!-- Timezone -->
+            <div class="form-group">
+            <label for="timezone">Timezone <span class="required">*</span></label>
+            <select
+                id="timezone"
+                formControlName="timezone"
+                class="form-control"
+                (change)="fieldErrors['timezone'] = null;"
+            >
+                <option value="">-- Select Timezone --</option>
+                <option *ngFor="let tz of timezones" [value]="tz">{{ tz }}</option>
+            </select>
+            <span *ngIf="fieldErrors.timezone" class="error-message">{{ fieldErrors.timezone | fieldLabel }}</span>
+            </div>
+        </div>
+
+        
+        </div>
+
+        <!-- Holidays Section -->
+        <div class="form-section">
+        <h3>Holidays <span class="required">*</span></h3>
+
+        <div [formGroup]="newHoliday" class="form-row holiday-input-row">
+            <div class="form-group col-12 col-md-4">
+            <label for="holidayDate">Date (DD.MM.YYYY) <span class="required">*</span></label>
+            <input
+                id="holidayDate"
+                type="date"
+                formControlName="holidayDate"
+                placeholder="DD.MM.YYYY"
+                class="form-control"
+                (change)="this.newHolidayErrors['holidayDate']=''"
+                [min]="holidayMinDate"
+                [max]="holidayMaxDate"
+                [readonly]="disableholiday"
+            />
+            <span *ngIf="newHolidayErrors['holidayDate']" class="error-message">{{ newHolidayErrors['holidayDate'] | fieldLabel }}</span>
+            </div>
+
+            <div class="form-group col-12 col-md-6">
+            <label for="description">Description <span class="required">*</span></label>
+            <input
+                id="description"
+                type="text"
+                formControlName="description"
+                placeholder="e.g., New Year"
+                class="form-control"
+                (change)="this.newHolidayErrors['description']=''"
+                [readonly]="disableholiday"
+            />
+            <span *ngIf="newHolidayErrors['description']" class="error-message">{{ newHolidayErrors['description'] | fieldLabel }}</span>
+            </div>
+
+            <div class="form-group col-12 col-md-2 d-flex align-items-end">
+            <button type="button" (click)="addHoliday()" class="add-btn">
+                + Add Holiday
+            </button>
+            </div>
+        </div>
+
+        <div class="holiday-table-wrapper">
+            <table class="holiday-table" *ngIf="holidaysArray.length > 0">
+            <thead>
+                <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let holiday of holidaysArray.controls; let i = index">
+                <td>{{ holiday.get('holidayDate')?.value }}</td>
+                <td>{{ holiday.get('description')?.value }}</td>
+                <td>
+                    <button type="button" class="btn-delete" aria-label="Delete holiday" (click)="removeHoliday(i)">⛔</button>
+                </td>
+                </tr>
+            </tbody>
+            </table>
+        </div>
+
+        <div *ngIf="fieldErrors.holidays" class="error-message">{{fieldErrors.holidays | fieldLabel}}</div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-actions">
+        <button type="submit" class="submit-btn" [disabled]="submitting || (isEditMode && !isUpdateEnabled)">
+            <!-- <span *ngIf="isEditMode && isUpdateEnabled" class="update-icon" aria-hidden="true">🔄</span> -->
+            {{ submitting ? (isEditMode ? 'Updating Calendar...' : 'Creating Calendar...') : (isEditMode ? 'Update Calendar' : 'Create Calendar') }}
+        </button>
+        <button type="button" class="cancel-btn" (click)="onCancel()">
+            Cancel
+        </button>
+        
+        <button type="button" class="cancel-btn" (click)="cancelForm()">Back</button>
+        </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <app-calendar-list></app-calendar-list>
+  </div>
+</div>

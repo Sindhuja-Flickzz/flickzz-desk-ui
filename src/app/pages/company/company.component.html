@@ -1,137 +1,58 @@
-<div class="company-page">
-  <div class="tabs">
-    <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
-    <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
-    <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
-  </div>
-
-  <div *ngIf="activeTab === 'create'" class="create-panel">
-    <h2>{{ pageTitle }}</h2>
-
-    <div class="type-toggle" *ngIf="!route.snapshot.data?.['type']">
-      <button type="button" class="type-btn" [class.active]="isRequestor" (click)="toggleType()">Requestor</button>
-      <button type="button" class="type-btn" [class.active]="!isRequestor" (click)="toggleType()">Service Provider</button>
-    </div>
+﻿<div class="company-page">
+  <div class="create-panel">
+    <h2>Company Information</h2>
 
     <form [formGroup]="companyForm" (ngSubmit)="onSave()">
       <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
       <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
 
       <div class="field">
-        <label>Company Name</label>
-        <input type="text" formControlName="companyName" placeholder="Enter company name" [readonly]="isEditMode"/>
-        <span *ngIf="formError.companyName" class="error-text">{{ formError.companyName | fieldLabel  }}</span>
+        <label>Universal Id</label>
+        <input type="text" formControlName="uid" readonly />
       </div>
 
-      <h3>Billing Information</h3>
+      <div class="field">
+        <label>Company Name</label>
+        <input type="text" formControlName="companyName" placeholder="Enter company name" />
+        <span *ngIf="companyForm.get('companyName')?.invalid && companyForm.get('companyName')?.touched" class="error-text">Company Name is required.</span>
+      </div>
 
       <div class="field">
         <label>Registered Number</label>
-        <input type="text" formControlName="registeredNumber" placeholder="Enter registered number" [readonly]="isEditMode"/>
-        <span *ngIf="formError.registeredNumber" class="error-text">{{ formError.registeredNumber | fieldLabel  }}</span>
+        <input type="text" formControlName="registeredNumber" readonly />
       </div>
 
       <div class="field">
-        <label>Currency</label>
+        <label>Country</label>
         <select formControlName="countryId">
-          <option value="" disabled>Select currency</option>
-          <option *ngFor="let c of countries" [value]="c.countryId">{{ c.currencyCode }}</option>
+          <option value="" disabled>Select country</option>
+          <option *ngFor="let c of countries" [value]="c.countryId">{{ c.countryName }}</option>
         </select>
-        <span *ngIf="formError.countryId" class="error-text">{{ formError.countryId | fieldLabel  }}</span>
+        <span *ngIf="companyForm.get('countryId')?.invalid && companyForm.get('countryId')?.touched" class="error-text">Country is required.</span>
       </div>
 
       <div class="field">
         <label>Address</label>
-        <input type="text" formControlName="address" placeholder="Enter address"/>
-        <span *ngIf="formError.address" class="error-text">{{ formError.address | fieldLabel  }}</span>
+        <input type="text" formControlName="address" placeholder="Enter address" />
+        <span *ngIf="companyForm.get('address')?.invalid && companyForm.get('address')?.touched" class="error-text">Address is required.</span>
       </div>
 
       <div class="field">
         <label>Mail</label>
-        <input type="email" formControlName="mail" placeholder="Enter email"/>
-        <span *ngIf="formError.mail" class="error-text">{{ formError.mail | fieldLabel  }}</span>
+        <input type="email" formControlName="mail" readonly />
       </div>
 
-      <div *ngIf="isRequestor" class="field">
-        <label class="checkbox-label">
-          <input type="checkbox" formControlName="markAsServiceProvider"/>
-          Mark same as service provider
-        </label>
+      <div class="field">
+        <label>Employee Size</label>
+        <input type="number" formControlName="employeeSize" min="1" placeholder="Enter employee size" />
+        <span *ngIf="companyForm.get('employeeSize')?.invalid && companyForm.get('employeeSize')?.touched" class="error-text">Employee Size is required and must be at least 1.</span>
       </div>
 
       <div class="actions">
-        <button type="submit" *ngIf="!isSubmitting" class="save-btn">{{ isEditMode ? 'Update Company' : 'Save Company' }}</button>
-        <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>{{ isEditMode ? 'Updating Company' : 'Saving Company' }}</button>
-        <button type="button" *ngIf="!isEditMode" class="reset-btn" (click)="resetForm()">Reset</button>
-        <button type="button" *ngIf="isEditMode" class="reset-btn" (click)="cancelForm()">Cancel</button>
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Updating...' : 'Update' }}</button>
+        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button type="button" class="reset-btn" (click)="cancelForm()">Back</button>
       </div>
     </form>
-  </div>
-
-  <div *ngIf="activeTab === 'list'" class="list-panel">
-    <h2>{{ isRequestor ? 'Requestor' : 'Service Provider' }} List</h2>
-    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
-    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
-
-    <div class="search-container">
-      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="applyFilters()" placeholder="Search by name, registration number, or address..." class="search-input">
-      
-      <div class="type-filters" *ngIf="isRequestor">
-        <label class="filter-label">
-          <input type="radio" name="typeFilter" value="all" [(ngModel)]="typeFilter" (ngModelChange)="onTypeFilterChange()" />
-          All
-        </label>
-        <label class="filter-label">
-          <input type="radio" name="typeFilter" value="both" [(ngModel)]="typeFilter" (ngModelChange)="onTypeFilterChange()" />
-          Both
-        </label>
-        <label class="filter-label">
-          <input type="radio" name="typeFilter" value="requestor" [(ngModel)]="typeFilter" (ngModelChange)="onTypeFilterChange()" />
-          Requestor
-        </label>
-      </div>
-    </div>
-
-    <div class="pagination-controls">
-      <mat-paginator
-        [length]="totalRecords"
-        [pageSize]="pageSize"
-        [pageSizeOptions]="pageSizeOptions"
-        (page)="onPageChange($event)"
-        showFirstLastButtons>
-      </mat-paginator>
-    </div>
-
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Company Name</th>
-            <th>Registered Number</th>
-            <th>Currency</th>
-            <th>Address</th>
-            <th>Mail</th>
-            <th>Type</th>
-            <th>Created By</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let company of getPaginatedCompanies()">
-            <td>{{ company.companyName }}</td>
-            <td>{{ company.registeredNumber }}</td>
-            <td>{{ company.country.currencyCode }}</td>
-            <td>{{ company.address }}</td>
-            <td>{{ company.mail }}</td>
-            <td>{{ getCompanyType(company) }}</td>
-            <td>{{ company.createdBy }}</td>
-            <td class="action-buttons">
-              <button type="button" (click)="onViewCompany(company)"><mat-icon>edit</mat-icon></button>
-              <button type="button" (click)="onDeleteCompany(company)"><mat-icon>delete</mat-icon></button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
   </div>
 </div>

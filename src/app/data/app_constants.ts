@@ -1,11 +1,17 @@
 import { MenuItem } from '../models/menu';
 
+export const USER_ROLES = {
+  AGENT: 'Agent',
+  ADMIN_AGENT: 'AdminAgent',
+  ADMIN: 'Admin'
+};
+
 export const MENU_INFO: MenuItem[] = [
     {
         "menuId": 1,
         "menuName": "ServiceCentral",
         "isActive": true,
-        "enableForRoles": ["Agent"],
+        "enableForRoles": [USER_ROLES.AGENT, USER_ROLES.ADMIN_AGENT],
         "icon" : "🗐",
         "isParent": true,
         "subMenus": [
@@ -13,7 +19,7 @@ export const MENU_INFO: MenuItem[] = [
                 "subMenuId": 101,
                 "subMenuName": "RITM",
                 "isActive": true,
-                "enableForRoles": ["Agent"],
+                "enableForRoles": [USER_ROLES.AGENT, USER_ROLES.ADMIN_AGENT],
                 "route": "/ritm",
                 "childSubMenus": []
             },
@@ -21,7 +27,7 @@ export const MENU_INFO: MenuItem[] = [
                 "subMenuId": 102,
                 "subMenuName": "Incident",
                 "isActive": true,
-                "enableForRoles": ["Agent"],
+                "enableForRoles": [USER_ROLES.AGENT, USER_ROLES.ADMIN_AGENT],
                 "route": "/welcome",
                 "childSubMenus": []
             }
@@ -209,11 +215,18 @@ export const MENU_INFO: MenuItem[] = [
         "menuId": 3,
         "menuName": "Settings",
         "isActive": true,
-        "enableForRoles": ["Admin"],
+        "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
         "icon": "⚙️",
-        "route": "/settings",
         "isParent": true,
-        "subMenus": []
+        "subMenus": [
+            {
+                "subMenuId": 301,
+                "subMenuName": "Organization",
+                "isActive": true,
+                "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+                "route": "/settings",
+                "childSubMenus": []}
+        ]
     }
 ];
 

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { PageEvent } from '@angular/material/paginator';
 import { PlantService } from '../../service/plant.service';
 import { CountryMasterVO, PlantMaster, PlantMasterRequest } from '../../models/plant-master';
@@ -29,6 +30,8 @@ export class PlantComponent implements OnInit {
   submitSuccess = '';
   submitError = '';
   isSubmitting = false;
+  userOrgId: string = '';
+  error: string | null = null;  
 
   alphanumericPattern = '^[a-zA-Z0-9 ]+$';
 
@@ -41,14 +44,16 @@ export class PlantComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private plantService: PlantService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private router: Router
   ) {
     this.plantForm = this.fb.group({
       plantId: [null],
-      plantName: ['', [Validators.required, Validators.pattern(this.alphanumericPattern)]],
+      plantName: ['', Validators.required],
       countryId: [null, Validators.required],
       calendarId: [null, Validators.required]
     });
+    this.userOrgId = localStorage.getItem('userOrgId') || '';
   }
 
   ngOnInit(): void {
@@ -70,7 +75,7 @@ export class PlantComponent implements OnInit {
       error: () => { this.countries = []; }
     });
 
-    this.plantService.getAllCalendars().subscribe({
+    this.plantService.getAllCalendars(this.userOrgId).subscribe({
       next: (response) => { this.calendars = (response as any).attributes || []; },
       error: () => { this.calendars = []; }
     });
@@ -84,14 +89,16 @@ export class PlantComponent implements OnInit {
   }
 
   loadPlantList(): void {
-    this.plantService.getAllPlants().subscribe({
+    this.error = null;
+    this.plantService.getAllPlants(this.userOrgId).subscribe({
       next: (result) => {
         this.plants = (result as any).attributes || [];
         this.searchValue = '';
         this.filterBySearch();
         this.currentPage = 0; // Reset to first page
       },
-      error: (err) => {
+      error: (err) => {        
+        this.error = err.error?.description || 'Failed to load plants. Please try again.';
         console.error('Failed to load plants:', err);
       }
     });
@@ -100,6 +107,10 @@ export class PlantComponent implements OnInit {
   cancelEdit(): void {
     this.resetForm();
     this.activeTab = 'list';  
+  }
+
+  backToHome(): void {
+    this.router.navigate(['/settings']);
   }
 
   selectTab(tab: 'create' | 'list'): void {
@@ -157,6 +168,7 @@ export class PlantComponent implements OnInit {
       plantName: this.plantForm.value.plantName,
       countryId: Number(this.plantForm.value.countryId),
       calendarId: Number(this.plantForm.value.calendarId),
+      companyId: Number(localStorage.getItem('userOrgId') || 0),
       createdBy: !this.isEditMode ? localStorage.getItem('userRole') || '' : '',
       updatedBy: this.isEditMode ? localStorage.getItem('userRole') || '' : ''
     };

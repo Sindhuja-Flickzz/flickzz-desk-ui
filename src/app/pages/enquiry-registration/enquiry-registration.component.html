@@ -41,7 +41,7 @@
     <div class="form-group">
       <label for="orgName">Organisation Name *</label>
       <input id="orgName" type="text" formControlName="orgName" />
-      <span *ngIf="orgNameControl?.touched && orgNameControl?.hasError('required')" class="error-text">
+      <span *ngIf="orgNameControl?.touched && orgNameControl?.invalid" class="error-text">
         Organisation Name is required
       </span>
     </div>
