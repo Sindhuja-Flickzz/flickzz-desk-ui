@@ -1,4 +1,4 @@
-<div class="app-shell" [class.collapsed]="isSidebarCollapsed" [class.menu-open]="isMobileMenuOpen">
+<div class="app-shell" [class.collapsed]="isSidebarCollapsed" [class.menu-open]="isMobileMenuOpen" [class.dark-theme]="(themeService.isDarkMode$ | async)">
  
 
   <div class="main">
@@ -17,7 +17,8 @@
       </button>
       <div class="page-title">{{ getActivePageTitle() }}</div>
       <div class="topbar-actions">
-        <button class="logout" *ngIf="isLoggedIn()" (click)="logout()">Logout</button>
+        <!-- <button class="logout" *ngIf="isLoggedIn()" (click)="logout()">Logout</button> -->
+        <app-profile-icon *ngIf="isLoggedIn()"></app-profile-icon>
       </div>
     </header>
 

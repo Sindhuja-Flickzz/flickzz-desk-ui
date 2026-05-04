@@ -66,6 +66,7 @@ export class CalendarComponent implements OnInit {
     this.initializeForm();
     this.loadCalendarTypes();
     this.configurePageModeFromParams();
+    this.calendarForm.patchValue({ 'timezone': ''});
   }
 
   private configurePageModeFromParams(): void {
@@ -181,7 +182,7 @@ export class CalendarComponent implements OnInit {
       validTo: this.dateUtils.formatToYYYYMMDD(new Date(calendar.validTo)),
       timeFrom: calendar.workFrom,
       timeTo: calendar.workTo,
-      timezone: calendar.timezone
+      timezone: calendar.timezone ? calendar.timezone : ''
     });
 
     // Set working days checkboxes

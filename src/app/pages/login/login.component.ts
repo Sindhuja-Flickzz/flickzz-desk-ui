@@ -155,13 +155,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     if (Object.keys(this.formError).length > 0) {
       return;
     }
-
-    // const payload = {
-    //   username: this.resetPasswordRequest.username,
-    //   oldPassword: this.registerLoginRequest.password,
-    //   newPassword: this.resetPasswordRequest.newPassword
-    // };
-
+    
     this.registerLoginRequest = {
       ...this.registerLoginRequest,
       email: this.resetPasswordRequest.username,

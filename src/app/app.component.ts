@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit, HostListener } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthenticationService } from './service/authentication.service';
+import { ThemeService } from './service/theme.service';
 import { MenuItem } from './models/menu';
 import { MENU_INFO, APP_CONSTANTS } from './data/app_constants';
 
@@ -58,7 +59,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private authService: AuthenticationService
+    private authService: AuthenticationService,
+    public themeService: ThemeService
   ) {}
 
   ngOnInit() {

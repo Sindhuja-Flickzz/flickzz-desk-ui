@@ -8,7 +8,7 @@ import { Router } from '@angular/router';
 })
 export class SettingsComponent {
   tiles = [
-    { title: 'Company', route: '/company/requestor' },
+    { title: 'Company', route: '/company' },
     { title: 'Plant', route: '/plant' },
     { title: 'Calendar', route: '/calendar' },
     { title: 'Skills', route: '/skill' },

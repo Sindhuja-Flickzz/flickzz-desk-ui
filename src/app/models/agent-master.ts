@@ -9,7 +9,8 @@ export interface AgentRequest {
   agentName: string;
   mailId: string;
   accessId: string;
-  phone: string;
+  phoneCode: string;
+  phoneNumber: string;  
   orgId: number;
   skills: SkillMaster[];
   calendarId: number;
@@ -46,9 +47,4 @@ export interface CountryMasterVO {
   countryId: number;
   countryName: string;
   isoCode: string;
-  isActive: boolean;
-  createdBy: string;
-  updatedBy: string;
-  createdAt: string; // ISO date string
-  updatedAt: string; // ISO date string
 }

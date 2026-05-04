@@ -99,15 +99,39 @@
     <button type="button" class="cancel-btn" (click)="cancelRegistration()">Cancel</button>
   </form>
 </div>
-
 <div class="success-screen" *ngIf="registrationSuccess">
-  <div class="celebration">
-    <div class="cracker cracker-left"></div>
-    <div class="cracker cracker-right"></div>
+    <div class="success-card"> 
+      <div class="logo-wrapper">
+        <img src="assets/logo_trans.png" alt="Logo" class="logo" />
+      </div>
+      <div class="text-content">
+        <h2>FlickDesk enquiry registration successful</h2>
+        <p>Please verify your email within 3 hours to proceed further.</p>
+      </div>
+    </div>
+    <div class="confetti">
+      <div class="confetti-piece" *ngFor="let confetti of confettiPieces" [ngStyle]="{
+        'background-color': confetti.color,
+        'left.%': confetti.left,
+        'animation-delay': confetti.delay + 's'
+      }">
+    </div>
+</div>
+<!-- <div class="success-container" *ngIf="registrationSuccess">
+
+  <div class="logo-wrapper">
+    <img src="assets/logo_trans.png" class="logo" />
   </div>
-  <div class="success-card">
+
+  <div class="text-content">
     <h2>FlickDesk enquiry registration successful</h2>
     <p>Please verify your email within 3 hours to proceed further.</p>
-    <!-- <div class="success-message">{{ successMessage }}</div> -->
   </div>
-</div>
+  <div class="confetti">
+    <div class="confetti-piece" *ngFor="let confetti of confettiPieces" [ngStyle]="{
+      'background-color': confetti.color,
+      'left.%': confetti.left,
+      'animation-delay': confetti.delay + 's'
+    }">
+  </div>
+</div> -->

@@ -89,6 +89,18 @@
     }
   }
 
+  .field-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+
+    .field {
+      flex: 1;
+      min-width: 180px;
+    }
+  }
+
   h3 {
     color: #1d326d;
     margin-bottom: 15px;

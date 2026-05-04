@@ -1,3 +1,5 @@
+import { CityMaster } from "./city-master";
+
 export interface CountryMaster {
   countryId: number;
   countryName: string;
@@ -14,8 +16,12 @@ export interface CompanyMaster {
   registeredNumber: string;
   uid: string;
   country: CountryMaster;
+  state: StateMaster;
+  city: CityMaster;
+  addressLine1: string;
+  addressLine2: string;
+  pinCode: string;
   employeeSize: number;
-  address: string;
   mail: string;
   createdBy: string;
   updatedBy: string;
@@ -40,14 +46,29 @@ export interface EnquiryCompanyVO {
   companyId?: number;
   uid: string;
   companyName: string;
-  address?: string;
+  country?: CountryMaster;
+  state: StateMaster;
+  city: CityMaster;
+  pinCode: string;
+  addressLine1: string;
+  addressLine2?: string;
   mail?: string;
   employeeSize?: number;
+  phoneCode?: string;
+  registeredNumber: string;
 }
 
 export interface EnquiryCountryVO {
   countryId: number;
   registeredNumber: string;
+  isoCode: string;
+  phoneCode: string;
+}
+
+export interface StateMaster {
+  stateId: number;
+  stateName: string;
+  countryId: number;
 }
 
 export interface CompanyRequest {
@@ -56,7 +77,12 @@ export interface CompanyRequest {
   registeredNumber: string;
   uid: string;
   countryId: number;
-  address: string;
+  address?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  stateId?: number;
+  cityId?: number;
+  pinCode?: string;
   employeeSize: number;
   mail: string;
   createdBy: string;

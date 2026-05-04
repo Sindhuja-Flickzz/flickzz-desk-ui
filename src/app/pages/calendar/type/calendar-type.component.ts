@@ -44,7 +44,7 @@ export class CalendarTypeComponent implements OnInit {
     private dialog: MatDialog,
     private router: Router  ) {
     this.calendarTypeForm = this.fb.group({
-      typeName: ['', [Validators.required, Validators.pattern(this.alphanumericPattern)]]
+      typeName: ['', Validators.required]
     });
   }
 

@@ -45,6 +45,8 @@ import { NumberRangeComponent } from './pages/number-range/number-range.componen
 import { VerifyComponent } from './pages/verify/verify.component';
 import { EnquiryRegistrationComponent } from './pages/enquiry-registration/enquiry-registration.component';
 import { SettingsComponent } from './pages/settings/settings.component';
+import { ProfileIconComponent } from './shared/profile-icon/profile-icon.component';
+import { ProfileComponent } from './pages/profile/profile.component';
 
 @NgModule({
   declarations: [
@@ -68,7 +70,9 @@ import { SettingsComponent } from './pages/settings/settings.component';
     NumberRangeComponent,
     VerifyComponent,
     EnquiryRegistrationComponent,
-    SettingsComponent
+    SettingsComponent,
+    ProfileIconComponent,
+    ProfileComponent
   ],
   imports: [
     BrowserModule,

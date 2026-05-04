@@ -4,11 +4,6 @@ export interface CountryMasterVO {
   countryId: number;
   countryName: string;
   isoCode: string;
-  isActive: boolean;
-  createdBy: string;
-  updatedBy: string;
-  createdAt: string; // ISO date string
-  updatedAt: string; // ISO date string
 }
 
 export interface PlantMaster {

@@ -78,7 +78,7 @@
             <td>{{ impact.impactCode }}</td>
             <td>{{ impact.impactLevel }}</td>
             <td>{{ impact.slaMultiplier | number:'1.2-2' }}</td>
-            <td>{{ impact.organization?.companyName }}</td>
+            <td>{{ impact.organization.companyName }}</td>
             <td class="action-buttons">
               <button type="button" (click)="onViewImpact(impact)"><mat-icon>edit</mat-icon></button>
               <button type="button" (click)="onDeleteImpact(impact)"><mat-icon>delete</mat-icon></button>

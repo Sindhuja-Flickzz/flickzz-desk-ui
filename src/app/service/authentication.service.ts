@@ -67,4 +67,23 @@ export class AuthenticationService {
       { refreshToken }
     );
   }
+
+  getEnquiryInfo(userEmail: string): Observable<FlickzzDeskResponse> {
+    return this.http.get<FlickzzDeskResponse>(
+      `${APP_CONSTANTS.API_BASE_URL}/enquiry/${userEmail}`
+    );
+  }
+
+  getUserInfo(userEmail: string): Observable<FlickzzDeskResponse> {
+    return this.http.get<FlickzzDeskResponse>(
+      `${APP_CONSTANTS.API_BASE_URL}/user/info/${userEmail}`
+    );
+  }
+
+  updateProfile(profileData: any): Observable<FlickzzDeskResponse> {
+    return this.http.post<FlickzzDeskResponse>(
+      `${APP_CONSTANTS.API_BASE_URL}/profile/update`,
+      profileData
+    );
+  }
 }

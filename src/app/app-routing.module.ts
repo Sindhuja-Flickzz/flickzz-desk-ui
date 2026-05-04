@@ -15,6 +15,7 @@ import {NumberRangeComponent} from "./pages/number-range/number-range.component"
 import {VerifyComponent} from './pages/verify/verify.component';
 import {EnquiryRegistrationComponent} from './pages/enquiry-registration/enquiry-registration.component';
 import {SettingsComponent} from './pages/settings/settings.component';
+import {ProfileComponent} from './pages/profile/profile.component';
 import {authGuard} from "./service/auth/auth.guard";
 
 const routes: Routes = [
@@ -35,6 +36,11 @@ const routes: Routes = [
   {
     path: 'settings',
     component: SettingsComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'profile',
+    component: ProfileComponent,
     canActivate: [authGuard]
   },
   {

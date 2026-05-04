@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthenticationService } from '../../service/authentication.service';
 import { EnquiryRequest } from '../../models/enquiry-request';
@@ -18,6 +18,12 @@ export class VerifyComponent implements OnInit {
   message = '';
   isSuccess = false;
   showForm = false;
+  showPassword = false;
+  showNewPassword = false;
+  showConfirmPassword = false;
+  text = 'FlickzzDesk';
+  letters = this.text.split('');
+  showSuccessPage = false;
 
   constructor(
     private fb: FormBuilder,
@@ -26,11 +32,24 @@ export class VerifyComponent implements OnInit {
     private router: Router,
   ) {
     this.verifyForm = this.fb.group({
-      password: ['', [Validators.required]]
-    });
+      newPassword: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', [Validators.required, Validators.minLength(8)]]
+    }, { validators: this.passwordMatchValidator });
+  }
+
+  passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+    const newPassword = control.get('newPassword');
+    const confirmPassword = control.get('confirmPassword');
+
+    if (!newPassword || !confirmPassword) {
+      return null;
+    }
+
+    return newPassword.value === confirmPassword.value ? null : { passwordMismatch: true };
   }
 
   ngOnInit(): void {
+        // this.showSuccessPage = true;
     this.route.queryParamMap.subscribe(params => {
       this.username = params.get('username') || '';
       this.token = params.get('token') || '';
@@ -44,8 +63,28 @@ export class VerifyComponent implements OnInit {
     });
   }
 
-  get passwordControl() {
-    return this.verifyForm.get('password');
+  // get passwordControl() {
+  //   return this.verifyForm.get('password');
+  // }
+
+  get newPasswordControl() {
+    return this.verifyForm.get('newPassword');
+  }
+
+  get confirmPasswordControl() {
+    return this.verifyForm.get('confirmPassword');
+  }
+
+  toggleShowPassword(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleShowNewPassword(): void {
+    this.showNewPassword = !this.showNewPassword;
+  }
+
+  toggleShowConfirmPassword(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
   }
 
   validateToken(token: string): void {
@@ -88,13 +127,16 @@ export class VerifyComponent implements OnInit {
 
     const payload: EnquiryRequest = {
       token: this.token,
-      password: this.passwordControl?.value
+      password: this.newPasswordControl?.value,
+      // newPassword: this.newPasswordControl?.value
     };
 
     this.authService.submitSecure(payload).subscribe({
       next: response => {
+        this.showSuccessPage = true;
         this.loading = false;
         this.isSuccess = true;
+        this.showForm = false;
         this.message = 'Secure access confirmed. \n You will be redirected to the login page in 3 seconds. \n Please login to FlickzzDesk with your credentials.';
         this.verifyForm.disable({ emitEvent: false });
         setTimeout(() => {

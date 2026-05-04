@@ -8,9 +8,6 @@ export interface BusinessService {
   serviceId: number;
   serviceName: string;
   serviceOfferings: ServiceOffering[];
-  isActive?: boolean;
-  createdBy?: string;
-  updatedBy?: string;
 }
 
 export interface BusinessServiceRequest {

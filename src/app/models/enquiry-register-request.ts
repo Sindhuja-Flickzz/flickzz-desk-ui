@@ -4,7 +4,8 @@ export interface EnquiryRegisterRequest {
   lastName: string;
   email: string;
   orgName: string;
-  phone: string;
+  phoneCode: string;
+  phoneNumber: string;
   countryId: number;
   employeeSize: number;
 }

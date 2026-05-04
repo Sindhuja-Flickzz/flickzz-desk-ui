@@ -1,10 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { PageEvent } from '@angular/material/paginator';
-import { forkJoin } from 'rxjs';
 import { AgentService } from '../../service/agent.service';
-import { AgentMaster, AgentRequest, AgentSkillsMapping } from '../../models/agent-master';
+import { forkJoin } from 'rxjs';
+import { AgentMaster, AgentRequest } from '../../models/agent-master';
 import { CalendarMasterVO } from '../../models/calendar-master';
 import { CompanyMaster, CountryMaster } from '../../models/company-master';
 import { SkillMaster } from '../../models/skill-master';
@@ -56,6 +56,7 @@ export class AgentComponent implements OnInit {
   pageSizeOptions = [5, 10, 25, 50];
   totalRecords = 0;
   currentPage = 0;
+  enquiryUser: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -69,7 +70,7 @@ export class AgentComponent implements OnInit {
       accessId: ['', Validators.required],
       countryCode: ['', Validators.required],
       phoneNumber: ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
-      orgId: [null, Validators.required],
+      // orgId: [null, Validators.required],
       calendarId: [null, Validators.required],
       countryId: [null, Validators.required],
       cityId: [null, Validators.required],
@@ -98,6 +99,7 @@ export class AgentComponent implements OnInit {
         const country = this.getCountryByCode(countryCode);
         if (country) {
           this.onCountrySelect(country);
+          this.selectedCountry = country;
         }
       }
     });
@@ -182,6 +184,74 @@ export class AgentComponent implements OnInit {
          this.agentForm.patchValue({ agentName: '' });
         this.formError['agentName'] = 'Agent Name already exists';
       } 
+    });
+  }
+
+  onMailIdChange(): void {
+    const email = this.agentForm.get('mailId')?.value?.trim();
+    this.formError['mailId'] = null;
+
+    if (!email) {
+      return;
+    }
+
+    this.agentService.getEnquiryByEmail(email).subscribe({
+      next: (enquiryData) => {
+        this.enquiryUser = true;
+        enquiryData = (enquiryData as any).attributes || enquiryData;
+        if (enquiryData) {
+          if (enquiryData.company?.country) {
+            this.agentForm.patchValue({ countryId: enquiryData.company?.country?.countryId });
+          }
+          if (enquiryData.company?.country) {
+            this.onLocationCountrySelect(enquiryData.company?.country?.countryId, enquiryData.company?.city?.cityId);
+          }
+          this.agentForm.patchValue({ agentName: enquiryData.company?.companyName });
+
+          if (enquiryData.company?.country) {
+            const country = this.getCountryByCode(enquiryData.company?.country?.isoCode);
+            if (country) {
+              const fullPhone = enquiryData.company?.registeredNumber || '';
+              const phoneCode = enquiryData.company?.phoneCode || '';
+              let phoneNumber = fullPhone;
+              if (phoneCode && fullPhone.startsWith(phoneCode)) {
+                phoneNumber = fullPhone.substring(phoneCode.length);
+              }
+              this.agentForm.patchValue({ phoneNumber });
+            }
+          }
+        }
+      },
+      error: () => {
+        if(this.enquiryUser) {
+          this.resetForm();
+          this.agentForm.patchValue({ mailId: email });
+        }
+        this.enquiryUser = false;
+        console.log(`No enquiry found for email ${email} - proceeding with blank form`);
+      }
+    });
+  }
+
+  loadAllCountries(): void {
+    this.agentService.getAllCountries().subscribe({
+      next: (response) => {
+        this.countries = (response as any).attributes || response || [];
+      },
+      error: () => {
+        this.countries = [];
+      }
+    });
+  }
+
+  loadAllCities(): void {
+    this.agentService.getAllCities().subscribe({
+      next: (response) => {
+        this.cities = (response as any).attributes || response || [];
+      },
+      error: () => {
+        this.cities = [];
+      }
     });
   }
 
@@ -424,8 +494,10 @@ export class AgentComponent implements OnInit {
       agentName: this.agentForm.value.agentName,
       mailId: this.agentForm.value.mailId,
       accessId: this.agentForm.value.accessId,
-      phone: this.selectedCountry ? `${this.selectedCountry.phoneCode}${this.agentForm.value.phoneNumber}` : this.agentForm.value.phoneNumber,
-      orgId: Number(this.agentForm.value.orgId),
+      phoneCode: this.selectedCountry ? this.selectedCountry.phoneCode : '',
+      phoneNumber: this.agentForm.value.phoneNumber,
+      // phone: this.selectedCountry ? `${this.selectedCountry.phoneCode}${this.agentForm.value.phoneNumber}` : this.agentForm.value.phoneNumber,
+      orgId: Number(this.userOrgId),
       skills,
       calendarId: Number(this.agentForm.value.calendarId),
       countryId: Number(this.agentForm.value.countryId),
@@ -491,7 +563,7 @@ export class AgentComponent implements OnInit {
         currentValue.accessId !== this.originalFormValue.accessId ||
         currentValue.countryCode !== this.originalFormValue.countryCode ||
         currentValue.phoneNumber !== this.originalFormValue.phoneNumber ||
-        currentValue.orgId !== this.originalFormValue.orgId ||
+        // currentValue.orgId !== this.originalFormValue.orgId ||
         currentValue.calendarId !== this.originalFormValue.calendarId ||
         currentValue.countryId !== this.originalFormValue.countryId ||
         currentValue.cityId !== this.originalFormValue.cityId ||
@@ -550,7 +622,7 @@ export class AgentComponent implements OnInit {
           mailId: agent.mailId,
           accessId: agent.accessId,
           phone: agent.phone,
-          orgId: agent.organization?.companyId || null,
+          // orgId: agent.organization?.companyId || null,
           calendarId: agent.calendar?.calendarId || null,
           countryId: agent.country?.countryId || null,
           cityId: agent.city?.cityId || null,
@@ -649,7 +721,7 @@ export class AgentComponent implements OnInit {
       return;
     }
     this.agentForm.patchValue({ 
-    orgId: '',
+    // orgId: '',
     calendarId: ''
     });
   }
@@ -742,7 +814,7 @@ export class AgentComponent implements OnInit {
   onLocationCountrySelect(countryId: number, selectedCityId?: number): void {
     this.clearLocalTimeInterval();
     this.selectedTimezone = null;
-    this.agentService.getCityList(countryId).subscribe({
+    this.agentService.getCityListByCountry(countryId).subscribe({
       next: (response) => {
         this.cities = (response as any).attributes || [];
         this.selectedCity = null;
@@ -800,7 +872,6 @@ export class AgentComponent implements OnInit {
         minute: '2-digit',
         second: '2-digit'
       });
-      console.log('Updated local time:', this.localTime);
     } catch (error) {
       console.error('Error getting local time:', error);
       this.localTime = '';

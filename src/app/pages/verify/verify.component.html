@@ -1,5 +1,5 @@
 <div class="verify-shell">
-  <div class="verify-card">
+  <div class="verify-card" *ngIf="!showSuccessPage">
     <img src="assets/logo.png" alt="Company Logo" class="verify-logo" />
     <h2>Secure Access</h2>
     <p class="username-label">Username: <strong>{{ username || 'Unknown user' }}</strong></p>
@@ -10,17 +10,63 @@
 
     <form [formGroup]="verifyForm" (ngSubmit)="onSubmit()" class="verify-form" *ngIf="showForm">
       <div class="form-field">
-        <label for="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          formControlName="password"
-          [disabled]="invalidLink || loading"
-          autocomplete="new-password"
-        />
-        <div class="field-error" *ngIf="passwordControl?.touched && passwordControl?.hasError('required')">
-          Password is required.
+        <label for="newPassword">Create Password</label>
+        <div class="password-input-wrapper">
+          <input
+            id="newPassword"
+            [type]="showNewPassword ? 'text' : 'password'"
+            formControlName="newPassword"
+            [disabled]="invalidLink || loading"
+            autocomplete="new-password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="toggleShowNewPassword()"
+            [disabled]="invalidLink || loading"
+            aria-label="Toggle password visibility"
+          >
+            <mat-icon>{{ showNewPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
         </div>
+        <div class="field-error" *ngIf="newPasswordControl?.touched && newPasswordControl?.hasError('required')">
+          New password is required.
+        </div>
+        <div class="field-error" *ngIf="newPasswordControl?.touched && newPasswordControl?.hasError('minlength')">
+          Password must be at least 8 characters long.
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="confirmPassword">Confirm Password</label>
+        <div class="password-input-wrapper">
+          <input
+            id="confirmPassword"
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            formControlName="confirmPassword"
+            [disabled]="invalidLink || loading"
+            autocomplete="new-password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="toggleShowConfirmPassword()"
+            [disabled]="invalidLink || loading"
+            aria-label="Toggle password visibility"
+          >
+            <mat-icon>{{ showNewPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+        </div>
+        <div class="field-error" *ngIf="confirmPasswordControl?.touched && confirmPasswordControl?.hasError('required')">
+          Confirm password is required.
+        </div>
+        <div class="field-error" *ngIf="confirmPasswordControl?.touched && confirmPasswordControl?.hasError('minlength')">
+          Password must be at least 8 characters long.
+        </div>
+      </div>
+
+      <div class="field-error" *ngIf="verifyForm.hasError('passwordMismatch') && newPasswordControl?.touched && confirmPasswordControl?.touched">
+        New password and confirm password do not match.
       </div>
 
       <div class="actions">
@@ -31,5 +77,15 @@
         <mat-progress-spinner diameter="36" mode="indeterminate"></mat-progress-spinner>
       </div>
     </form>
+  </div>
+  <div class="loading-container" *ngIf="showSuccessPage">
+    <div class="brand">
+      <span *ngFor="let letter of letters; let i = index"
+            [style.animationDelay]="i * 0.08 + 's'">
+        {{ letter }}
+      </span>
+    </div>
+
+    <p class="subtitle">Setting things up for you...</p>
   </div>
 </div>

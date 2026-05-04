@@ -21,6 +21,7 @@ export class EnquiryRegistrationComponent implements OnInit {
   loading = false;
   registrationSuccess = false;
   successMessage = '';
+  confettiPieces: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -41,9 +42,23 @@ export class EnquiryRegistrationComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Generate confetti pieces
+    this.confettiPieces = Array.from({ length: 30 }).map(() => ({
+      color: this.randomColor(),
+      left: Math.random() * 100,
+      delay: Math.random() * 5
+    }));
+    
+    // setTimeout(() => {
+    //   this.registrationSuccess = true;
+    // }, 1500);
     this.loadCountries();
   }
 
+  randomColor(): string {
+    const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1', '#5f27cd'];
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
   get firstNameControl() {
     return this.registrationForm.get('firstName');
   }
@@ -139,7 +154,8 @@ export class EnquiryRegistrationComponent implements OnInit {
       lastName: this.registrationForm.value.lastName,
       email: this.registrationForm.value.email,
       orgName: this.registrationForm.value.orgName,
-      phone: `${this.countryCode}${this.registrationForm.value.phoneNumber}`,
+      phoneCode: this.countryCode,
+      phoneNumber: this.registrationForm.value.phoneNumber,
       countryId: Number(this.registrationForm.value.countryId),
       employeeSize: Number(this.registrationForm.value.employeeSize)
     };

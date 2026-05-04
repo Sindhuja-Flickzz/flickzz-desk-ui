@@ -11,7 +11,6 @@ export interface CalendarMasterVO {
   workFrom: string; // Time format HH:MM
   workTo: string; // Time format HH:MM
   timezone: string;
-  isActive: boolean;
 }
 
 export interface WorkdayVO {

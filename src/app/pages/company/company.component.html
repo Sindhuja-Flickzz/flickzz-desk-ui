@@ -8,7 +8,7 @@
 
       <div class="field">
         <label>Universal Id</label>
-        <input type="text" formControlName="uid" readonly />
+        <input type="text" formControlName="uid" placeholder="Universal ID" readonly />
       </div>
 
       <div class="field">
@@ -19,27 +19,56 @@
 
       <div class="field">
         <label>Registered Number</label>
-        <input type="text" formControlName="registeredNumber" readonly />
+        <input type="text" formControlName="registeredNumber" placeholder="Registered number" readonly />
       </div>
 
       <div class="field">
-        <label>Country</label>
-        <select formControlName="countryId">
-          <option value="" disabled>Select country</option>
-          <option *ngFor="let c of countries" [value]="c.countryId">{{ c.countryName }}</option>
-        </select>
-        <span *ngIf="companyForm.get('countryId')?.invalid && companyForm.get('countryId')?.touched" class="error-text">Country is required.</span>
+        <label>Address Line 1</label>
+        <input type="text" formControlName="addressLine1" placeholder="Enter address line 1" />
+        <span *ngIf="companyForm.get('addressLine1')?.invalid && companyForm.get('addressLine1')?.touched" class="error-text">Address Line 1 is required.</span>
       </div>
 
       <div class="field">
-        <label>Address</label>
-        <input type="text" formControlName="address" placeholder="Enter address" />
-        <span *ngIf="companyForm.get('address')?.invalid && companyForm.get('address')?.touched" class="error-text">Address is required.</span>
+        <label>Address Line 2</label>
+        <input type="text" formControlName="addressLine2" placeholder="Enter address line 2" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Country</label>
+          <select formControlName="countryId" title="Select country">
+            <option value="" disabled>Select country</option>
+            <option *ngFor="let c of countries" [value]="c.countryId">{{ c.countryName }}</option>
+          </select>
+          <span *ngIf="companyForm.get('countryId')?.invalid && companyForm.get('countryId')?.touched" class="error-text">Country is required.</span>
+        </div>
+
+        <div class="field">
+          <label>State</label>
+          <select formControlName="state" title="Select state" [disabled]="states.length === 0" (change)="onStateSelect($any($event.target).value)">
+            <option value="" disabled>Select state</option>
+            <option *ngFor="let state of states" [value]="state.stateId">{{ state.stateName }}</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>City</label>
+          <select formControlName="city" title="Select city" [disabled]="cities.length === 0">
+            <option value="" disabled>Select city</option>
+            <option *ngFor="let city of cities" [value]="city.cityId">{{ city.cityName }}</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Pincode</label>
+          <input type="text" formControlName="pincode" placeholder="Enter pincode" />
+          <span *ngIf="companyForm.get('pincode')?.invalid && companyForm.get('pincode')?.touched" class="error-text">Pincode must be numeric.</span>
+        </div>
       </div>
 
       <div class="field">
         <label>Mail</label>
-        <input type="email" formControlName="mail" readonly />
+        <input type="email" formControlName="mail" placeholder="Email address" readonly />
       </div>
 
       <div class="field">
