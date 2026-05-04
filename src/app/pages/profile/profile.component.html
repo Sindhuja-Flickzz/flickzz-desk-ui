@@ -1,0 +1,306 @@
+<div class="profile-container">
+  <!-- Header with Edit Button -->
+  <div class="profile-header">
+    <button class="back-btn" (click)="goBack()" aria-label="Go back">
+      <span class="icon">←</span> Back
+    </button>
+    <h1 class="page-title">User Profile</h1>
+    <button
+      *ngIf="!isEditing"
+      class="edit-btn"
+      (click)="startEditing()"
+      aria-label="Edit profile"
+      [disabled]="isLoading">
+      <span class="icon">✏️</span>
+    </button>
+    <div *ngIf="isEditing" class="edit-actions">
+      <button class="edit-btn" (click)="saveProfile()" [disabled]="isSaving || profileForm.invalid">
+        <span class="icon" *ngIf="!isSaving">💾</span>
+        <!-- <span *ngIf="isSaving">Saving...</span>
+        <span *ngIf="!isSaving">Save</span> -->
+      </button>
+      <button class="cancel-btn" (click)="cancelEditing()" [disabled]="isSaving">
+        <span class="icon">✕</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="errorMessage" class="alert alert-error" role="alert">
+    <span class="icon">⚠️</span>
+    <span>{{ errorMessage }}</span>
+  </div>
+  <div *ngIf="successMessage" class="alert alert-success" role="alert">
+    <span class="icon">✓</span>
+    <span>{{ successMessage }}</span>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading profile information...</p>
+  </div>
+
+  <!-- Profile Form -->
+  <div *ngIf="!isLoading && profileData" class="profile-form-container">
+    <form [formGroup]="profileForm" class="profile-form">
+
+      <!-- Basic Information Section -->
+      <div class="form-section">
+        <h2 class="section-title">Basic Information</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">{{ getFieldLabel('firstName') }} *</label>
+            <input
+              id="firstName"
+              type="text"
+              formControlName="firstName"
+              [readonly]="isFieldReadOnly('firstName') || !isEditing"
+              [class.readonly]="isFieldReadOnly('firstName')"
+              placeholder="Enter first name">
+            <span *ngIf="profileForm.get('firstName')?.hasError('required') && isEditing" class="error-text">
+              First name is required
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="middleName">{{ getFieldLabel('middleName') }} </label>
+            <input
+              id="middleName"
+              type="text"
+              formControlName="middleName"
+              [readonly]="isFieldReadOnly('middleName') || !isEditing"
+              [class.readonly]="isFieldReadOnly('middleName')"
+              placeholder="Enter middle name">
+            <span *ngIf="profileForm.get('middleName')?.hasError('required') && isEditing" class="error-text">
+              Middle name is required
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">{{ getFieldLabel('lastName') }} </label>
+            <input
+              id="lastName"
+              type="text"
+              formControlName="lastName"
+              [readonly]="isFieldReadOnly('lastName') || !isEditing"
+              [class.readonly]="isFieldReadOnly('lastName')"
+              placeholder="Enter last name">
+            <span *ngIf="profileForm.get('lastName')?.hasError('required') && isEditing" class="error-text">
+              Last name is required
+            </span>
+          </div>
+        <!-- </div> -->
+
+        <!-- <div class="form-row"> -->
+          <div class="form-group">
+            <label for="email">{{ getFieldLabel('email') }} *</label>
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              readonly
+              class="readonly">
+          </div>
+
+          <div class="form-group" *ngIf="shouldShowUID()">
+            <label for="uid">{{ getFieldLabel('uid') }}</label>
+            <input
+              id="uid"
+              type="text"
+              formControlName="uid"
+              readonly
+              class="readonly">
+          </div>
+
+          <div class="form-group" *ngIf="shouldShowAccessID()">
+            <label for="accessId">{{ getFieldLabel('accessId') }}</label>
+            <input
+              id="accessId"
+              type="text"
+              formControlName="accessId"
+              readonly
+              class="readonly">
+          </div>
+        <!-- </div> -->
+
+        <!-- <div class="form-row"> -->
+          <div class="form-group">
+            <label for="organizationName">{{ getFieldLabel('organizationName') }}</label>
+            <input
+              id="organizationName"
+              type="text"
+              formControlName="organizationName"
+              readonly
+              class="readonly">
+          </div>
+
+          <div class="form-group">
+            <label for="role">{{ getFieldLabel('role') }} *</label>
+            <input
+              id="role"
+              type="text"
+              formControlName="role"
+              readonly
+              class="readonly">
+          </div>
+        <!-- </div> -->
+
+        <!-- <div class="form-row"> -->
+          <div class="form-group">
+            <label for="registeredNumber">{{ getFieldLabel('registeredNumber') }}*</label>
+            <input
+              id="registeredNumber"
+              type="text"
+              formControlName="registeredNumber"
+              readonly
+              class="readonly">
+          </div>
+
+          <div class="form-group">
+            <label for="country">{{ getFieldLabel('country') }}</label>
+            <select
+              id="country"
+              formControlName="country"
+              [disabled]="!isEditing"
+              [class.readonly]="!isEditing">
+              <option value="">Select Country</option>
+              <option *ngFor="let country of countries" [value]="country.countryId">{{ country.countryName }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+    <div *ngIf="isAdminRole">
+        <div class="form-row">
+            <div class="form-group">
+            <label for="state">{{ getFieldLabel('state') }}</label>
+            <select
+                id="state"
+                formControlName="state"
+                [disabled]="!isEditing"
+                [class.readonly]="!isEditing">
+                <option value="">Select State</option>
+                <option *ngFor="let state of states" [value]="state.stateId">{{ state.stateName }}</option>
+            </select>
+            </div>
+
+            <div class="form-group">
+            <label for="city">{{ getFieldLabel('city') }}</label>
+            <select
+                id="city"
+                formControlName="city"
+                [disabled]="!isEditing"
+                [class.readonly]="!isEditing">
+                <option value="">Select City</option>
+                <option *ngFor="let city of cities" [value]="city.cityId">{{ city.cityName }}</option>
+            </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+            <label for="addressLine1">{{ getFieldLabel('addressLine1') }}</label>
+            <input
+                id="addressLine1"
+                type="text"
+                formControlName="addressLine1"
+                [readonly]="!isEditing"
+                [class.readonly]="!isEditing"
+                placeholder="Enter address line 1">
+            </div>
+
+            <div class="form-group">
+            <label for="addressLine2">{{ getFieldLabel('addressLine2') }}</label>
+            <input
+                id="addressLine2"
+                type="text"
+                formControlName="addressLine2"
+                [readonly]="!isEditing"
+                [class.readonly]="!isEditing"
+                placeholder="Enter address line 2">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="pinCode">{{ getFieldLabel('pinCode') }}</label>
+                <input
+                    id="pinCode"
+                    type="text"
+                    formControlName="pinCode"
+                    [readonly]="!isEditing"
+                    [class.readonly]="!isEditing"
+                    placeholder="Enter pin code">
+                </div>
+
+                <div class="form-group">
+                <label for="employeeSize">{{ getFieldLabel('employeeSize') }}</label>
+                <input
+                    id="employeeSize"
+                    type="number"
+                    formControlName="employeeSize"
+                    [readonly]="!isEditing"
+                    [class.readonly]="!isEditing"
+                    placeholder="Enter employee size">
+                <span *ngIf="profileForm.get('employeeSize')?.hasError('pattern') && isEditing" class="error-text">
+                    Please enter a valid number
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="!isAdminRole">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="city">{{ getFieldLabel('city') }}</label>
+            <select
+              id="city"
+              formControlName="city"
+              [disabled]="!isEditing"
+              [class.readonly]="!isEditing">
+              <option value="">Select City</option>
+              <option *ngFor="let city of cities" [value]="city.cityId">{{ city.cityName }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="language">{{ getFieldLabel('language') }}</label>
+            <select
+              id="language"
+              formControlName="language"
+              [disabled]="!isEditing"
+              [class.readonly]="!isEditing">
+              <option value="">Select Language</option>
+              <option *ngFor="let language of languages" [value]="language.languageId">{{ language.languageName }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Skills Section -->
+        <div *ngIf="skillsData && skillsData.length > 0" class="skills-section">
+          <h3 class="subsection-title">Skillset Information</h3>
+          <div class="skills-table">
+            <div class="skills-header">
+              <div class="skill-col">Skill Name</div>
+              <div class="skill-col">Experience (Years)</div>
+              <div class="skill-col">Experience (Months)</div>
+            </div>
+            <div *ngFor="let skill of skillsData" class="skills-row">
+              <div class="skill-col">{{ skill.skillName }}</div>
+              <div class="skill-col">{{ skill.experienceYears }}</div>
+              <div class="skill-col">{{ skill.experienceMonths }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- No Data State -->
+  <div *ngIf="!isLoading && !profileData" class="no-data-state">
+    <p>No profile data available.</p>
+    <button class="back-btn" (click)="goBack()">Go Back</button>
+  </div>
+</div>

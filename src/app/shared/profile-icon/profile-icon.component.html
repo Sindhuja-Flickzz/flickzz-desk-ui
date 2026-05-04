@@ -1,0 +1,92 @@
+<div class="profile-container" [class.dropdown-open]="isDropdownOpen">
+  <!-- Profile Icon Button -->
+  <button
+    class="profile-button"
+    (click)="toggleDropdown()"
+    [attr.aria-expanded]="isDropdownOpen"
+    aria-label="User profile menu"
+    aria-haspopup="true">
+
+    <!-- Avatar -->
+    <div class="avatar" [style.background-color]="getAvatarColor()">
+      <span class="avatar-initials">{{ getInitials() }}</span>
+    </div>
+
+    <!-- Notification Badge -->
+    <div class="notification-badge" *ngIf="notificationCount > 0" [class.hidden]="isDropdownOpen">
+      <span class="badge-count">{{ notificationCount }}</span>
+    </div>
+  </button>
+
+  <!-- Dropdown Menu -->
+  <div class="dropdown-menu" *ngIf="isDropdownOpen" role="menu" aria-label="Profile menu">
+
+    <!-- User Info Section -->
+    <div class="user-info-section">
+      <div class="user-avatar-large" [style.background-color]="getAvatarColor()">
+        <span class="avatar-initials-large">{{ getInitials() }}</span>
+      </div>
+
+      <div class="user-details">
+        <div class="user-name" *ngIf="!isEditing">{{ userProfile.username }}</div>
+        <input
+          *ngIf="isEditing"
+          type="text"
+          class="edit-input"
+          [(ngModel)]="editProfile.username"
+          placeholder="Username">
+
+        <div class="user-meta">
+          <div class="user-uid">UID: {{ userProfile.uid }}</div>
+          <div class="user-role">{{ userProfile.role }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit/Save Actions -->
+    <div class="edit-actions" *ngIf="isEditing">
+      <button class="action-btn save-btn" (click)="saveProfile()" role="menuitem">
+        <i class="icon">✓</i> Save
+      </button>
+      <button class="action-btn cancel-btn" (click)="cancelEditing()" role="menuitem">
+        <i class="icon">✕</i> Cancel
+      </button>
+    </div>
+
+    <!-- Menu Items -->
+    <div class="menu-items">
+      <button class="menu-item" (click)="navigateToProfile()" role="menuitem" *ngIf="!isEditing">
+        <i class="icon">👤</i>
+        <span>Profile</span>
+        <i class="chevron">›</i>
+      </button>
+
+      <button class="menu-item" role="menuitem">
+        <i class="icon">🔔</i>
+        <span>Notifications</span>
+        <span class="notification-indicator" *ngIf="notificationCount > 0">{{ notificationCount }}</span>
+      </button>
+
+      <!-- <button class="menu-item" (click)="toggleDarkMode()" role="menuitem">
+        <i class="icon" [class]="isDarkMode ? '🌙' : '☀️'"></i>
+        <span>{{ isDarkMode ? 'Light Mode' : 'Dark Mode' }}</span>
+        <div class="toggle-switch">
+          <div class="toggle-slider" [class.active]="isDarkMode"></div>
+        </div>
+      </button> -->
+
+      <button class="menu-item" (click)="openSettings()" role="menuitem">
+        <i class="icon">⚙️</i>
+        <span>Settings</span>
+        <i class="chevron">›</i>
+      </button>
+
+      <div class="menu-divider"></div>
+
+      <button class="menu-item logout-item" (click)="logout()" role="menuitem">
+        <i class="icon">🚪</i>
+        <span>Logout</span>
+      </button>
+    </div>
+  </div>
+</div>
