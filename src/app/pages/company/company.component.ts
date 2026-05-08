@@ -88,7 +88,7 @@ export class CompanyComponent implements OnInit {
       }
     });
 
-    this.companyService.getEnquiryByUserEmail(userEmail).subscribe({
+    this.companyService.getCompanyInfoByUserEmail(userEmail).subscribe({
       next: (response) => {
         const enquiry = (response as any).attributes || response;
         this.patchEnquiryData(enquiry);

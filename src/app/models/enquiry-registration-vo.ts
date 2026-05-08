@@ -1,4 +1,5 @@
-import { CompanyMaster, CountryMaster } from './company-master';
+import { CityMaster } from './city-master';
+import { CompanyMaster, CountryMaster, StateMaster } from './company-master';
 
 export interface EnquiryRegistrationVO {
   enquiryId: number;
@@ -13,4 +14,6 @@ export interface EnquiryRegistrationVO {
   phoneCode: string;
   phoneNumber: string;
   country: CountryMaster;
+  state: StateMaster;
+  city: CityMaster
 }

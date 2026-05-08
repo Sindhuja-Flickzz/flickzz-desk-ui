@@ -80,10 +80,10 @@ export class AuthenticationService {
     );
   }
 
-  updateProfile(profileData: any): Observable<FlickzzDeskResponse> {
+  updateEnquiry(enquiryRegisterRequest: EnquiryRegisterRequest): Observable<FlickzzDeskResponse> {
     return this.http.post<FlickzzDeskResponse>(
-      `${APP_CONSTANTS.API_BASE_URL}/profile/update`,
-      profileData
+      `${APP_CONSTANTS.API_BASE_URL}/enquiry/update`,
+      enquiryRegisterRequest
     );
   }
 }

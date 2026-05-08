@@ -1,5 +1,6 @@
 import { CompanyMaster, CountryMaster } from './company-master';
 import { CityMaster, LanguageMaster } from './city-master';
+import { CalendarMasterVO } from './calendar-master';
 
 export interface AgentSkillMapping {
   agentSkillId: number;
@@ -18,7 +19,9 @@ export interface AgentMasterVO {
   agentName: string;
   mailId: string;
   accessId: string;
-  phone: string;
+  phoneCode: string;
+  phoneNumber: string;
+  calendar: CalendarMasterVO;
   organization: CompanyMaster
   agentSkillsMappings: AgentSkillMapping[];
 }

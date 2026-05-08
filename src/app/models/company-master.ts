@@ -37,8 +37,10 @@ export interface EnquiryRegistration {
   userRole: string;
   email: string;
   company: EnquiryCompanyVO;
-  phone: string;
+  phoneCode: string;
+  phoneNumber: string;
   country: EnquiryCountryVO;
+  city: CityMaster;
   employeeSize: number;
 }
 

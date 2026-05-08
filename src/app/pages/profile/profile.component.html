@@ -1,8 +1,8 @@
 <div class="profile-container">
   <!-- Header with Edit Button -->
   <div class="profile-header">
-    <button class="back-btn" (click)="goBack()" aria-label="Go back">
-      <span class="icon">←</span> Back
+    <button class="edit-btn" (click)="goBack()" aria-label="Go back">
+      <span class="icon">←</span>
     </button>
     <h1 class="page-title">User Profile</h1>
     <button
@@ -47,10 +47,28 @@
 
       <!-- Basic Information Section -->
       <div class="form-section">
-        <h2 class="section-title">Basic Information</h2>
+        <!-- <h2 class="section-title">Basic Information</h2> -->
 
         <div class="form-row">
-          <div class="form-group">
+          <div class="form-group" *ngIf="false">
+            <label for="agentId"></label>
+            <input
+              id="agentId"
+              type="text"
+              formControlName="agentId"
+              placeholder="Agent Id">
+          </div>
+
+          <div class="form-group" *ngIf="false">
+            <label for="enquiryId"></label>
+            <input
+              id="enquiryId"
+              type="text"
+              formControlName="enquiryId"
+              placeholder="Enquiry Id">
+          </div>
+
+          <div class="form-group" *ngIf="isAdminRole">
             <label for="firstName">{{ getFieldLabel('firstName') }} *</label>
             <input
               id="firstName"
@@ -64,7 +82,7 @@
             </span>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" *ngIf="isAdminRole">
             <label for="middleName">{{ getFieldLabel('middleName') }} </label>
             <input
               id="middleName"
@@ -78,7 +96,7 @@
             </span>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" *ngIf="isAdminRole">
             <label for="lastName">{{ getFieldLabel('lastName') }} </label>
             <input
               id="lastName"
@@ -91,9 +109,21 @@
               Last name is required
             </span>
           </div>
-        <!-- </div> -->
 
-        <!-- <div class="form-row"> -->
+        <div class="form-group" *ngIf="!isAdminRole">
+            <label for="agentName">{{ getFieldLabel('agentName') }} </label>
+            <input
+              id="agentName"
+              type="text"
+              formControlName="agentName"
+              [readonly]="isFieldReadOnly('agentName') || !isEditing"
+              [class.readonly]="isFieldReadOnly('agentName')"
+              placeholder="Enter agent name">
+            <span *ngIf="profileForm.get('agentName')?.hasError('required') && isEditing" class="error-text">
+              Agent name is required
+            </span>
+          </div>
+
           <div class="form-group">
             <label for="email">{{ getFieldLabel('email') }} *</label>
             <input
@@ -104,7 +134,7 @@
               class="readonly">
           </div>
 
-          <div class="form-group" *ngIf="shouldShowUID()">
+          <div class="form-group" *ngIf="this.isAdminRole">
             <label for="uid">{{ getFieldLabel('uid') }}</label>
             <input
               id="uid"
@@ -114,7 +144,7 @@
               class="readonly">
           </div>
 
-          <div class="form-group" *ngIf="shouldShowAccessID()">
+          <div class="form-group" *ngIf="!this.isAdminRole">
             <label for="accessId">{{ getFieldLabel('accessId') }}</label>
             <input
               id="accessId"
@@ -123,9 +153,7 @@
               readonly
               class="readonly">
           </div>
-        <!-- </div> -->
-
-        <!-- <div class="form-row"> -->
+          
           <div class="form-group">
             <label for="organizationName">{{ getFieldLabel('organizationName') }}</label>
             <input
@@ -145,17 +173,15 @@
               readonly
               class="readonly">
           </div>
-        <!-- </div> -->
-
-        <!-- <div class="form-row"> -->
+          
           <div class="form-group">
             <label for="registeredNumber">{{ getFieldLabel('registeredNumber') }}*</label>
             <input
               id="registeredNumber"
               type="text"
               formControlName="registeredNumber"
-              readonly
-              class="readonly">
+              [readonly]="isFieldReadOnly('registeredNumber') || !isEditing"
+              [class.readonly]="isFieldReadOnly('registeredNumber')">
           </div>
 
           <div class="form-group">
@@ -163,30 +189,28 @@
             <select
               id="country"
               formControlName="country"
+              (change)="onCountryChange($any($event.target).value)"
               [disabled]="!isEditing"
               [class.readonly]="!isEditing">
               <option value="">Select Country</option>
               <option *ngFor="let country of countries" [value]="country.countryId">{{ country.countryName }}</option>
             </select>
           </div>
-        </div>
-      </div>
 
-    <div *ngIf="isAdminRole">
-        <div class="form-row">
-            <div class="form-group">
+          <div class="form-group" *ngIf="isAdminRole">
             <label for="state">{{ getFieldLabel('state') }}</label>
             <select
                 id="state"
                 formControlName="state"
+                (change)="onStateChange($any($event.target).value)"
                 [disabled]="!isEditing"
                 [class.readonly]="!isEditing">
                 <option value="">Select State</option>
                 <option *ngFor="let state of states" [value]="state.stateId">{{ state.stateName }}</option>
             </select>
-            </div>
+          </div>
 
-            <div class="form-group">
+          <div class="form-group">
             <label for="city">{{ getFieldLabel('city') }}</label>
             <select
                 id="city"
@@ -196,76 +220,21 @@
                 <option value="">Select City</option>
                 <option *ngFor="let city of cities" [value]="city.cityId">{{ city.cityName }}</option>
             </select>
-            </div>
-        </div>
+          </div>
 
-        <div class="form-row">
-            <div class="form-group">
-            <label for="addressLine1">{{ getFieldLabel('addressLine1') }}</label>
-            <input
-                id="addressLine1"
-                type="text"
-                formControlName="addressLine1"
-                [readonly]="!isEditing"
-                [class.readonly]="!isEditing"
-                placeholder="Enter address line 1">
-            </div>
-
-            <div class="form-group">
-            <label for="addressLine2">{{ getFieldLabel('addressLine2') }}</label>
-            <input
-                id="addressLine2"
-                type="text"
-                formControlName="addressLine2"
-                [readonly]="!isEditing"
-                [class.readonly]="!isEditing"
-                placeholder="Enter address line 2">
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="pinCode">{{ getFieldLabel('pinCode') }}</label>
-                <input
-                    id="pinCode"
-                    type="text"
-                    formControlName="pinCode"
-                    [readonly]="!isEditing"
-                    [class.readonly]="!isEditing"
-                    placeholder="Enter pin code">
-                </div>
-
-                <div class="form-group">
-                <label for="employeeSize">{{ getFieldLabel('employeeSize') }}</label>
-                <input
-                    id="employeeSize"
-                    type="number"
-                    formControlName="employeeSize"
-                    [readonly]="!isEditing"
-                    [class.readonly]="!isEditing"
-                    placeholder="Enter employee size">
-                <span *ngIf="profileForm.get('employeeSize')?.hasError('pattern') && isEditing" class="error-text">
-                    Please enter a valid number
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <div *ngIf="!isAdminRole">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="city">{{ getFieldLabel('city') }}</label>
+          <div class="form-group" *ngIf="!isAdminRole">
+            <label for="calendar">{{ getFieldLabel('calendar') }}</label>
             <select
-              id="city"
-              formControlName="city"
+              id="calendar"
+              formControlName="calendar"
               [disabled]="!isEditing"
               [class.readonly]="!isEditing">
-              <option value="">Select City</option>
-              <option *ngFor="let city of cities" [value]="city.cityId">{{ city.cityName }}</option>
+              <option value="">Select calendar</option>
+              <option *ngFor="let cal of calendars" [value]="cal.calendarId">{{ cal.calendarCode }}</option>
             </select>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" *ngIf="!isAdminRole">
             <label for="language">{{ getFieldLabel('language') }}</label>
             <select
               id="language"
@@ -275,26 +244,101 @@
               <option value="">Select Language</option>
               <option *ngFor="let language of languages" [value]="language.languageId">{{ language.languageName }}</option>
             </select>
-          </div>
+            
+            </div>
+          </div>        
         </div>
 
-        <!-- Skills Section -->
-        <div *ngIf="skillsData && skillsData.length > 0" class="skills-section">
-          <h3 class="subsection-title">Skillset Information</h3>
-          <div class="skills-table">
-            <div class="skills-header">
-              <div class="skill-col">Skill Name</div>
-              <div class="skill-col">Experience (Years)</div>
-              <div class="skill-col">Experience (Months)</div>
+            <!-- Skills Section -->
+        <div class="skills-section" *ngIf="!isAdminRole">
+            <h3 class="subsection-title">Skillset Information</h3>
+
+            <div *ngIf="isEditing" class="skill-entry-panel">
+                <div class="skill-entry-row">
+                <div class="skill-input-group">
+                    <label for="skillName">Skill</label>
+                    <input
+                    id="skillName"
+                    formControlName="skillName"
+                    type="text"
+                    [(ngModel)]="skillNameInput"
+                    (input)="onSkillSearch()"
+                    [readonly]="!isEditing"
+                    placeholder="Search or select skill"
+                    class="skill-search-input">
+                    <!-- <ul *ngIf="skillSearchResults.length > 0" class="suggestions-list">
+                    <li *ngFor="let skill of skillSearchResults" (click)="selectSkill(skill)">
+                        {{ skill.skillName }}
+                    </li>
+                    </ul> -->
+                </div>
+
+                <div class="skill-input-group small-input">
+                    <label for="experienceYears">Years</label>
+                    <input
+                    id="experienceYears"
+                    formControlName="experienceYears"
+                    type="number"
+                    min="0"
+                    [(ngModel)]="experienceYearsInput"
+                    [readonly]="!isEditing"
+                    placeholder="0">
+                    <span *ngIf="skillFormError.experienceYears" class="error-text">{{ skillFormError.experienceYears }}</span>
+                </div>
+
+                <div class="skill-input-group small-input">
+                    <label for="experienceMonths">Months</label>
+                    <input
+                    id="experienceMonths"
+                    formControlName="experienceMonths"
+                    type="number"
+                    min="0"
+                    max="11"
+                    [(ngModel)]="experienceMonthsInput"
+                    [readonly]="!isEditing"
+                    placeholder="0">
+                    <span *ngIf="skillFormError.experienceMonths" class="error-text">{{ skillFormError.experienceMonths }}</span>
+                </div>
+
+                <button class="add-skill-btn" type="button" (click)="addOrUpdateSkill()">
+                    {{ editingSkillIndex !== null ? 'Update Skill' : 'Add Skill' }}
+                </button>
+                </div>
+                <div class="suggestions" *ngIf="skillSearchResults.length > 0">
+                    <div class="suggestion-items">
+                        <span class="suggestion" *ngFor="let skill of skillSearchResults" (click)="selectSkill(skill)">{{ skill.skillName }}</span>
+                    </div>
+                </div>
+                <span *ngIf="skillFormError.skillName" class="error-text">{{ skillFormError.skillName }}</span>
             </div>
-            <div *ngFor="let skill of skillsData" class="skills-row">
-              <div class="skill-col">{{ skill.skillName }}</div>
-              <div class="skill-col">{{ skill.experienceYears }}</div>
-              <div class="skill-col">{{ skill.experienceMonths }}</div>
+
+            <div *ngIf="skillsData && skillsData.length > 0" class="skills-table">
+                <div class="skills-header">
+                <div class="skill-col">Skill Name</div>
+                <div class="skill-col">Experience (Years)</div>
+                <div class="skill-col">Experience (Months)</div>
+                <!-- <div class="skill-col">Actions</div> -->
+                </div>
+                <div *ngFor="let skill of skillsData; let idx = index" class="skills-row">
+                <div class="skill-col">{{ skill.skillName }}</div>
+                <div class="skill-col">{{ skill.experienceYears }}</div>
+                <div class="skill-col">{{ skill.experienceMonths }}
+
+                <!-- </div>
+                <div class="skill-col"> -->
+                    <button type="button" class="row-action remove" (click)="removeSkill(idx)" [disabled]="!isEditing">X</button>
+                </div>
+                </div>
             </div>
-          </div>
+
+            <div *ngIf="(!skillsData || skillsData.length === 0) && !isEditing" class="empty-message">
+                <p>No skills added yet.</p>
+            </div>
+
+            <div *ngIf="(!skillsData || skillsData.length === 0) && isEditing" class="empty-message">
+                <p>Add skills using the fields above.</p>
+            </div>
         </div>
-      </div>
     </form>
   </div>
 

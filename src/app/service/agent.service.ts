@@ -72,4 +72,8 @@ export class AgentService {
   getEnquiryByEmail(userEmail: string): Observable<EnquiryRegistration> {
     return this.http.get<EnquiryRegistration>(`${this.baseUrl}/enquiry/${userEmail}`);
   }
+
+  getAgentInfoByEmail(userEmail: string): Observable<AgentMaster> {
+    return this.http.get<AgentMaster>(`${this.baseUrl}/agent/email/${userEmail}`);
+  }
 }

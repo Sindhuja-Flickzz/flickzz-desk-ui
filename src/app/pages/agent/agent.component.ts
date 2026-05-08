@@ -96,7 +96,7 @@ export class AgentComponent implements OnInit {
     // Handle country selection changes
     this.agentForm.get('countryCode')?.valueChanges.subscribe(countryCode => {
       if (countryCode) {
-        const country = this.getCountryByCode(countryCode);
+        const country = this.getCountryByCode(countryCode, 'isoCode');
         if (country) {
           this.onCountrySelect(country);
           this.selectedCountry = country;
@@ -200,26 +200,15 @@ export class AgentComponent implements OnInit {
         this.enquiryUser = true;
         enquiryData = (enquiryData as any).attributes || enquiryData;
         if (enquiryData) {
-          if (enquiryData.company?.country) {
-            this.agentForm.patchValue({ countryId: enquiryData.company?.country?.countryId });
+          if (enquiryData?.country) {
+            this.agentForm.patchValue({ countryId: enquiryData?.country?.countryId });
+            this.onLocationCountrySelect(enquiryData?.country?.countryId, enquiryData.city?.cityId);
           }
-          if (enquiryData.company?.country) {
-            this.onLocationCountrySelect(enquiryData.company?.country?.countryId, enquiryData.company?.city?.cityId);
-          }
-          this.agentForm.patchValue({ agentName: enquiryData.company?.companyName });
-
-          if (enquiryData.company?.country) {
-            const country = this.getCountryByCode(enquiryData.company?.country?.isoCode);
-            if (country) {
-              const fullPhone = enquiryData.company?.registeredNumber || '';
-              const phoneCode = enquiryData.company?.phoneCode || '';
-              let phoneNumber = fullPhone;
-              if (phoneCode && fullPhone.startsWith(phoneCode)) {
-                phoneNumber = fullPhone.substring(phoneCode.length);
-              }
-              this.agentForm.patchValue({ phoneNumber });
-            }
-          }
+          this.agentForm.patchValue({ 
+            agentName: enquiryData.company?.companyName,
+            countryCode: this.getCountryByCode(enquiryData?.phoneCode, 'phoneCode')?.isoCode,
+            phoneNumber: enquiryData?.phoneNumber
+           });
         }
       },
       error: () => {
@@ -229,6 +218,15 @@ export class AgentComponent implements OnInit {
         }
         this.enquiryUser = false;
         console.log(`No enquiry found for email ${email} - proceeding with blank form`);
+        this.agentService.getAgentInfoByEmail(email).subscribe({
+          next: (agentData) => {
+            this.formError['mailId'] = 'An agent with this email already exists';
+              this.agentForm.patchValue({ mailId: '' });
+          },
+          error: () => {
+            this.formError['mailId'] = '';
+          }
+        });
       }
     });
   }
@@ -261,6 +259,7 @@ export class AgentComponent implements OnInit {
         this.agents = (result as any).attributes || [];
         // Calculate local time for each agent
         this.agents.forEach(agent => {
+          agent.phone = (agent.phoneCode || '') + (agent.phoneNumber || '')
           if (agent.city?.timezone) {
             agent.localTime = this.getLocalTime(agent.city.timezone);
           } else {
@@ -488,7 +487,6 @@ export class AgentComponent implements OnInit {
         updatedBy: currentUser
       };
     });
-
     const payload: AgentRequest = {
       agentId: this.agentForm.value.agentId,
       agentName: this.agentForm.value.agentName,
@@ -606,6 +604,7 @@ export class AgentComponent implements OnInit {
     this.activeTab = 'create';
     this.isEditMode = true;
     this.pageTitle = 'Edit Agent';
+    this.enquiryUser = false;
 
     this.agentService.getAgentSkills(agent.agentId).subscribe({
       next: (mappingsResp) => {
@@ -807,8 +806,8 @@ export class AgentComponent implements OnInit {
     return `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`;
   }
 
-  getCountryByCode(code?: string): CountryMaster | undefined {
-    return this.countries.find(c => c.isoCode === code);
+  getCountryByCode(code?: string, nameString?: string): CountryMaster | undefined {
+    return this.countries.find(c => c[nameString as keyof CountryMaster] === code);
   }
 
   onLocationCountrySelect(countryId: number, selectedCityId?: number): void {

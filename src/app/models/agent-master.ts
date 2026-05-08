@@ -27,6 +27,8 @@ export interface AgentMaster {
   mailId: string;
   accessId: string;
   phone: string;
+  phoneCode: string;
+  phoneNumber: string;
   organization: CompanyMaster;
   calendar: CalendarMasterVO;
   country: CountryMaster;

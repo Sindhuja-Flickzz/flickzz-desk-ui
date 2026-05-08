@@ -10,11 +10,10 @@
 
     <form [formGroup]="agentForm" (ngSubmit)="onSave()">
       <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
-      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
 
       <div class="field">
         <label>Mail ID</label>
-        <input type="email" formControlName="mailId" (change)="onMailIdChange()" placeholder="Enter email" />
+        <input type="email" formControlName="mailId" (change)="onMailIdChange()" placeholder="Enter email" [readonly]="isEditMode" />
         <span *ngIf="formError.mailId" class="error-text">{{ formError.mailId | fieldLabel  }}</span>
       </div>
       
@@ -26,7 +25,7 @@
 
       <div class="field">
         <label>Access ID</label>
-        <input type="text" formControlName="accessId" (change)="formError['accessId'] = null;" placeholder="Enter access ID" />
+        <input type="text" formControlName="accessId" (change)="formError['accessId'] = null;" placeholder="Enter access ID" [readonly]="isEditMode" />
         <span *ngIf="formError.accessId" class="error-text">{{ formError.accessId | fieldLabel  }}</span>
       </div>
 
@@ -70,7 +69,7 @@
               </mat-option>
             </mat-select>
           </mat-form-field>
-          <div class="phone-code-display" *ngIf="selectedCountry">
+          <div class="phone-code-display" *ngIf="selectedCountry" formControlName="phoneCode">
             <!-- <img [src]="getCountryFlagUrl(selectedCountry.isoCode)" [alt]="selectedCountry.countryName + ' flag'" class="flag-icon" /> -->
             {{ selectedCountry.phoneCode }}
           </div>
@@ -158,6 +157,7 @@
         <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isEditMode ? (isSubmitting ? 'Updating Agent...' : 'Update Agent') : (isSubmitting ? 'Saving Agent...' : 'Save Agent') }}</button>
         <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
         <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
+        <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
       </div>
     </form>
   </div>

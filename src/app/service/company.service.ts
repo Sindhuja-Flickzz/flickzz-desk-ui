@@ -36,8 +36,12 @@ export class CompanyService {
     return this.http.get<CompanyMaster[]>(`${this.baseUrl}/company/list`);
   }
 
-  getEnquiryByUserEmail(userEmail: string): Observable<EnquiryRegistration> {
-    return this.http.get<EnquiryRegistration>(`${this.baseUrl}/enquiry/${userEmail}`);
+  // getEnquiryByUserEmail(userEmail: string): Observable<EnquiryRegistration> {
+  //   return this.http.get<EnquiryRegistration>(`${this.baseUrl}/enquiry/${userEmail}`);
+  // }
+
+  getCompanyInfoByUserEmail(userEmail: string): Observable<EnquiryRegistration> {
+    return this.http.get<EnquiryRegistration>(`${this.baseUrl}/enquiry/company/${userEmail}`);
   }
 
   createCompany(request: CompanyRequest): Observable<any> {
