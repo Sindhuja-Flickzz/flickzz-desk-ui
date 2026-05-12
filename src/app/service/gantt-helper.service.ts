@@ -21,6 +21,7 @@ export interface GanttRowData {
   name: string;
   sequence: number;
   parentEpicId?: number;
+  storyCode?: string;
   startDate?: Date;
   endDate?: Date;
   days?: number;
@@ -33,6 +34,7 @@ export interface GanttRowData {
   taskBarWidth?: number;
   level: number;
   predecessorId?: number;
+  predecessorCode?: string;
   dependencies?: number[];
 }
 

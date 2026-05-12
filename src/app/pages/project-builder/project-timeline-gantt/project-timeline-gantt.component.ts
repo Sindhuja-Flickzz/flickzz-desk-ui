@@ -244,6 +244,15 @@ export class ProjectTimelineGanttComponent implements OnInit, OnChanges {
     
     if (!this.dateRange) return;
 
+    const storyCodeById = new Map<number, string>();
+    this.epics.forEach(epic => {
+      epic.userStories?.forEach((story: UserStory) => {
+        if (story.storyId != null) {
+          storyCodeById.set(story.storyId, story.storyCode);
+        }
+      });
+    });
+
     this.epics.forEach((epic, epicIndex) => {
       // Add epic row
       const epicRow: GanttRowData = {
@@ -268,6 +277,7 @@ export class ProjectTimelineGanttComponent implements OnInit, OnChanges {
             type: 'story',
             id: story.storyId,
             name: story.title,
+            storyCode: story.storyCode,
             sequence: story.storySequence,
             parentEpicId: epic.epicId,
             startDate: story.plannedStartDate ? new Date(story.plannedStartDate) : undefined,
@@ -280,6 +290,7 @@ export class ProjectTimelineGanttComponent implements OnInit, OnChanges {
             level: 1,
             isExpanded: false,
             predecessorId: story.predecessorId || undefined,
+            predecessorCode: story.predecessorId ? storyCodeById.get(story.predecessorId) : undefined,
             taskBarStart: 0,
             taskBarWidth: 0
           };

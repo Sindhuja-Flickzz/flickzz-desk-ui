@@ -40,6 +40,11 @@
          (scroll)="onLeftPanelScroll($event)">
       <!-- Header Row -->
       <div class="header-row left-row">
+        <div class="wsa-col-header">
+          <div class="task-col-content">
+            <span>WSA</span>
+          </div>
+        </div>
         <div class="task-col-header">
           <div class="task-col-content">
             <span>Task / Epic</span>
@@ -61,6 +66,9 @@
         <div *ngFor="let row of ganttRows; trackBy: trackByRow" [class]="'gantt-row ' + row.type + '-row level-' + row.level">
           <!-- Epic Row -->
           <div *ngIf="row.type === 'epic'" class="epic-row-content">
+            <div class="wsa-col">
+              <span class="wsa-label">—</span>
+            </div>
             <div class="task-col">
               <button 
                 type="button"
@@ -94,6 +102,9 @@
 
           <!-- Story Row -->
           <div *ngIf="row.type === 'story'" class="story-row-content left-row">
+            <div class="wsa-col">
+              <span class="story-code" [title]="row.storyCode">{{ row.storyCode || '—' }}</span>
+            </div>
             <div class="task-col">
               <span class="story-name" [title]="row.name">{{ row.name }}</span>
             </div>
@@ -101,7 +112,7 @@
               <div class="meta-item lead-item" [title]="row.leads?.join(', ') || 'Unassigned'">
                 <span class="lead-label">{{ row.leads?.join(', ') }}</span>
               </div>
-              <!-- <div class="meta-item predecessor-item" [title]="row.predecessorId || 'None'">{{ row.predecessorId || '—' }}</div> -->
+              <div class="meta-item predecessor-item" [title]="row.predecessorCode || 'None'">{{ row.predecessorCode || '—' }}</div>
               <div class="meta-item start-item" [title]="row.startDate ? (row.startDate | date:'MMM dd, yyyy') : 'Not set'">{{ row.startDate ? (row.startDate | date:'MMM dd, yyyy') : '—' }}</div>
               <div class="meta-item end-item" [title]="row.endDate ? (row.endDate | date:'MMM dd, yyyy') : 'Not set'">{{ row.endDate ? (row.endDate | date:'MMM dd, yyyy') : '—' }}</div>
               <div class="meta-item days-item" [title]="row.days + ' total days'">{{ row.days || 0 }}</div>

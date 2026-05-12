@@ -253,6 +253,7 @@ $shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.15);
   flex-shrink: 0;
   position: relative;
   z-index: 2;
+  --wsa-col: minmax(100px, 1fr);
   --task-col: minmax(180px, 2.5fr);
   --meta-col: minmax(90px, 1fr);
   overflow-x: auto;
@@ -286,7 +287,7 @@ $shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.15);
   .epic-row-content,
   .story-row-content {
     display: grid;
-    grid-template-columns: var(--task-col) repeat(7, var(--meta-col));
+    grid-template-columns: var(--wsa-col) var(--task-col) repeat(7, var(--meta-col));
     min-width: 0;
     width: 100%;
     gap: 0;
@@ -307,13 +308,14 @@ $shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.15);
     height: auto;
     min-height: 48px;
 
+    .wsa-col-header,
     .task-col-header,
     .meta-col-header {
       display: contents;
     }
 
     .task-col-content,
-    .task-col {
+    .wsa-col-content {
       padding: 12px 12px;
       width: 100%;
       white-space: normal;
@@ -350,10 +352,11 @@ $shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.15);
   .left-row {
     width: 100%;
     display: grid;
-    grid-template-columns: var(--task-col) repeat(7, var(--meta-col));
+    grid-template-columns: var(--wsa-col) var(--task-col) repeat(7, var(--meta-col));
     align-items: center;
     min-width: 0;
 
+    .wsa-col,
     .task-col-header,
     .task-col {
       width: 100%;
@@ -367,8 +370,12 @@ $shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.15);
       min-width: 0;
     }
 
-    .task-col-header {
+    .wsa-col-header {
       grid-column: 1;
+    }
+
+    .task-col-header {
+      grid-column: 2;
     }
 
     .meta-col-header {
@@ -402,6 +409,7 @@ $shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.15);
       }
     }
   }
+}
 
   .gantt-row {
     display: block;
@@ -539,32 +547,8 @@ $shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.15);
     &:first-child {
       border-left: none;
     }
-  }
+  // }
 
-    scroll-behavior: smooth;
-
-    &::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: $text-light;
-      border-radius: 3px;
-
-      &:hover {
-        background: $text-secondary;
-      }
-    }
-  }
-
-  .gantt-row {
-    display: block;
-    border-bottom: 1px solid $border-color;
     transition: background-color $transition-duration ease;
 
     &:hover {
