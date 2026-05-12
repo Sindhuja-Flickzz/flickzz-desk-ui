@@ -12,8 +12,8 @@ export class SkillService {
 
   constructor(private http: HttpClient) { }
 
-  getAllSkills(): Observable<SkillMaster[]> {
-    return this.http.get<SkillMaster[]>(`${this.baseUrl}/skills/list`);
+  getAllSkills(userOrgId: string): Observable<SkillMaster[]> {
+    return this.http.get<SkillMaster[]>(`${this.baseUrl}/skills/list/${userOrgId}`);
   }
 
   createSkills(requests: SkillRequest[]): Observable<any> {

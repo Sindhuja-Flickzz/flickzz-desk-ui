@@ -77,7 +77,8 @@ export class NumberRangeComponent implements OnInit {
   }
 
   loadPlantList(): void {
-    this.plantService.getAllPlants().subscribe({
+    const userOrgId = localStorage.getItem('userOrgId') || '';
+    this.plantService.getAllPlants(userOrgId).subscribe({
       next: (result) => {
         this.plants = (result as any).attributes || result || [];
       },

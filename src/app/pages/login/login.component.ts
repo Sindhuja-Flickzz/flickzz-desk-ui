@@ -37,6 +37,8 @@ export class LoginComponent implements OnInit, OnDestroy {
       mfaEnabled: false,
       refreshToken: '',
       secretImageUri: '',
+      userOrgId: 0,
+      userOrgName: '',
       userRole: ''
     }
   };
@@ -102,7 +104,17 @@ export class LoginComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           this.commonResponse = response;
-          if (response.attributes.mfaEnabled) {
+          if(response.attributes.enquiryUser) {
+            this.isLoginMode = false;
+            this.isVerifying = false;
+            localStorage.setItem('token', response.attributes.accessToken as string);
+            localStorage.setItem('refreshToken', response.attributes.refreshToken as string);
+            localStorage.setItem('userId', this.registerLoginRequest.email as string);
+            localStorage.setItem('userRole', response.attributes.userRole as string);
+            localStorage.setItem('userOrgId', response.attributes.userOrgId.toString());
+            localStorage.setItem('userOrgName', response.attributes.userOrgName as string);
+            this.router.navigate(['settings']);
+          } else if (response.attributes.mfaEnabled) {
             this.isLoginMode = false;
             this.isMfaSetupMode = true;
           } else {
@@ -143,13 +155,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     if (Object.keys(this.formError).length > 0) {
       return;
     }
-
-    // const payload = {
-    //   username: this.resetPasswordRequest.username,
-    //   oldPassword: this.registerLoginRequest.password,
-    //   newPassword: this.resetPasswordRequest.newPassword
-    // };
-
+    
     this.registerLoginRequest = {
       ...this.registerLoginRequest,
       email: this.resetPasswordRequest.username,
@@ -216,6 +222,8 @@ export class LoginComponent implements OnInit, OnDestroy {
           localStorage.setItem('refreshToken', response.attributes.refreshToken as string);
           localStorage.setItem('userId', this.registerLoginRequest.email as string);
           localStorage.setItem('userRole', response.attributes.userRole as string);
+          localStorage.setItem('userOrgId', response.attributes.userOrgId.toString());
+          localStorage.setItem('userOrgName', response.attributes.userOrgName as string);
           this.router.navigate(['welcome']);
         },
         error: (err) => {

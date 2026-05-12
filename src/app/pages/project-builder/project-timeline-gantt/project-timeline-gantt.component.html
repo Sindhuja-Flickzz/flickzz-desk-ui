@@ -1,0 +1,261 @@
+<div class="gantt-container">
+  <!-- Header Section -->
+  <div class="gantt-header">
+    <div class="header-content">
+      <button type="button" class="back-button" (click)="goBack()" title="Back to project list">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="header-info">
+        <h1 class="project-title">{{ project?.projectName }}</h1>
+        <p class="project-code">{{ project?.projectCode }} • {{ project?.company?.companyName }}</p>
+      </div>
+    </div>
+    <div class="week-navigator" *ngIf="!isMobile">
+      <button type="button" [disabled]="displayWeek === 1" (click)="previousWeek()" class="nav-btn" title="Previous week">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <span class="week-info">Week {{ getWeekDisplay() }} of {{ totalWeeks }}</span>
+      <button type="button" [disabled]="displayWeek >= totalWeeks" (click)="nextWeek()" class="nav-btn" title="Next week">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="alert alert-error">
+    <mat-icon>error</mat-icon>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading project timeline...</p>
+  </div>
+
+  <!-- Gantt Chart -->
+  <div *ngIf="!loading && dateRange && ganttRows.length > 0" class="gantt-chart">
+    <!-- Sticky Left Panel -->
+    <div class="gantt-left-panel" #leftPanel
+         (scroll)="onLeftPanelScroll($event)">
+      <!-- Header Row -->
+      <div class="header-row left-row">
+        <div class="wsa-col-header">
+          <div class="task-col-content">
+            <span>WSA</span>
+          </div>
+        </div>
+        <div class="task-col-header">
+          <div class="task-col-content">
+            <span>Task / Epic</span>
+          </div>
+        </div>
+        <div class="meta-col-header">
+          <div class="meta-item lead-item" [title]="'Lead'">Lead</div>
+          <div class="meta-item predecessor-item" [title]="'Predecessor'">Pred.</div>
+          <div class="meta-item start-item" [title]="'Start Date'">Start</div>
+          <div class="meta-item end-item" [title]="'End Date'">End</div>
+          <div class="meta-item days-item" [title]="'Total Days'">Days</div>
+          <div class="meta-item workdays-item" [title]="'Work Days'">W.Days</div>
+          <div class="meta-item progress-item" [title]="'Progress'">% Done</div>
+        </div>
+      </div>
+
+      <!-- Task Rows -->
+      <div class="task-rows" #taskRows>
+        <div *ngFor="let row of ganttRows; trackBy: trackByRow" [class]="'gantt-row ' + row.type + '-row level-' + row.level">
+          <!-- Epic Row -->
+          <div *ngIf="row.type === 'epic'" class="epic-row-content">
+            <div class="wsa-col">
+              <span class="wsa-label">—</span>
+            </div>
+            <div class="task-col">
+              <button 
+                type="button"
+                class="expand-btn" 
+                (click)="toggleEpic(row.id)"
+                [class.expanded]="row.isExpanded"
+                [attr.aria-expanded]="row.isExpanded"
+                [title]="row.isExpanded ? 'Collapse' : 'Expand'">
+                <mat-icon>{{ row.isExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </button>
+              <span class="epic-name" [title]="row.name">{{ row.name }}</span>
+            </div>
+            <div class="meta-col">
+              <div class="meta-item">—</div>
+              <div class="meta-item">—</div>
+              <div class="meta-item">—</div>
+              <div class="meta-item">—</div>
+              <div class="meta-item" [title]="getEpicStatsForEpicId(row.id).totalDays + ' days'">
+                {{ getEpicStatsForEpicId(row.id).totalDays || 0 }}
+              </div>
+              <div class="meta-item" [title]="getEpicStatsForEpicId(row.id).totalWorkDays + ' work days'">
+                {{ getEpicStatsForEpicId(row.id).totalWorkDays || 0 }}
+              </div>
+              <div class="meta-item progress-item">
+                <span class="progress-badge" [style.backgroundColor]="row.progressColor" [title]="getProgressPercentageText(row.progress || 0) + ' complete'">
+                  {{ getProgressPercentageText(row.progress || 0) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Story Row -->
+          <div *ngIf="row.type === 'story'" class="story-row-content left-row">
+            <div class="wsa-col">
+              <span class="story-code" [title]="row.storyCode">{{ row.storyCode || '—' }}</span>
+            </div>
+            <div class="task-col">
+              <span class="story-name" [title]="row.name">{{ row.name }}</span>
+            </div>
+            <div class="meta-col">
+              <div class="meta-item lead-item" [title]="row.leads?.join(', ') || 'Unassigned'">
+                <span class="lead-label">{{ row.leads?.join(', ') }}</span>
+              </div>
+              <div class="meta-item predecessor-item" [title]="row.predecessorCode || 'None'">{{ row.predecessorCode || '—' }}</div>
+              <div class="meta-item start-item" [title]="row.startDate ? (row.startDate | date:'MMM dd, yyyy') : 'Not set'">{{ row.startDate ? (row.startDate | date:'MMM dd, yyyy') : '—' }}</div>
+              <div class="meta-item end-item" [title]="row.endDate ? (row.endDate | date:'MMM dd, yyyy') : 'Not set'">{{ row.endDate ? (row.endDate | date:'MMM dd, yyyy') : '—' }}</div>
+              <div class="meta-item days-item" [title]="row.days + ' total days'">{{ row.days || 0 }}</div>
+              <div class="meta-item workdays-item" [title]="row.workDays + ' work days'">{{ row.workDays || 0 }}</div>
+              <div class="meta-item progress-item">
+                <span class="progress-badge" [style.backgroundColor]="row.progressColor" [title]="getProgressPercentageText(row.progress || 0) + ' complete'">
+                  {{ getProgressPercentageText(row.progress || 0) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Draggable Splitter -->
+    <div class="gantt-splitter"
+         [class.dragging]="isSplitterDragging"
+         (mousedown)="onSplitterMouseDown($event)"
+         (touchstart)="onSplitterMouseDown($event)"
+         title="Drag to resize panels"></div>
+
+    <!-- Scrollable Timeline Section -->
+    <div class="gantt-timeline-wrapper" #timelineScroll
+         [class.dragging]="isDragging"
+         (pointerdown)="onTimelinePointerDown($event)"
+         (pointermove)="onTimelinePointerMove($event)"
+         (pointerup)="onTimelinePointerUp()"
+         (pointerleave)="onTimelinePointerUp()"
+         (scroll)="onTimelineScroll($event)">
+      <!-- Timeline Header with Weeks and Days -->
+      <div class="timeline-header">
+        <!-- Month/Week Header -->
+        <div class="header-row time-header">
+          <div class="week-header-container">
+            <div 
+              *ngFor="let week of dateRange.weeks" 
+              [class]="'week-header ' + (week.month || '')"
+              [style.width.%]="(7 / dateRange.days.length) * 100">
+              <span class="week-label">W{{ week.weekNumber }} {{ week.month }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Day Header -->
+        <div class="header-row day-header">
+          <div class="days-container">
+            <div 
+              *ngFor="let day of dateRange.days"
+              [class]="'day-cell ' + (isDayColumn(day) ? 'workday' : 'weekend') + (isTodayColumn(day) ? ' today' : '')"
+              [style.width.%]="(1 / dateRange.days.length) * 100"
+              [title]="day | date:'EEEE, MMM dd'">
+              <span class="day-label">{{ day | date:'dd' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline Grid with Today Indicator -->
+      <div class="timeline-container">
+        <!-- Today Indicator -->
+        <div *ngIf="showToday" class="today-indicator" [style.left.%]="todayPosition">
+          <div class="today-line"></div>
+          <span class="today-label">Today</span>
+        </div>
+
+        <!-- Grid Background -->
+        <div class="timeline-grid">
+          <div 
+            *ngFor="let day of dateRange.days"
+            [class]="'grid-cell ' + (isDayColumn(day) ? 'workday' : 'weekend') + (isTodayColumn(day) ? ' today' : '')"
+            [style.width.%]="(1 / dateRange.days.length) * 100">
+          </div>
+        </div>
+
+        <!-- Task Bars -->
+        <div class="timeline-content">
+          <div *ngFor="let row of ganttRows; trackBy: trackByRow" [class]="'gantt-row ' + row.type + '-row'">
+            <div *ngIf="row.type === 'epic'" class="epic-bar-row">
+              <!-- Epic progress bar (spanning all child stories) -->
+              <div class="epic-timeline-bar-container" *ngIf="row.progress && row.progress > 0">
+                <div 
+                  class="epic-timeline-bar"
+                  [style.backgroundColor]="row.progressColor"
+                  [style.opacity]="0.3"
+                  [matTooltip]="row.name + ' - ' + getProgressPercentageText(row.progress) + ' complete'">
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="row.type === 'story'" class="story-bar-row">
+              <div class="story-timeline-bar-container" [style.left.%]="row.taskBarStart" [style.width.%]="row.taskBarWidth">
+                <div 
+                  class="story-timeline-bar"
+                  [style.backgroundColor]="row.progressColor"
+                  [matTooltip]="getTaskTooltip(row)"
+                  matTooltipPosition="above"
+                  matTooltipShowDelay="300">
+                  <span *ngIf="row.taskBarWidth ? row.taskBarWidth > 15 : false" class="bar-label">{{ getProgressPercentageText(row.progress ? row.progress : 0) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && (!ganttRows || ganttRows.length === 0)" class="empty-state">
+    <mat-icon>event</mat-icon>
+    <h3>No Stories Found</h3>
+    <p>This project doesn't have any user stories yet.</p>
+  </div>
+</div>
+
+<!-- Tooltip Content (for dynamic content) -->
+<ng-template #taskTooltipTemplate let-row="row">
+  <div class="task-tooltip">
+    <div class="tooltip-title">{{ row.name }}</div>
+    <div class="tooltip-item" *ngIf="row.startDate">
+      <span class="tooltip-label">Start:</span>
+      <span>{{ row.startDate | date:'MMM dd, yyyy' }}</span>
+    </div>
+    <div class="tooltip-item" *ngIf="row.endDate">
+      <span class="tooltip-label">End:</span>
+      <span>{{ row.endDate | date:'MMM dd, yyyy' }}</span>
+    </div>
+    <div class="tooltip-item" *ngIf="row.days">
+      <span class="tooltip-label">Duration:</span>
+      <span>{{ row.days }} days</span>
+    </div>
+    <div class="tooltip-item" *ngIf="row.workDays">
+      <span class="tooltip-label">Work Days:</span>
+      <span>{{ row.workDays }} days</span>
+    </div>
+    <div class="tooltip-item" *ngIf="row.progress !== undefined">
+      <span class="tooltip-label">Progress:</span>
+      <span>{{ getProgressPercentageText(row.progress) }}</span>
+    </div>
+    <div class="tooltip-item" *ngIf="row.leads && row.leads.length > 0">
+      <span class="tooltip-label">Leads:</span>
+      <span>{{ row.leads | join }}</span>
+    </div>
+  </div>
+</ng-template>

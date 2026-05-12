@@ -21,8 +21,8 @@
       </div>
 
       <div class="field">
-        <label>Region</label>
-        <select formControlName="countryId">
+        <label for="countryId">Region</label>
+        <select id="countryId" formControlName="countryId" title="Region">
           <option value="" disabled>Select region</option>
           <option *ngFor="let c of countries" [value]="c.countryId">{{ c.countryName }}</option>
         </select>
@@ -30,8 +30,8 @@
       </div>
 
       <div class="field">
-        <label>Calendar</label>
-        <select formControlName="calendarId">
+        <label for="calendarId">Calendar</label>
+        <select id="calendarId" formControlName="calendarId" title="Calendar">
           <option value="" disabled>Select calendar</option>
           <option *ngFor="let cal of calendars" [value]="cal.calendarId">{{ cal.calendarCode }}</option>
         </select>
@@ -41,7 +41,9 @@
       <div class="actions">
         <button type="submit" *ngIf="!isSubmitting" class="save-btn">{{ isEditMode ? 'Update Plant' : 'Save Plant' }}</button>
         <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>{{ isEditMode ? 'Updating Plant' : 'Saving Plant' }}</button>
-        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
+        <button type="button" class="reset-btn" (click)="backToHome()">Back</button>
       </div>
     </form>
   </div>
@@ -81,6 +83,10 @@
       </table>
     </div>
 
+    <!-- Empty State -->
+    <div *ngIf="!loading && !error && plants.length === 0" class="empty-state">
+      No Plants found.
+    </div>
     <div class="pagination-controls">
       <mat-paginator
         [length]="totalRecords"

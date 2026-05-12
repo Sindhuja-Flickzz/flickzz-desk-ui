@@ -43,3 +43,10 @@ export class FieldLabelPipe implements PipeTransform {
       .join(' ');
   }
 }
+
+@Pipe({ name: 'join' })
+export class JoinPipe implements PipeTransform {
+  transform(value: string[], separator: string = ', '): string {
+    return Array.isArray(value) ? value.join(separator) : '';
+  }
+}

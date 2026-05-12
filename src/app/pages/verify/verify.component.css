@@ -1,0 +1,221 @@
+.verify-shell {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  background: #f4f6f8;
+}
+
+.verify-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 32px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.verify-logo {
+  display: block;
+  width: 120px;
+  margin: 0 auto 24px;
+}
+
+h2 {
+  margin: 0 0 16px;
+  font-size: 28px;
+  color: #212121;
+}
+
+.username-label {
+  margin: 0 0 20px;
+  color: #555;
+  font-size: 15px;
+}
+
+.message {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.message.success {
+  background: #eef7ed;
+  color: #1f7a32;
+}
+
+.message.error {
+  background: #fdecea;
+  color: #a8231d;
+}
+
+.verify-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-field {
+  text-align: left;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 600;
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 80px 10px 12px;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #0d47a1;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+
+.password-toggle:hover:not(:disabled) {
+  color: #1565c0;
+}
+
+.password-toggle:disabled {
+  color: #90a4ae;
+  cursor: not-allowed;
+}
+
+.field-error {
+  margin-top: 8px;
+  color: #c62828;
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+}
+
+.actions button {
+  min-width: 120px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #0d47a1;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.actions button:disabled {
+  background: #90a4ae;
+  cursor: not-allowed;
+}
+
+.spinner {
+  display: flex;
+  justify-content: center;
+}
+.loading-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(180deg, #1b8ea8, #3f6fa8);
+}
+
+/* BRAND TEXT */
+.brand {
+  display: flex;
+  font-size: 42px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: white;
+  position: relative;
+}
+
+/* Each letter */
+.brand span {
+  opacity: 0;
+  transform: translateY(20px);
+  display: inline-block;
+  animation: letterIn 0.5s ease forwards;
+}
+
+/* Letter animation */
+@keyframes letterIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* SHIMMER EFFECT */
+.brand::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255,255,255,0.8),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+.brand {
+  background: linear-gradient(90deg, #fff, #aeefff, #fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@keyframes shimmer {
+  0% { left: -50%; }
+  100% { left: 120%; }
+}
+
+/* SUBTITLE */
+.subtitle {
+  margin-top: 20px;
+  color: rgba(255,255,255,0.8);
+  font-size: 14px;
+  animation: fade 2s infinite;
+}
+
+@keyframes fade {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.brand::before {
+  content: '|';
+  margin-left: 5px;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}

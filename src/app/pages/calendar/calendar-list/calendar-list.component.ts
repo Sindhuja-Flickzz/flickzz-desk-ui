@@ -37,9 +37,10 @@ export class CalendarListPageComponent implements OnInit {
   }
 
   loadCalendars(): void {
+    const userOrgId = localStorage.getItem('userOrgId') || '';
     this.loading = true;
     this.error = null;
-    this.calendarService.getAllCalendars().subscribe({
+    this.calendarService.getAllCalendars(userOrgId).subscribe({
       next: (calendars) => {
         this.calendars = (calendars as any).attributes as CalendarMasterVO[]; // Handle case where response might not have 'object'
         this.applyFilters();
@@ -54,21 +55,20 @@ export class CalendarListPageComponent implements OnInit {
   }
 
   onViewCalendar(calendar: CalendarMasterVO): void {
-    const isRequestor = calendar.calendarType?.toLowerCase().includes('requestor');
-    this.router.navigate(['/calendar/create-calendar'], {
-      queryParams: { mode: 'edit', code: calendar.calendarCode, type: isRequestor ? 'requestor' : 'support' },
+    this.router.navigate(['/calendar'], {
+      queryParams: { mode: 'edit', code: calendar.calendarCode },
       state: { calendar: calendar }
     });
   }
 
   createSupportCalendar(): void {
-    this.router.navigate(['/calendar/create-calendar'], {
+    this.router.navigate(['/calendar'], {
       queryParams: { type: 'support' }
     });
   }
 
   createRequestorCalendar(): void {
-    this.router.navigate(['/calendar/create-calendar'], {
+    this.router.navigate(['/calendar'], {
       queryParams: { type: 'requestor' }
     });
   }
@@ -78,31 +78,17 @@ export class CalendarListPageComponent implements OnInit {
     this.applyFilters();
   }
 
-  onTypeFilterChange(value: 'all' | 'support' | 'requestor'): void {
-    this.selectedTypeFilter = value;
-    this.applyFilters();
-  }
-
   applyFilters(): void {
     const term = this.searchTerm.trim().toLowerCase();
 
     this.filteredCalendars = this.calendars.filter(calendar => {
+      const typeText = calendar.calendarType?.toString().toLowerCase() || '';
       let termMatch = true;
       if (term) {
         termMatch = (calendar.calendarCode || '').toLowerCase().includes(term)
-          || (calendar.calendarType || '').toLowerCase().includes(term);
+          || typeText.includes(term);
       }
-
-      let typeMatch = true;
-      if (this.selectedTypeFilter === 'support') {
-        typeMatch = (calendar.calendarType || '').toLowerCase().includes('support')
-          || !!(calendar as any).isSupport;
-      } else if (this.selectedTypeFilter === 'requestor') {
-        typeMatch = (calendar.calendarType || '').toLowerCase().includes('requestor')
-          || !!(calendar as any).isRequestor;
-      }
-
-      return termMatch && typeMatch;
+      return termMatch;
     });
 
     this.totalRecords = this.filteredCalendars.length;

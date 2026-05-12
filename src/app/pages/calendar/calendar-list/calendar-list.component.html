@@ -3,28 +3,8 @@
     <h2>Calendar List</h2>
   </div>
 
-  <div class="calendar-filters">
-    <div class="filter-item">
-      <!-- <label for="calendarSearch">Search by code/type</label> -->
-      <input id="calendarSearch" type="text" class="form-control" [(ngModel)]="searchTerm" (ngModelChange)="onSearchTermChange($event)" placeholder="Search by Calendar Code/ Type" />
-    </div>
-    <div class="filter-item">
-      <!-- <label>Type</label> -->
-      <div class="type-filter-options">
-        <label class="radio-label">
-          <input type="radio" name="typeFilter" value="all" [(ngModel)]="selectedTypeFilter" (change)="onTypeFilterChange('all')" />
-          All
-        </label>
-        <label class="radio-label">
-          <input type="radio" name="typeFilter" value="support" [(ngModel)]="selectedTypeFilter" (change)="onTypeFilterChange('support')" />
-          Support
-        </label>
-        <label class="radio-label">
-          <input type="radio" name="typeFilter" value="requestor" [(ngModel)]="selectedTypeFilter" (change)="onTypeFilterChange('requestor')" />
-          Requestor
-        </label>
-      </div>
-    </div>
+  <div class="search-container">
+    <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearchTermChange($event)" placeholder="Search by Calendar Code/ Type..." class="search-input">
   </div>
 
   <!-- Error Message -->
@@ -40,9 +20,9 @@
   <!-- Calendar Grid -->
   <div *ngIf="!loading && !error" class="calendar-grid">
     <mat-card *ngFor="let calendar of getPaginatedCalendars()" class="calendar-card">
-      <mat-card-header>
+      <mat-card-header class="calendar-card-header">
         <mat-card-title>{{ calendar.calendarCode }}</mat-card-title>
-        <mat-card-subtitle>{{ calendar.calendarType }}</mat-card-subtitle>
+        <mat-card-subtitle>{{ calendar.calendarType.typeName }}</mat-card-subtitle>
       </mat-card-header>
 
       <mat-card-content>
@@ -69,7 +49,7 @@
         </div>
       </mat-card-content>
 
-      <mat-card-actions>
+      <mat-card-actions class="calendar-card-footer">
         <button mat-raised-button color="primary" (click)="onViewCalendar(calendar)">
           <mat-icon>edit</mat-icon>
           Modify

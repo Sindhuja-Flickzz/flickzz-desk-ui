@@ -8,7 +8,10 @@ export interface FlickzzDeskResponse {
 export interface CommonObject {
   accessToken: string;
   mfaEnabled: boolean;
+  userOrgId: Number;
+  userOrgName: string;
   refreshToken: string;
   secretImageUri: string;
   userRole: string;
+  enquiryUser?: boolean;
 }

@@ -12,4 +12,5 @@ export interface SkillRequest {
   skillName: string;
   createdBy: string;
   updatedBy: string;
+  companyId: number;
 }

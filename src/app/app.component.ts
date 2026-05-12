@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit, HostListener } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthenticationService } from './service/authentication.service';
+import { ThemeService } from './service/theme.service';
 import { MenuItem } from './models/menu';
 import { MENU_INFO, APP_CONSTANTS } from './data/app_constants';
 
@@ -58,12 +59,13 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private authService: AuthenticationService
+    private authService: AuthenticationService,
+    public themeService: ThemeService
   ) {}
 
   ngOnInit() {
     const currentUrl = this.router.url;
-    this.showSidebar = !!localStorage.getItem('token') && !currentUrl.startsWith('/login') && !currentUrl.startsWith('/register');
+    this.showSidebar = !!localStorage.getItem('token') && !currentUrl.startsWith('/login') ;
     if (this.showSidebar) {
       this.loadMenu();
     }
@@ -75,7 +77,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.activeRoute = event.url;
 
         // Show sidebar for authenticated routes only
-        const show = !!localStorage.getItem('token') && !event.url.startsWith('/login') && !event.url.startsWith('/register');
+        const show = !!localStorage.getItem('token') && !event.url.startsWith('/login') ;
         this.showSidebar = show;
         if (show) {
           this.loadMenu();

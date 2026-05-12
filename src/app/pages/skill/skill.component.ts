@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { PageEvent } from '@angular/material/paginator';
 import { SkillService } from '../../service/skill.service';
 import { SkillMaster, SkillRequest } from '../../models/skill-master';
@@ -27,6 +28,8 @@ export class SkillComponent implements OnInit {
   submitSuccess = '';
   submitError = '';
   isSubmitting = false;
+  userOrgId: string = '';
+  error: string | null = null; 
 
   // Pagination
   pageSize = 10;
@@ -37,12 +40,14 @@ export class SkillComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private skillService: SkillService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private router: Router
   ) {
     this.skillForm = this.fb.group({
       skillId: [null],
       skillName: ['', Validators.required]
     });
+    this.userOrgId = localStorage.getItem('userOrgId') || '';
   }
 
   ngOnInit(): void {
@@ -64,17 +69,22 @@ export class SkillComponent implements OnInit {
   }
 
   loadSkillList(): void {
-    this.skillService.getAllSkills().subscribe({
+    this.userOrgId = localStorage.getItem('userOrgId') || '';
+    this.skillService.getAllSkills(this.userOrgId).subscribe({
       next: (result) => {
+        this.loading = false;
         this.skills = (result as any).attributes || [];
         this.searchValue = '';
         this.filterBySearch();
         this.currentPage = 0; // Reset to first page
       },
       error: (err) => {
+        this.loading = false;
         console.error('Failed to load skills:', err);
+        this.error = err.error?.description || 'Failed to load skills. Please try again.';
       }
     });
+    console.log('skill.lenght', this.skills.length);
   }
 
   selectTab(tab: 'create' | 'list'): void {
@@ -154,6 +164,7 @@ export class SkillComponent implements OnInit {
       const payload: SkillRequest = {
         skillId: this.skillForm.value.skillId,
         skillName: this.skillForm.value.skillName,
+        companyId: Number(localStorage.getItem('userOrgId') || 0),
         createdBy: localStorage.getItem('userRole') || '',
         updatedBy: localStorage.getItem('userRole') || ''
       };
@@ -185,6 +196,7 @@ export class SkillComponent implements OnInit {
 
       const requests: SkillRequest[] = this.skillList.map(skill => ({
         skillName: skill.name,
+        companyId: Number(localStorage.getItem('userOrgId') || 0),
         createdBy: localStorage.getItem('userRole') || '',
         updatedBy: localStorage.getItem('userRole') || ''
       }));
@@ -288,5 +300,9 @@ export class SkillComponent implements OnInit {
   onPageChange(event: PageEvent): void {
     this.currentPage = event.pageIndex;
     this.pageSize = event.pageSize;
+  }
+
+  backToHome(): void {
+    this.router.navigate(['/settings']);
   }
 }

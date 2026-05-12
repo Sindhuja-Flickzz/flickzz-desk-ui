@@ -1,10 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { PageEvent } from '@angular/material/paginator';
-import { forkJoin } from 'rxjs';
 import { AgentService } from '../../service/agent.service';
-import { AgentMaster, AgentRequest, AgentSkillsMapping } from '../../models/agent-master';
+import { forkJoin } from 'rxjs';
+import { AgentMaster, AgentRequest } from '../../models/agent-master';
 import { CalendarMasterVO } from '../../models/calendar-master';
 import { CompanyMaster, CountryMaster } from '../../models/company-master';
 import { SkillMaster } from '../../models/skill-master';
@@ -43,6 +43,7 @@ export class AgentComponent implements OnInit {
   filteredAgents: AgentMaster[] = [];
   agentSkillNames: { [key: number]: string[] } = {};
   searchValue = '';
+  userOrgId: string = '';
 
   loading = false;
   formError: any = {};
@@ -55,6 +56,7 @@ export class AgentComponent implements OnInit {
   pageSizeOptions = [5, 10, 25, 50];
   totalRecords = 0;
   currentPage = 0;
+  enquiryUser: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -68,7 +70,7 @@ export class AgentComponent implements OnInit {
       accessId: ['', Validators.required],
       countryCode: ['', Validators.required],
       phoneNumber: ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
-      orgId: [null, Validators.required],
+      // orgId: [null, Validators.required],
       calendarId: [null, Validators.required],
       countryId: [null, Validators.required],
       cityId: [null, Validators.required],
@@ -77,6 +79,7 @@ export class AgentComponent implements OnInit {
       experienceYears: [0, [Validators.min(0)]],
       experienceMonths: [0, [Validators.min(0), Validators.max(11)]]
     });
+    this.userOrgId = localStorage.getItem('userOrgId') || '';
   }
 
   ngOnInit(): void {
@@ -93,9 +96,10 @@ export class AgentComponent implements OnInit {
     // Handle country selection changes
     this.agentForm.get('countryCode')?.valueChanges.subscribe(countryCode => {
       if (countryCode) {
-        const country = this.getCountryByCode(countryCode);
+        const country = this.getCountryByCode(countryCode, 'isoCode');
         if (country) {
           this.onCountrySelect(country);
+          this.selectedCountry = country;
         }
       }
     });
@@ -130,15 +134,7 @@ export class AgentComponent implements OnInit {
   loadAllData(): void {
     this.loading = true;
 
-    this.agentService.getCompanyList().subscribe({
-      next: (response) => {
-        this.companies = (response as any).attributes || [];
-        this.setDefaultOrganizationAndCalendar();
-      },
-      error: () => { this.companies = []; }
-    });
-
-    this.agentService.getCalendarList().subscribe({
+    this.agentService.getCalendarList(this.userOrgId).subscribe({
       next: (response) => {
         this.calendars = (response as any).attributes || [];
         this.setDefaultOrganizationAndCalendar();
@@ -146,7 +142,7 @@ export class AgentComponent implements OnInit {
       error: () => { this.calendars = []; }
     });
 
-    this.agentService.getSkillsList().subscribe({
+    this.agentService.getSkillsList(this.userOrgId).subscribe({
       next: (response) => {
         this.skills = (response as any).attributes || [];
         this.suggestedSkills = this.skills;
@@ -191,12 +187,79 @@ export class AgentComponent implements OnInit {
     });
   }
 
+  onMailIdChange(): void {
+    const email = this.agentForm.get('mailId')?.value?.trim();
+    this.formError['mailId'] = null;
+
+    if (!email) {
+      return;
+    }
+
+    this.agentService.getEnquiryByEmail(email).subscribe({
+      next: (enquiryData) => {
+        this.enquiryUser = true;
+        enquiryData = (enquiryData as any).attributes || enquiryData;
+        if (enquiryData) {
+          if (enquiryData?.country) {
+            this.agentForm.patchValue({ countryId: enquiryData?.country?.countryId });
+            this.onLocationCountrySelect(enquiryData?.country?.countryId, enquiryData.city?.cityId);
+          }
+          this.agentForm.patchValue({ 
+            agentName: enquiryData.company?.companyName,
+            countryCode: this.getCountryByCode(enquiryData?.phoneCode, 'phoneCode')?.isoCode,
+            phoneNumber: enquiryData?.phoneNumber
+           });
+        }
+      },
+      error: () => {
+        if(this.enquiryUser) {
+          this.resetForm();
+          this.agentForm.patchValue({ mailId: email });
+        }
+        this.enquiryUser = false;
+        console.log(`No enquiry found for email ${email} - proceeding with blank form`);
+        this.agentService.getAgentInfoByEmail(email).subscribe({
+          next: (agentData) => {
+            this.formError['mailId'] = 'An agent with this email already exists';
+              this.agentForm.patchValue({ mailId: '' });
+          },
+          error: () => {
+            this.formError['mailId'] = '';
+          }
+        });
+      }
+    });
+  }
+
+  loadAllCountries(): void {
+    this.agentService.getAllCountries().subscribe({
+      next: (response) => {
+        this.countries = (response as any).attributes || response || [];
+      },
+      error: () => {
+        this.countries = [];
+      }
+    });
+  }
+
+  loadAllCities(): void {
+    this.agentService.getAllCities().subscribe({
+      next: (response) => {
+        this.cities = (response as any).attributes || response || [];
+      },
+      error: () => {
+        this.cities = [];
+      }
+    });
+  }
+
   loadAgentList(): void {
-    this.agentService.getAgentList().subscribe({
+    this.agentService.getAgentList(this.userOrgId).subscribe({
       next: (result) => {
         this.agents = (result as any).attributes || [];
         // Calculate local time for each agent
         this.agents.forEach(agent => {
+          agent.phone = (agent.phoneCode || '') + (agent.phoneNumber || '')
           if (agent.city?.timezone) {
             agent.localTime = this.getLocalTime(agent.city.timezone);
           } else {
@@ -424,14 +487,15 @@ export class AgentComponent implements OnInit {
         updatedBy: currentUser
       };
     });
-
     const payload: AgentRequest = {
       agentId: this.agentForm.value.agentId,
       agentName: this.agentForm.value.agentName,
       mailId: this.agentForm.value.mailId,
       accessId: this.agentForm.value.accessId,
-      phone: this.selectedCountry ? `${this.selectedCountry.phoneCode}${this.agentForm.value.phoneNumber}` : this.agentForm.value.phoneNumber,
-      orgId: Number(this.agentForm.value.orgId),
+      phoneCode: this.selectedCountry ? this.selectedCountry.phoneCode : '',
+      phoneNumber: this.agentForm.value.phoneNumber,
+      // phone: this.selectedCountry ? `${this.selectedCountry.phoneCode}${this.agentForm.value.phoneNumber}` : this.agentForm.value.phoneNumber,
+      orgId: Number(this.userOrgId),
       skills,
       calendarId: Number(this.agentForm.value.calendarId),
       countryId: Number(this.agentForm.value.countryId),
@@ -497,7 +561,7 @@ export class AgentComponent implements OnInit {
         currentValue.accessId !== this.originalFormValue.accessId ||
         currentValue.countryCode !== this.originalFormValue.countryCode ||
         currentValue.phoneNumber !== this.originalFormValue.phoneNumber ||
-        currentValue.orgId !== this.originalFormValue.orgId ||
+        // currentValue.orgId !== this.originalFormValue.orgId ||
         currentValue.calendarId !== this.originalFormValue.calendarId ||
         currentValue.countryId !== this.originalFormValue.countryId ||
         currentValue.cityId !== this.originalFormValue.cityId ||
@@ -540,6 +604,7 @@ export class AgentComponent implements OnInit {
     this.activeTab = 'create';
     this.isEditMode = true;
     this.pageTitle = 'Edit Agent';
+    this.enquiryUser = false;
 
     this.agentService.getAgentSkills(agent.agentId).subscribe({
       next: (mappingsResp) => {
@@ -556,7 +621,7 @@ export class AgentComponent implements OnInit {
           mailId: agent.mailId,
           accessId: agent.accessId,
           phone: agent.phone,
-          orgId: agent.organization?.companyId || null,
+          // orgId: agent.organization?.companyId || null,
           calendarId: agent.calendar?.calendarId || null,
           countryId: agent.country?.countryId || null,
           cityId: agent.city?.cityId || null,
@@ -655,7 +720,7 @@ export class AgentComponent implements OnInit {
       return;
     }
     this.agentForm.patchValue({ 
-    orgId: '',
+    // orgId: '',
     calendarId: ''
     });
   }
@@ -741,14 +806,14 @@ export class AgentComponent implements OnInit {
     return `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`;
   }
 
-  getCountryByCode(code?: string): CountryMaster | undefined {
-    return this.countries.find(c => c.isoCode === code);
+  getCountryByCode(code?: string, nameString?: string): CountryMaster | undefined {
+    return this.countries.find(c => c[nameString as keyof CountryMaster] === code);
   }
 
   onLocationCountrySelect(countryId: number, selectedCityId?: number): void {
     this.clearLocalTimeInterval();
     this.selectedTimezone = null;
-    this.agentService.getCityList(countryId).subscribe({
+    this.agentService.getCityListByCountry(countryId).subscribe({
       next: (response) => {
         this.cities = (response as any).attributes || [];
         this.selectedCity = null;
@@ -806,7 +871,6 @@ export class AgentComponent implements OnInit {
         minute: '2-digit',
         second: '2-digit'
       });
-      console.log('Updated local time:', this.localTime);
     } catch (error) {
       console.error('Error getting local time:', error);
       this.localTime = '';

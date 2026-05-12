@@ -1,0 +1,14 @@
+<div class="settings-container">
+  <header class="settings-header">
+    <h1>Settings</h1>
+    <p>Select an option below to configure.</p>
+  </header>
+
+  <div class="tile-grid">
+    <div class="tile" *ngFor="let tile of tiles">
+      <button class="tile-button" (click)="onTileClick(tile)">
+        <span class="tile-title">{{ tile.title }}</span>
+      </button>
+    </div>
+  </div>
+</div>

@@ -11,6 +11,7 @@ html body {
   font-family: 'Nunito', sans-serif;
   background: #F4F4F4;
   color: #00246B;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 html,
@@ -20,6 +21,7 @@ body {
   font-family: 'Nunito', sans-serif;
   background: #F4F4F4;
   color: #00246B;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 * {
@@ -33,4 +35,18 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+// Dark Mode Support
+.dark-theme {
+  background: #1a202c !important;
+  color: #e2e8f0 !important;
+
+  a {
+    color: #63b3ed;
+  }
+
+  a:hover {
+    color: #90cdf4;
+  }
 }

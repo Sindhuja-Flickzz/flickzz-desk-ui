@@ -1,6 +1,16 @@
+import { CountryMaster } from "./company-master";
+
 export interface CompanyMaster {
   companyId: number;
   companyName: string;
+  registeredNumber: string;
+  uid: string;
+  country: CountryMaster;
+  address: string;
+  employeeSize: number;
+  mail: string;
+  createdBy: string;
+  updatedBy: string;
 }
 
 export interface PriorityMaster {

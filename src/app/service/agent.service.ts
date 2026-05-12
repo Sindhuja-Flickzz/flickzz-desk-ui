@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
 import { AgentRequest, AgentMaster, AgentSkillsMapping, CountryMasterVO } from '../models/agent-master';
+import { CountryMaster, EnquiryRegistration } from '../models/company-master';
+import { CityMaster } from '../models/city-master';
 
 @Injectable({
   providedIn: 'root'
@@ -12,22 +14,31 @@ export class AgentService {
 
   constructor(private http: HttpClient) { }
 
+  
+  getAllCountries(): Observable<CountryMaster[]> {
+    return this.http.get<CountryMaster[]>(`${this.baseUrl}/country/list`);
+  }
+  
+  getAllCities(): Observable<CityMaster[]> {
+    return this.http.get<CityMaster[]>(`${this.baseUrl}/city/list`);
+  }
+
   getCompanyList(): Observable<any> {
     return this.http.get(`${this.baseUrl}/company/list`);
   }
 
-  getCalendarList(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/settings/calendar/list`);
+  getCalendarList(userOrgId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/calendar/list/${userOrgId}`);
   }
 
-  getSkillsList(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/skills/list`);
+  getSkillsList(userOrgId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/skills/list/${userOrgId}`);
   }
   getCountryList(): Observable<CountryMasterVO[]> {
     return this.http.get<CountryMasterVO[]>(`${this.baseUrl}/country/list`);
   }
-  getCityList(countryId: number): Observable<any> {
-    return this.http.get(`${this.baseUrl}/city/list/${countryId}`);
+  getCityListByCountry(countryId: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/city/country/list/${countryId}`);
   }
 
   getLanguageList(): Observable<any> {
@@ -42,8 +53,8 @@ export class AgentService {
     return this.http.post(`${this.baseUrl}/agent/update`, request);
   }
 
-  getAgentList(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/agent/list`);
+  getAgentList(userOrgId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/agent/list/${userOrgId}`);
   }
 
   getAgentInfoByName(agentName: string): Observable<AgentMaster> {
@@ -56,5 +67,13 @@ export class AgentService {
 
   deleteAgent(agentId: number): Observable<any> {
     return this.http.delete(`${this.baseUrl}/agent/delete/${agentId}`);
+  }
+
+  getEnquiryByEmail(userEmail: string): Observable<EnquiryRegistration> {
+    return this.http.get<EnquiryRegistration>(`${this.baseUrl}/enquiry/${userEmail}`);
+  }
+
+  getAgentInfoByEmail(userEmail: string): Observable<AgentMaster> {
+    return this.http.get<AgentMaster>(`${this.baseUrl}/agent/email/${userEmail}`);
   }
 }

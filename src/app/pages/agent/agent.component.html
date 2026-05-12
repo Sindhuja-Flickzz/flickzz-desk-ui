@@ -1,4 +1,4 @@
-<div class="agent-page">
+<div class="agent-page" title="Agent management page">
   <div class="tabs">
     <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
     <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
@@ -10,8 +10,13 @@
 
     <form [formGroup]="agentForm" (ngSubmit)="onSave()">
       <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
-      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
 
+      <div class="field">
+        <label>Mail ID</label>
+        <input type="email" formControlName="mailId" (change)="onMailIdChange()" placeholder="Enter email" [readonly]="isEditMode" />
+        <span *ngIf="formError.mailId" class="error-text">{{ formError.mailId | fieldLabel  }}</span>
+      </div>
+      
       <div class="field">
         <label>Agent Name</label>
         <input type="text" formControlName="agentName" (change)="checkAgentName()" placeholder="Enter agent name" />
@@ -19,62 +24,12 @@
       </div>
 
       <div class="field">
-        <label>Mail ID</label>
-        <input type="email" formControlName="mailId" (change)="formError['mailId'] = null;" placeholder="Enter email" />
-        <span *ngIf="formError.mailId" class="error-text">{{ formError.mailId | fieldLabel  }}</span>
-      </div>
-
-      <div class="field">
         <label>Access ID</label>
-        <input type="text" formControlName="accessId" (change)="formError['accessId'] = null;" placeholder="Enter access ID" />
+        <input type="text" formControlName="accessId" (change)="formError['accessId'] = null;" placeholder="Enter access ID" [readonly]="isEditMode" />
         <span *ngIf="formError.accessId" class="error-text">{{ formError.accessId | fieldLabel  }}</span>
       </div>
 
-      <div class="field">
-        <label>Phone</label>
-        <div class="phone-input-container">
-          <mat-form-field appearance="outline" class="country-dropdown">
-            <mat-select formControlName="countryCode" placeholder="Country">
-              <mat-select-trigger>
-                <img *ngIf="selectedCountry" [src]="getCountryFlagUrl(selectedCountry.isoCode)" [alt]="selectedCountry.countryName + ' flag'" class="flag-icon selected-flag" />
-              </mat-select-trigger>
-              <mat-option *ngFor="let country of countries" [value]="country.isoCode" >
-                <img [src]="getCountryFlagUrl(country.isoCode)" [alt]="country.countryName + ' flag'" class="flag-icon" />
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-          <div class="phone-code-display" *ngIf="selectedCountry">
-            <!-- <img [src]="getCountryFlagUrl(selectedCountry.isoCode)" [alt]="selectedCountry.countryName + ' flag'" class="flag-icon" /> -->
-            {{ selectedCountry.phoneCode }}
-          </div>
-          <input
-            type="text"
-            formControlName="phoneNumber"
-            placeholder="Enter phone number"
-            class="phone-number-input"
-            (input)="formError['phoneNumber'] = null;" />
-        </div>
-        <span *ngIf="formError.countryCode" class="error-text">{{ formError.countryCode | fieldLabel }}</span>
-        <span *ngIf="formError.phoneNumber" class="error-text">{{ formError.phoneNumber | fieldLabel }}</span>
-      </div>
-
-      <div class="field">
-        <label>Organization</label>
-        <select formControlName="orgId" title="Organization" (change)="formError['orgId'] = null;">
-          <option value="" disabled>Select organization</option>
-          <option *ngFor="let org of companies" [value]="org.companyId">{{ org.companyName }}</option>
-        </select>
-        <span *ngIf="formError.orgId" class="error-text">{{ formError.orgId  | fieldLabel }}</span>
-      </div>
-
-      <div class="field">
-        <label>Calendar</label>
-        <select formControlName="calendarId" title="Calendar" (change)="formError['calendarId'] = null;">
-          <option value="" disabled>Select calendar</option>
-          <option *ngFor="let cal of calendars" [value]="cal.calendarId">{{ cal.calendarCode }}</option>
-        </select>
-        <span *ngIf="formError.calendarId" class="error-text">{{ formError.calendarId | fieldLabel }}</span>
-      </div>
+      
 
       <div class="field-row">
         <div class="field">
@@ -99,6 +54,53 @@
           <label>Local Time</label>
           <input type="text" [value]="localTime" readonly placeholder="Select a city to see local time" />
         </div>
+      </div>
+
+      <div class="field">
+        <label>Phone</label>
+        <div class="phone-input-container">
+          <mat-form-field appearance="outline" class="country-dropdown">
+            <mat-select formControlName="countryCode" placeholder="Country" title="Country code selector">
+              <mat-select-trigger>
+                <img *ngIf="selectedCountry" [src]="getCountryFlagUrl(selectedCountry.isoCode)" [alt]="selectedCountry.countryName + ' flag'" [title]="selectedCountry.countryName + ' flag'" class="flag-icon selected-flag" />
+              </mat-select-trigger>
+              <mat-option *ngFor="let country of countries" [value]="country.isoCode" [disabled]="enquiryUser" >
+                <img [src]="getCountryFlagUrl(country.isoCode)" [alt]="country.countryName + ' flag'" [title]="country.countryName + ' flag'" class="flag-icon" />
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          <div class="phone-code-display" *ngIf="selectedCountry" formControlName="phoneCode">
+            <!-- <img [src]="getCountryFlagUrl(selectedCountry.isoCode)" [alt]="selectedCountry.countryName + ' flag'" class="flag-icon" /> -->
+            {{ selectedCountry.phoneCode }}
+          </div>
+          <input
+            type="text"
+            formControlName="phoneNumber"
+            placeholder="Enter phone number"
+            class="phone-number-input"
+            (input)="formError['phoneNumber'] = null;" 
+            [readOnly]="enquiryUser"/>
+        </div>
+        <span *ngIf="formError.countryCode" class="error-text">{{ formError.countryCode | fieldLabel }}</span>
+        <span *ngIf="formError.phoneNumber" class="error-text">{{ formError.phoneNumber | fieldLabel }}</span>
+      </div>
+
+      <!-- <div class="field">
+        <label>Organization</label>
+        <select formControlName="orgId" title="Organization" (change)="formError['orgId'] = null;">
+          <option value="" disabled>Select organization</option>
+          <option *ngFor="let org of companies" [value]="org.companyId">{{ org.companyName }}</option>
+        </select>
+        <span *ngIf="formError.orgId" class="error-text">{{ formError.orgId  | fieldLabel }}</span>
+      </div> -->
+
+      <div class="field">
+        <label>Calendar</label>
+        <select formControlName="calendarId" title="Calendar" (change)="formError['calendarId'] = null;">
+          <option value="" disabled>Select calendar</option>
+          <option *ngFor="let cal of calendars" [value]="cal.calendarId">{{ cal.calendarCode }}</option>
+        </select>
+        <span *ngIf="formError.calendarId" class="error-text">{{ formError.calendarId | fieldLabel }}</span>
       </div>
 
       <div class="field">
@@ -155,6 +157,7 @@
         <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isEditMode ? (isSubmitting ? 'Updating Agent...' : 'Update Agent') : (isSubmitting ? 'Saving Agent...' : 'Save Agent') }}</button>
         <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
         <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
+        <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
       </div>
     </form>
   </div>
@@ -193,10 +196,10 @@
             <td>{{ agent.accessId }}</td>
             <td>{{ agent.phone }}</td>
             <td>{{ agent.organization.companyName }}</td>
-            <td>{{ agent.country?.countryName }}</td>
-            <td>{{ agent.city?.cityName }}</td>
-            <td>{{ agent.language?.languageName }}</td>
-            <td>{{ agentSkillNames[agent.agentId]?.join(', ') }}</td>
+            <td>{{ agent.country.countryName }}</td>
+            <td>{{ agent.city.cityName }}</td>
+            <td>{{ agent.language.languageName }}</td>
+            <td>{{ agentSkillNames[agent.agentId].join(', ') }}</td>
             <td>{{ agent.calendar.calendarCode }}</td>
             <td class="action-buttons">
               <button type="button" (click)="onViewAgent(agent)"><mat-icon>edit</mat-icon></button>
@@ -205,6 +208,10 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div *ngIf="!loading && agents.length === 0" class="empty-state">
+      No Agents found.
     </div>
 
     <div class="pagination-controls">

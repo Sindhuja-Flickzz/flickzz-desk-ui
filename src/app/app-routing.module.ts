@@ -1,18 +1,24 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import {LoginComponent} from "./pages/login/login.component";
-import {RegisterComponent} from "./pages/register/register.component";
 import {WelcomeComponent} from "./pages/welcome/welcome.component";
-import {CreateCalendarComponent} from "./pages/calendar/create-calendar/create-calendar.component";
-import {CalendarListPageComponent} from "./pages/calendar/calendar-list/calendar-list.component";
-import {PlantComponent} from "./pages/plant/plant.component";
+import {CalendarComponent} from "./pages/calendar/calendar.component/calendar.component";
+import { CalendarTypeComponent } from "./pages/calendar/type/calendar-type.component";
+import {PlantComponent}from "./pages/plant/plant.component";
+import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
+// import { ProjectTimelineGanttComponent } from './pages/project-builder/project-timeline-gantt/project-timeline-gantt.component';
 import {SkillComponent} from "./pages/skill/skill.component";
 import {CompanyComponent} from "./pages/company/company.component";
 import {AgentComponent} from "./pages/agent/agent.component";
 import {PriorityComponent} from "./pages/priority/priority.component";
+import {ImpactComponent} from "./pages/impact/impact.component";
 import {RitmComponent} from "./pages/ritm/ritm.component";
 import {BusinessOfferingComponent} from "./pages/business-offering/business-offering.component";
 import {NumberRangeComponent} from "./pages/number-range/number-range.component";
+import {VerifyComponent} from './pages/verify/verify.component';
+import {EnquiryRegistrationComponent} from './pages/enquiry-registration/enquiry-registration.component';
+import {SettingsComponent} from './pages/settings/settings.component';
+import {ProfileComponent} from './pages/profile/profile.component';
 import {authGuard} from "./service/auth/auth.guard";
 
 const routes: Routes = [
@@ -26,22 +32,28 @@ const routes: Routes = [
     component: LoginComponent
   },
   {
-    path: 'register',
-    component: RegisterComponent
-  },
-  {
     path: 'welcome',
     component: WelcomeComponent,
     canActivate: [authGuard]
   },
   {
-    path: 'calendar/create-calendar',
-    component: CreateCalendarComponent,
+    path: 'settings',
+    component: SettingsComponent,
     canActivate: [authGuard]
   },
   {
-    path: 'calendar/list',
-    component: CalendarListPageComponent,
+    path: 'profile',
+    component: ProfileComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'calendar',
+    component: CalendarComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'calendar-type',
+    component: CalendarTypeComponent,
     canActivate: [authGuard]
   },
   {
@@ -49,6 +61,16 @@ const routes: Routes = [
     component: PlantComponent,
     canActivate: [authGuard]
   },
+  {
+    path: 'project-builder',
+    component: ProjectBuilderComponent,
+    canActivate: [authGuard]
+  },
+  // {
+  //   path: 'project-builder/:projectId',
+  //   component: ProjectTimelineGanttComponent,
+  //   canActivate: [authGuard]
+  // },
   {
     path: 'number-range',
     component: NumberRangeComponent,
@@ -62,6 +84,11 @@ const routes: Routes = [
   {
     path: 'priority',
     component: PriorityComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'impact',
+    component: ImpactComponent,
     canActivate: [authGuard]
   },
   {
@@ -95,6 +122,14 @@ const routes: Routes = [
     path: 'agent',
     component: AgentComponent,
     canActivate: [authGuard]
+  },
+  {
+    path: 'enquiry/register',
+    component: EnquiryRegistrationComponent
+  },
+  {
+    path: 'enquiry/verify',
+    component: VerifyComponent
   },
   {
     path: '**',

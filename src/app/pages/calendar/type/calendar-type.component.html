@@ -1,0 +1,93 @@
+<div class="calendar-type-page">
+  <div class="tabs">
+    <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
+    <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <h2>{{ pageTitle }}</h2>
+
+    <form [formGroup]="calendarTypeForm" (ngSubmit)="onSave()">
+
+      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+      
+      <div class="field">
+        <label>Type Name</label>
+        <div class="input-with-button">
+          <input type="text" formControlName="typeName" placeholder="Enter calendar type name" />
+          <button type="button" class="add-btn" (click)="addTypeName()">+</button>
+        </div>
+        <span *ngIf="formError.typeName" class="error-text">{{ formError.typeName | fieldLabel }}</span>
+      </div>
+
+      <div *ngIf="!isEditMode && typeNameList.length > 0" class="type-list">
+        <h3>Calendar Types to Create:</h3>
+        <div class="skills-chips">
+          <!-- <li *ngFor="let typeName of typeNameList; let i = index">
+            <span>{{ typeName }}</span>
+            <button type="button" class="remove-btn" (click)="removeTypeName(i)">×</button>
+          </li> -->
+          <button type="button" *ngFor="let typeName of typeNameList" class="skill-chip" (click)="removeTypeName(typeName)">
+            {{ typeName }} 
+            <span class="remove-icon">×</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="actions">
+        <button type="submit" *ngIf="!isSubmitting" class="save-btn" [disabled]="typeNameList.length === 0">Save</button>
+        <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>Saving</button>
+        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button type="button" class="reset-btn" (click)="cancelForm()">Back</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <h2>Calendar Type List</h2>
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+    
+    <div class="search-container">
+      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by type name or created by..." class="search-input">
+    </div>
+    
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Type Name</th>
+            <th>Created By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let type of getPaginatedCalendarTypes()">
+            <td>{{ type.typeName }}</td>
+            <td>{{ type.createdBy }}</td>
+            <td class="action-buttons">
+              <button type="button" (click)="onDeleteCalendarType(type)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && calendarTypes.length === 0" class="empty-state">
+    No calendar type found.
+  </div>
+
+    <div class="pagination-controls">
+      <mat-paginator
+        [length]="totalRecords"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+    </div>
+  </div>
+</div>
