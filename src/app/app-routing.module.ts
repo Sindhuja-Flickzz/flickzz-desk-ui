@@ -3,7 +3,10 @@ import { RouterModule, Routes } from '@angular/router';
 import {LoginComponent} from "./pages/login/login.component";
 import {WelcomeComponent} from "./pages/welcome/welcome.component";
 import {CalendarComponent} from "./pages/calendar/calendar.component/calendar.component";
-import { CalendarTypeComponent } from "./pages/calendar/type/calendar-type.component";import {PlantComponent} from "./pages/plant/plant.component";
+import { CalendarTypeComponent } from "./pages/calendar/type/calendar-type.component";
+import {PlantComponent}from "./pages/plant/plant.component";
+import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
+// import { ProjectTimelineGanttComponent } from './pages/project-builder/project-timeline-gantt/project-timeline-gantt.component';
 import {SkillComponent} from "./pages/skill/skill.component";
 import {CompanyComponent} from "./pages/company/company.component";
 import {AgentComponent} from "./pages/agent/agent.component";
@@ -58,6 +61,16 @@ const routes: Routes = [
     component: PlantComponent,
     canActivate: [authGuard]
   },
+  {
+    path: 'project-builder',
+    component: ProjectBuilderComponent,
+    canActivate: [authGuard]
+  },
+  // {
+  //   path: 'project-builder/:projectId',
+  //   component: ProjectTimelineGanttComponent,
+  //   canActivate: [authGuard]
+  // },
   {
     path: 'number-range',
     component: NumberRangeComponent,

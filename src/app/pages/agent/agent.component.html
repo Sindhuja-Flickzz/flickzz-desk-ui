@@ -1,4 +1,4 @@
-<div class="agent-page">
+<div class="agent-page" title="Agent management page">
   <div class="tabs">
     <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
     <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
@@ -60,12 +60,12 @@
         <label>Phone</label>
         <div class="phone-input-container">
           <mat-form-field appearance="outline" class="country-dropdown">
-            <mat-select formControlName="countryCode" placeholder="Country">
+            <mat-select formControlName="countryCode" placeholder="Country" title="Country code selector">
               <mat-select-trigger>
-                <img *ngIf="selectedCountry" [src]="getCountryFlagUrl(selectedCountry.isoCode)" [alt]="selectedCountry.countryName + ' flag'" class="flag-icon selected-flag" />
+                <img *ngIf="selectedCountry" [src]="getCountryFlagUrl(selectedCountry.isoCode)" [alt]="selectedCountry.countryName + ' flag'" [title]="selectedCountry.countryName + ' flag'" class="flag-icon selected-flag" />
               </mat-select-trigger>
               <mat-option *ngFor="let country of countries" [value]="country.isoCode" [disabled]="enquiryUser" >
-                <img [src]="getCountryFlagUrl(country.isoCode)" [alt]="country.countryName + ' flag'" class="flag-icon" />
+                <img [src]="getCountryFlagUrl(country.isoCode)" [alt]="country.countryName + ' flag'" [title]="country.countryName + ' flag'" class="flag-icon" />
               </mat-option>
             </mat-select>
           </mat-form-field>
@@ -208,6 +208,10 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div *ngIf="!loading && agents.length === 0" class="empty-state">
+      No Agents found.
     </div>
 
     <div class="pagination-controls">

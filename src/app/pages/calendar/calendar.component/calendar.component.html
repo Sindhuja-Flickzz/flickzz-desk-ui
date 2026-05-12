@@ -1,4 +1,4 @@
-<div class="calendar-page">
+<div class="calendar-page" title="Calendar management page">
   <div class="tabs">
     <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
     <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
@@ -47,6 +47,7 @@
             </label>
             <select
                 id="calendarType"
+                title="Calendar type"
                 formControlName="calendarType"
                 class="form-control"
                 (change)="fieldErrors['calendarType'] = null;"
@@ -141,6 +142,7 @@
             <label for="timezone">Timezone <span class="required">*</span></label>
             <select
                 id="timezone"
+                title="Timezone"
                 formControlName="timezone"
                 class="form-control"
                 (change)="fieldErrors['timezone'] = null;"

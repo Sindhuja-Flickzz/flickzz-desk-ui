@@ -21,8 +21,8 @@
       </div>
 
       <div class="field">
-        <label>Region</label>
-        <select formControlName="countryId">
+        <label for="countryId">Region</label>
+        <select id="countryId" formControlName="countryId" title="Region">
           <option value="" disabled>Select region</option>
           <option *ngFor="let c of countries" [value]="c.countryId">{{ c.countryName }}</option>
         </select>
@@ -30,8 +30,8 @@
       </div>
 
       <div class="field">
-        <label>Calendar</label>
-        <select formControlName="calendarId">
+        <label for="calendarId">Calendar</label>
+        <select id="calendarId" formControlName="calendarId" title="Calendar">
           <option value="" disabled>Select calendar</option>
           <option *ngFor="let cal of calendars" [value]="cal.calendarId">{{ cal.calendarCode }}</option>
         </select>

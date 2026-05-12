@@ -227,6 +227,16 @@ export const MENU_INFO: MenuItem[] = [
                 "route": "/settings",
                 "childSubMenus": []}
         ]
+    },
+    {
+        "menuId": 4,
+        "menuName": "Project Builder",
+        "isActive": true,
+        "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+        "icon": "🏗️",
+        "isParent": true,
+        "route": "/project-builder",
+        "subMenus": []
     }
 ];
 

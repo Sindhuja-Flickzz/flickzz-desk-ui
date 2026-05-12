@@ -17,6 +17,7 @@ import { SkillComponent } from './pages/skill/skill.component';
 import { CompanyComponent } from './pages/company/company.component';
 import { AgentComponent } from './pages/agent/agent.component';
 import { FieldLabelPipe } from './pipes/field-label.pipe';
+import { JoinPipe } from './pipes/field-label.pipe';
 import {HttpClient, HttpClientModule, HTTP_INTERCEPTORS} from "@angular/common/http";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import { AuthInterceptor } from './service/auth.interceptor';
@@ -37,6 +38,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { PriorityComponent } from './pages/priority/priority.component';
 import { ImpactComponent } from './pages/impact/impact.component';
 import { RitmComponent } from './pages/ritm/ritm.component';
@@ -47,6 +50,8 @@ import { EnquiryRegistrationComponent } from './pages/enquiry-registration/enqui
 import { SettingsComponent } from './pages/settings/settings.component';
 import { ProfileIconComponent } from './shared/profile-icon/profile-icon.component';
 import { ProfileComponent } from './pages/profile/profile.component';
+import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
+import { ProjectTimelineGanttComponent } from './pages/project-builder/project-timeline-gantt/project-timeline-gantt.component';
 
 @NgModule({
   declarations: [
@@ -63,6 +68,7 @@ import { ProfileComponent } from './pages/profile/profile.component';
     CompanyComponent,
     AgentComponent,
     FieldLabelPipe,
+    JoinPipe,
     PriorityComponent,
     ImpactComponent,
     RitmComponent,
@@ -72,7 +78,9 @@ import { ProfileComponent } from './pages/profile/profile.component';
     EnquiryRegistrationComponent,
     SettingsComponent,
     ProfileIconComponent,
-    ProfileComponent
+    ProfileComponent,
+    ProjectBuilderComponent,
+    ProjectTimelineGanttComponent
   ],
   imports: [
     BrowserModule,
@@ -97,7 +105,9 @@ import { ProfileComponent } from './pages/profile/profile.component';
     MatNativeDateModule,
     MatSlideToggleModule,
     MatTabsModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatChipsModule,
+    MatTooltipModule
   ],
   providers: [
     HttpClient,
