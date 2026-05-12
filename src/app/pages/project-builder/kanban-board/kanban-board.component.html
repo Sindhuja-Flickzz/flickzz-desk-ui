@@ -1,0 +1,231 @@
+<div class="kanban-board-container">
+  <!-- Header with filters and controls -->
+  <div class="kanban-header">
+    <div class="header-left">
+      <h2 class="board-title">{{ project?.projectName }} - Kanban Board</h2>
+    </div>
+    <div class="header-right">
+      <div class="search-box">
+        <mat-icon>search</mat-icon>
+        <input
+          type="text"
+          placeholder="Search tasks..."
+          [(ngModel)]="filters.searchText"
+          (ngModelChange)="applyFilters()"
+          class="search-input"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Panel -->
+  <div class="filter-panel">
+    <div class="filter-group">
+      <label>Epic:</label>
+      <select
+        [(ngModel)]="filters.selectedEpic"
+        (ngModelChange)="applyFilters()"
+        class="filter-select"
+      >
+        <option value="">All Epics</option>
+        <option *ngFor="let epic of epicOptions" [value]="epic">
+          {{ epic }}
+        </option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Lead:</label>
+      <select
+        [(ngModel)]="filters.selectedLead"
+        (ngModelChange)="applyFilters()"
+        class="filter-select"
+      >
+        <option [value]="undefined">All Leads</option>
+        <option *ngFor="let lead of leadOptions" [value]="lead.companyId">
+          {{ lead.companyName }}
+        </option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Status:</label>
+      <select
+        [(ngModel)]="filters.selectedStatus"
+        (ngModelChange)="applyFilters()"
+        class="filter-select"
+      >
+        <option [value]="undefined">All Statuses</option>
+        <option *ngFor="let status of statusOptions" [value]="status.progressId">
+          {{ status.progressName }}
+        </option>
+      </select>
+    </div>
+
+    <div class="filter-group checkbox">
+      <label>
+        <input
+          type="checkbox"
+          [(ngModel)]="filters.showOverdue"
+          (ngModelChange)="applyFilters()"
+        />
+        Show Overdue
+      </label>
+    </div>
+  </div>
+
+  <!-- Error message -->
+  <div *ngIf="error" class="alert alert-error">
+    {{ error }}
+    <button (click)="error = ''" class="close-btn">×</button>
+  </div>
+
+  <!-- Kanban Board -->
+  <div class="kanban-board-wrapper">
+    <div class="kanban-board">
+      <!-- Columns -->
+      <div
+        *ngFor="
+          let column of columns;
+          trackBy: trackByColumnId
+        "
+        class="kanban-column"
+        [style.--status-color]="'#' + column.colorCode"
+        [@fadeInOut]
+      >
+        <!-- Column Header -->
+        <div class="column-header">
+          <div class="header-content">
+            <div class="status-dot" [style.backgroundColor]="'#' + column.colorCode"></div>
+            <div class="header-info">
+              <h3 class="column-title">{{ column.progressName }}</h3>
+              <span class="task-count">{{ getColumnTasks(column.progressId).length }}</span>
+            </div>
+          </div>
+          <button
+            class="collapse-btn"
+            (click)="toggleColumnCollapse(column.progressId)"
+            [attr.aria-label]="isColumnExpanded(column.progressId) ? 'Collapse' : 'Expand'"
+          >
+            <mat-icon>
+              {{ isColumnExpanded(column.progressId) ? 'unfold_less' : 'unfold_more' }}
+            </mat-icon>
+          </button>
+        </div>
+
+        <!-- Tasks Container (Droppable) -->
+        <div
+          *ngIf="isColumnExpanded(column.progressId)"
+          class="tasks-container"
+          cdkDropList
+          [id]="'drop-' + column.progressId"
+          [cdkDropListData]="getColumnTasks(column.progressId)"
+          cdkDropListSortingDisabled
+          (cdkDropListDropped)="drop($event, column.progressId)"
+          (cdkDropListEntered)="isDragging = true"
+          (cdkDropListExited)="isDragging = false"
+        >
+          <!-- Task Cards -->
+          <div
+            *ngFor="
+              let task of getColumnTasks(column.progressId);
+              trackBy: trackByStoryId
+            "
+            class="task-card"
+            cdkDrag
+            [cdkDragData]="task"
+            [@slideIn]
+          >
+            <!-- Card Content -->
+            <div class="card-header">
+              <div class="story-badge">{{ task.storyCode }}</div>
+              <div class="priority-badge" *ngIf="task.priority">
+                {{ task.priority.priorityName }}
+              </div>
+            </div>
+
+            <div class="card-body">
+              <h4 class="task-title">{{ task.title }}</h4>
+              <p class="task-description">{{ task.description }}</p>
+
+              <!-- Epic name -->
+              <div class="epic-tag" *ngIf="task.epicName">
+                <mat-icon>bookmark</mat-icon>
+                <span>{{ task.epicName }}</span>
+              </div>
+
+              <!-- Progress bar -->
+              <div class="progress-section">
+                <div class="progress-label">
+                  <span>Progress</span>
+                  <span class="percentage">{{ task.completionPercentage | number : '1.0-0' }}%</span>
+                </div>
+                <div class="progress-bar">
+                  <div
+                    class="progress-fill"
+                    [style.width.%]="task.completionPercentage"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <!-- Leads/Assignees -->
+              <div class="leads-section">
+                <div class="lead-avatars">
+                  <div
+                    *ngFor="let lead of task.leads; let i = index"
+                    class="lead-avatar"
+                    [title]="lead.companyName"
+                  >
+                    {{ (lead.companyName | slice:0:1 | uppercase) }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dates and metrics -->
+              <div class="metrics-section">
+                <div class="metric" *ngIf="task.plannedEndDate">
+                  <mat-icon>calendar_today</mat-icon>
+                  <span title="Due date">
+                    {{ task.plannedEndDate | date : 'MMM d' }}
+                  </span>
+                </div>
+                <div class="metric" *ngIf="task.workDays">
+                  <mat-icon>schedule</mat-icon>
+                  <span title="Work days">{{ task.workDays }} days</span>
+                </div>
+                <div class="metric" *ngIf="task.storyPoints">
+                  <mat-icon>assessment</mat-icon>
+                  <span title="Story points">{{ task.storyPoints }} pts</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Drag preview -->
+            <div *cdkDragPlaceholder class="drag-placeholder"></div>
+          </div>
+
+          <!-- Empty state -->
+          <div *ngIf="getColumnTasks(column.progressId).length === 0" class="empty-state">
+            <mat-icon>inbox</mat-icon>
+            <p>No tasks</p>
+          </div>
+        </div>
+
+        <!-- Collapsed state -->
+        <div
+          *ngIf="!isColumnExpanded(column.progressId)"
+          class="collapsed-state"
+        >
+          <p>{{ getColumnTasks(column.progressId).length }} tasks</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading indicator -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+</div>

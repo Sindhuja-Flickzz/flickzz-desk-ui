@@ -6,8 +6,17 @@
     (backClicked)="selectedProjectForView = undefined">
   </app-project-timeline-gantt>
 
+  <!-- Kanban Board View -->
+  <div *ngIf="selectedProjectForKanban" class="kanban-view-wrapper">
+    <button class="back-btn" (click)="selectedProjectForKanban = undefined">
+      <mat-icon>arrow_back</mat-icon>
+      Back to Project List
+    </button>
+    <app-kanban-board [project]="selectedProjectForKanban"></app-kanban-board>
+  </div>
+
   <!-- Main Project Builder View -->
-  <ng-container *ngIf="!selectedProjectForView">
+  <ng-container *ngIf="!selectedProjectForView && !selectedProjectForKanban">
     <div class="tabs">
       <button class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
       <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
@@ -324,7 +333,8 @@
             <td>{{ (project.plannedStartDate | date:'yyyy-MM-dd') || 'N/A'}}</td>
             <td>{{ (project.plannedEndDate | date:'yyyy-MM-dd') || 'N/A' }}</td>
             <td class="action-buttons">
-              <button type="button" title="View" (click)="onViewProject(project)"><mat-icon>visibility</mat-icon></button>
+              <button type="button" title="View Gantt" (click)="onViewProject(project)"><mat-icon>visibility</mat-icon></button>
+              <button type="button" title="Kanban Board" (click)="onViewKanban(project)"><mat-icon>dashboard</mat-icon></button>
               <button type="button" title="Delete" (click)="onDeleteProject(project)"><mat-icon>delete</mat-icon></button>
             </td>
           </tr>

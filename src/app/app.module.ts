@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CommonModule } from '@angular/common';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -52,6 +53,7 @@ import { ProfileIconComponent } from './shared/profile-icon/profile-icon.compone
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
 import { ProjectTimelineGanttComponent } from './pages/project-builder/project-timeline-gantt/project-timeline-gantt.component';
+import { KanbanBoardComponent } from './pages/project-builder/kanban-board/kanban-board.component';
 
 @NgModule({
   declarations: [
@@ -80,7 +82,8 @@ import { ProjectTimelineGanttComponent } from './pages/project-builder/project-t
     ProfileIconComponent,
     ProfileComponent,
     ProjectBuilderComponent,
-    ProjectTimelineGanttComponent
+    ProjectTimelineGanttComponent,
+    KanbanBoardComponent
   ],
   imports: [
     BrowserModule,
@@ -90,6 +93,7 @@ import { ProjectTimelineGanttComponent } from './pages/project-builder/project-t
     FormsModule,
     ReactiveFormsModule,
     CommonModule,
+    DragDropModule,
     // Angular Material modules
     MatDialogModule,
     MatIconModule,

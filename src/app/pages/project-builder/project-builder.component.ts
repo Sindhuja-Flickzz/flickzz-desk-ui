@@ -25,6 +25,7 @@ export class ProjectBuilderComponent implements OnInit {
   projects: ProjectVO[] = [];
   filteredProjects: ProjectVO[] = [];
   selectedProjectForView?: ProjectVO;
+  selectedProjectForKanban?: ProjectVO;
 
   searchValue = '';
   pageSize = 10;
@@ -453,6 +454,23 @@ export class ProjectBuilderComponent implements OnInit {
         console.error('Failed to load project details', err);
         this.selectedProjectForView = project;
         this.submitError = 'Unable to fetch complete project details.';
+      }
+    });
+  }
+
+  /**
+   * Load project and display in Kanban board view
+   */
+  onViewKanban(project: ProjectVO): void {
+    this.selectedProjectForKanban = project;
+    this.projectService.getProjectInfo(String(project.projectId)).subscribe({
+      next: (result) => {
+        this.selectedProjectForKanban = (result as any).attributes || project;  
+      },
+      error: (err) => {
+        console.error('Failed to load project details for Kanban', err);
+        this.selectedProjectForKanban = project;
+        this.submitError = 'Unable to fetch project details for Kanban board.';
       }
     });
   }
