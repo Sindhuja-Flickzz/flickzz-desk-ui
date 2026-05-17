@@ -40,6 +40,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 import { PriorityComponent } from './pages/priority/priority.component';
 import { ImpactComponent } from './pages/impact/impact.component';
 import { RitmComponent } from './pages/ritm/ritm.component';
@@ -107,7 +108,8 @@ import { ProjectTimelineGanttComponent } from './pages/project-builder/project-t
     MatTabsModule,
     MatProgressSpinnerModule,
     MatChipsModule,
-    MatTooltipModule
+    MatTooltipModule,
+    DragDropModule
   ],
   providers: [
     HttpClient,

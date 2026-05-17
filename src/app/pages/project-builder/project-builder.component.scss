@@ -359,6 +359,56 @@
   color: #5f728c;
 }
 
+.user-story-list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 0.8vw, 6px);
+  padding-left: clamp(20px, 4vw, 32px);
+}
+
+.user-story-row {
+  display: grid;
+  grid-template-columns: auto 1fr clamp(32px, 8vw, 38px);
+  align-items: center;
+  gap: clamp(8px, 1.5vw, 12px);
+  background: #f9fbff;
+  border: 1px solid transparent;
+  border-radius: clamp(10px, 2vw, 14px);
+  padding: clamp(8px, 1.2vw, 12px) clamp(8px, 1.5vw, 12px);
+  color: #5f728c;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: clamp(36px, 6vw, 42px);
+
+  &:hover {
+    border-color: #d6dfea;
+    background: #f0f4fb;
+    color: #3d5680;
+  }
+
+  &.active {
+    border-color: #0f5bba;
+    background: #eef4ff;
+    color: #0f5bba;
+    font-weight: 600;
+  }
+}
+
+.user-story-indent {
+  width: clamp(2px, 0.4vw, 4px);
+  height: clamp(16px, 3vw, 24px);
+  background: #cdd9f0;
+  border-radius: 2px;
+}
+
+.user-story-name {
+  font-size: clamp(11px, 1.3vw, 13px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .icon-button {
   border: none;
   background: transparent;
@@ -383,11 +433,12 @@
 }
 
 .add-epic-btn,
-.add-task-btn,
+.add-user-story-btn,
 .outline-btn {
   border: 1px solid #0f5bba;
   background: #fff;
   color: #0f5bba;
+  margin-top: 5px;
   padding: clamp(10px, 1.5vw, 12px) clamp(12px, 2vw, 16px);
   cursor: pointer;
   border-radius: clamp(10px, 2vw, 14px);
@@ -449,7 +500,7 @@
   margin-top: clamp(4px, 1vw, 6px);
 }
 
-.tasks-table {
+.user-stories-table {
   overflow-x: auto;
   width: 100%;
   max-width: 100%;
@@ -457,7 +508,7 @@
   box-sizing: border-box;
 }
 
-.tasks-table table {
+.user-stories-table table {
   width: 100%;
   border-collapse: collapse;
   min-width: 100%;
@@ -466,8 +517,8 @@
   box-sizing: border-box;
 }
 
-.tasks-table th,
-.tasks-table td {
+.user-stories-table th,
+.user-stories-table td {
   text-align: left;
   padding: clamp(8px, 1.5vw, 14px);
   border-bottom: 1px solid #eef2f8;
@@ -475,13 +526,13 @@
   word-break: break-word;
 }
 
-.tasks-table thead {
+.user-stories-table thead {
   background: #f8faff;
   font-weight: 600;
 }
 
-.tasks-table input,
-.tasks-table select {
+.user-stories-table input,
+.user-stories-table select {
   width: 100%;
   min-width: clamp(90px, 20vw, 140px);
   background: #fff;
@@ -511,7 +562,7 @@
   display: block;
 }
 
-.tasks-table .icon-button {
+.user-stories-table .icon-button {
   width: 38px;
   height: 38px;
   border-radius: 12px;
@@ -799,11 +850,11 @@
   transition: transform 0.3s ease;
 }
 
-.mobile-tasks {
+.mobile-user-stories {
   display: none;
 }
 
-.task-card {
+.user-story-card {
   background: #f9f9f9;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -842,7 +893,7 @@
   border-radius: 4px;
 }
 
-.remove-task-btn {
+.remove-user-story-btn {
   background: #ff4d4f;
   color: #fff;
   border: none;
@@ -894,7 +945,7 @@
     gap: 24px;
   }
 
-  .tasks-table table {
+  .user-stories-table table {
     min-width: 900px;
   }
 }
@@ -920,12 +971,12 @@
     box-sizing: border-box;
   }
 
-  .tasks-table input,
-  .tasks-table select {
+  .user-stories-table input,
+  .user-stories-table select {
     min-width: 120px;
   }
 
-  .tasks-table table {
+  .user-stories-table table {
     min-width: 800px;
   }
 }
@@ -996,16 +1047,16 @@
     box-sizing: border-box;
   }
 
-  .tasks-table {
+  .user-stories-table {
     overflow-x: auto;
   }
 
-  .tasks-table table {
+  .user-stories-table table {
     min-width: 700px;
   }
 
-  .tasks-table input,
-  .tasks-table select {
+  .user-stories-table input,
+  .user-stories-table select {
     min-width: 110px;
     height: 28px;
     padding: 6px 8px;
@@ -1153,23 +1204,23 @@
     padding: 10px 12px;
   }
 
-  .tasks-table {
+  .user-stories-table {
     overflow-x: auto;
 
   }
 
-  .tasks-table table {
+  .user-stories-table table {
     min-width: 650px;
   }
 
-  .tasks-table th,
-  .tasks-table td {
+  .user-stories-table th,
+  .user-stories-table td {
     padding: 10px 8px;
     font-size: 12px;
   }
 
-  .tasks-table input,
-  .tasks-table select {
+  .user-stories-table input,
+  .user-stories-table select {
     min-width: 100px;
     height: 26px;
     padding: 4px 6px;
@@ -1235,11 +1286,11 @@
     font-size: 18px;
   }
 
-  .mobile-tasks {
+  .mobile-user-stories {
     display: block;
   }
 
-  .tasks-table {
+  .user-stories-table {
     display: table;
   }
 
@@ -1362,15 +1413,15 @@
     border-radius: 6px;
   }
 
-  .tasks-table {
+  .user-stories-table {
     display: none;
   }
 
-  .mobile-tasks {
+  .mobile-user-stories {
     display: block;
   }
 
-  .task-card {
+  .user-story-card {
     background: #f5f7fb;
     border: 1px solid #e0e6f2;
     border-radius: 8px;
@@ -1495,7 +1546,7 @@
   }
 
   .add-epic-btn,
-  .add-task-btn,
+  .add-user-story-btn,
   .outline-btn {
     width: 100%;
     padding: 10px;

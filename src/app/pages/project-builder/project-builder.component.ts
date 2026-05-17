@@ -1,5 +1,6 @@
 import { Component, HostListener, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { PageEvent } from '@angular/material/paginator';
 import { CompanyMaster } from '../../models/company-master';
 import { CompanyService } from '../../service/company.service';
@@ -18,6 +19,7 @@ export class ProjectBuilderComponent implements OnInit {
   activeTab: 'create' | 'list' = 'create';
   reviewMode = false;
   selectedEpicIndex = 0;
+  selectedUserStoryIndex: number | null = null;
   isMobile = false;
   isSidebarOpen = true;
   builderForm: FormGroup;
@@ -86,43 +88,63 @@ export class ProjectBuilderComponent implements OnInit {
     return this.builderForm.get('epics') as FormArray;
   }
 
-  tasks(epicIndex: number): FormArray {
-    return this.epics.at(epicIndex).get('tasks') as FormArray;
+  userStories(epicIndex: number): FormArray {
+    return this.epics.at(epicIndex).get('userStories') as FormArray;
   }
 
   get selectedEpic(): FormGroup {
     return this.epics.at(this.selectedEpicIndex) as FormGroup;
   }
 
-  selectEpic(index: number): void {
-    this.selectedEpicIndex = index;
+  get selectedUserStory(): FormGroup | null {
+    if (this.selectedUserStoryIndex === null) return null;
+    return this.userStories(this.selectedEpicIndex).at(this.selectedUserStoryIndex) as FormGroup;
   }
 
-  createTaskForm(taskId: string = ''): FormGroup {
+  selectEpic(index: number): void {
+    this.selectedEpicIndex = index;
+    this.selectedUserStoryIndex = null;
+  }
+
+  selectUserStory(epicIndex: number, userStoryIndex: number): void {
+    this.selectedEpicIndex = epicIndex;
+    this.selectedUserStoryIndex = userStoryIndex;
+  }
+
+  createUserStoryForm(userStoryId: string = ''): FormGroup {
     return this.fb.group({
-      taskId: [taskId],
-      taskName: ['', Validators.required],
+      userStoryId: [userStoryId],
+      userStoryName: ['', Validators.required],
       leadIds: [[], Validators.required],
       startDate: ['', Validators.required],
       endDate: ['', Validators.required],
-      predecessorTaskName: [null]
+      predecessorUserStoryName: [null]
     });
   }
+
+  // createUserStoryForm(userStoryId: string = ''): FormGroup {
+  //   return this.fb.group({
+  //     userStoryId: [userStoryId],
+  //     userStoryName: ['', Validators.required],
+  //     userStoryDesc: [''],
+  //     userStories: this.fb.array([this.createUserStoryForm(`${userStoryId}.1`)])
+  //   });
+  // }
 
   createEpicForm(): FormGroup {
     return this.fb.group({
       epicName: ['', Validators.required],
       epicDesc: [''],
       epicSequence: [this.epics.length + 1],
-      tasks: this.fb.array([this.createTaskForm(`${this.epics.length + 1}.1`)])
+      userStories: this.fb.array([this.createUserStoryForm(`${this.epics.length + 1}.1`)])
     });
   }
 
   addEpic(): void {
     this.epics.push(this.createEpicForm());
     this.syncEpicSequences();
-    this.syncTaskIds();
     this.selectedEpicIndex = this.epics.length - 1;
+    this.selectedUserStoryIndex = null;
   }
 
   removeEpic(index: number): void {
@@ -131,36 +153,86 @@ export class ProjectBuilderComponent implements OnInit {
     }
     this.epics.removeAt(index);
     this.syncEpicSequences();
-    this.syncTaskIds();
     if (this.selectedEpicIndex >= this.epics.length) {
       this.selectedEpicIndex = this.epics.length - 1;
     }
     if (this.selectedEpicIndex < 0) {
       this.selectedEpicIndex = 0;
     }
+    this.selectedUserStoryIndex = null;
   }
 
-  addTask(epicIndex: number): void {
-    this.tasks(epicIndex).push(this.createTaskForm(`${epicIndex + 1}.${this.tasks(epicIndex).length + 1}`));
-    this.syncTaskIds();
+  addUserStory(epicIndex: number): void {
+    const storyArray = this.userStories(epicIndex);
+    const newIndex = storyArray.length;
+    storyArray.push(this.createUserStoryForm(`${epicIndex + 1}.${newIndex + 1}`));
+    this.selectedEpicIndex = epicIndex;
+    this.selectedUserStoryIndex = newIndex;
+    this.syncUserStoryIds();
   }
 
-  removeTask(epicIndex: number, taskIndex: number): void {
-    const taskArray = this.tasks(epicIndex);
-    if (taskArray.length <= 1) {
+  removeUserStory(epicIndex: number, userStoryIndex: number): void {
+    const userStoryArray = this.userStories(epicIndex);
+    if (userStoryArray.length <= 1) {
       return;
     }
-    taskArray.removeAt(taskIndex);
-    this.syncTaskIds();
+    userStoryArray.removeAt(userStoryIndex);
+    this.syncUserStoryIds();
+    if (this.selectedUserStoryIndex !== null) {
+      if (this.selectedUserStoryIndex >= userStoryArray.length) {
+        this.selectedUserStoryIndex = userStoryArray.length - 1;
+      }
+      if (userStoryArray.length === 0) {
+        this.selectedUserStoryIndex = null;
+      }
+    }
   }
 
-  addLeadToTask(selectedLeadId: string, epicIndex: number, taskIndex: number, selectEl: HTMLSelectElement): void {
+  // addUserStory(epicIndex: number, userStoryIndex?: number): void {
+  //   let targetUserStoryIndex = userStoryIndex;
+  //   const stories = this.userStories(epicIndex);
+
+  //   if (targetUserStoryIndex === undefined) {
+  //     if (stories.length === 0) {
+  //       this.addUserStory(epicIndex);
+  //       targetUserStoryIndex = this.userStories(epicIndex).length - 1;
+  //     } else {
+  //       targetUserStoryIndex = this.selectedUserStoryIndex ?? 0;
+  //     }
+  //   }
+
+  //   this.userStories(epicIndex, targetUserStoryIndex).push(
+  //     this.createUserStoryForm(`${epicIndex + 1}.${targetUserStoryIndex + 1}.${this.userStories(epicIndex, targetUserStoryIndex).length + 1}`)
+  //   );
+  //   this.syncUserStoryIds();
+  // }
+
+  dropUserStory(event: CdkDragDrop<AbstractControl[]>, epicIndex: number): void {
+    const stories = this.userStories(epicIndex);
+    moveItemInArray(stories.controls, event.previousIndex, event.currentIndex);
+    stories.updateValueAndValidity();
+
+    if (this.selectedEpicIndex === epicIndex && this.selectedUserStoryIndex !== null) {
+      const selectedIndex = this.selectedUserStoryIndex;
+      if (event.previousIndex === selectedIndex) {
+        this.selectedUserStoryIndex = event.currentIndex;
+      } else if (event.previousIndex < selectedIndex && event.currentIndex >= selectedIndex) {
+        this.selectedUserStoryIndex = selectedIndex - 1;
+      } else if (event.previousIndex > selectedIndex && event.currentIndex <= selectedIndex) {
+        this.selectedUserStoryIndex = selectedIndex + 1;
+      }
+    }
+
+    this.syncUserStoryIds();
+  }
+
+  addLeadToUserStory(selectedLeadId: string, epicIndex: number, userStoryIndex: number, selectEl: HTMLSelectElement): void {
     if (!selectedLeadId) {
       return;
     }
 
-    const leadControl = this.tasks(epicIndex).at(taskIndex).get('leadIds');
-    const selectedLeadIds :number[] = Array.isArray(leadControl?.value) ? [...(leadControl?.value as number[])] : [];
+    const leadControl = this.userStories(epicIndex).at(userStoryIndex).get('leadIds');
+    const selectedLeadIds: number[] = Array.isArray(leadControl?.value) ? [...(leadControl?.value as number[])] : [];
     const leadIdNumber = Number(selectedLeadId);
 
     if (!selectedLeadIds.includes(leadIdNumber)) {
@@ -170,8 +242,8 @@ export class ProjectBuilderComponent implements OnInit {
     selectEl.value = '';
   }
 
-  getAvailableCompanyLeads(task: AbstractControl): any[] {
-    const selectedIds = task.get('leadIds')?.value || [];
+  getAvailableCompanyLeads(userStory: AbstractControl): any[] {
+    const selectedIds = userStory.get('leadIds')?.value || [];
     return this.companies.filter(company => !selectedIds.includes(company.companyId));
   }
 
@@ -181,21 +253,21 @@ export class ProjectBuilderComponent implements OnInit {
     });
   }
 
-  syncTaskIds(): void {
+  syncUserStoryIds(): void {
     this.epics.controls.forEach((epic, epicIndex) => {
-      const taskArray = epic.get('tasks') as FormArray;
-      taskArray.controls.forEach((task, taskIndex) => {
-        task.get('taskId')?.setValue(`${epicIndex + 1}.${taskIndex + 1}`, { emitEvent: false });
+      const storyArray = epic.get('userStories') as FormArray;
+      storyArray.controls.forEach((userStory, userStoryIndex) => {
+        userStory.get('userStoryId')?.setValue(`${epicIndex + 1}.${userStoryIndex + 1}`, { emitEvent: false });
       });
     });
   }
 
-  findTaskIdByName(taskName: string | null | undefined): string | null {
-    if (!taskName) {
+  findUserStoryIdByName(userStoryName: string | null | undefined): string | null {
+    if (!userStoryName) {
       return null;
     }
 
-    const parts = taskName.split('.');
+    const parts = userStoryName.split('.');
     if (parts.length < 2 || !parts[0].startsWith('Epic')) {
       return null;
     }
@@ -206,17 +278,17 @@ export class ProjectBuilderComponent implements OnInit {
       return null;
     }
 
-    const taskNamePart = parts.slice(1).join('.'); // in case task name has dots
+    const userStoryNamePart = parts.slice(1).join('.'); // in case user story name has dots
     const epicIndex = epicNum - 1;
     if (epicIndex < 0 || epicIndex >= this.epics.length) {
       return null;
     }
 
-    const taskArray = this.tasks(epicIndex);
-    for (let taskIndex = 0; taskIndex < taskArray.length; taskIndex++) {
-      const task = taskArray.at(taskIndex);
-      if (task.get('taskName')?.value?.trim() === taskNamePart.trim()) {
-        return `${epicNum}.${taskIndex + 1}`;
+    const stories = this.userStories(epicIndex);
+    for (let usIndex = 0; usIndex < stories.length; usIndex++) {
+      const userStory = stories.at(usIndex);
+      if (userStory.get('userStoryName')?.value?.trim() === userStoryNamePart.trim()) {
+        return `${epicNum}.${usIndex + 1}`;
       }
     }
 
@@ -305,15 +377,20 @@ export class ProjectBuilderComponent implements OnInit {
       if (!epic.get('epicName')?.value?.trim()) {
         valid = false;
       }
-      this.tasks(epicIndex).controls.forEach(task => {
-        if (!task.get('taskName')?.value?.trim() || !task.get('leadIds')?.value?.length || !task.get('startDate')?.value || !task.get('endDate')?.value) {
-          valid = false;
-        }
-      });
+      const stories = this.userStories(epicIndex);
+      if (!stories || stories.length === 0) {
+        valid = false;
+      } else {
+        stories.controls.forEach(userStory => {
+          if (!userStory.get('userStoryName')?.value?.trim() || !userStory.get('leadIds')?.value?.length || !userStory.get('startDate')?.value || !userStory.get('endDate')?.value) {
+            valid = false;
+          }
+        });
+      }
     });
 
     if (!valid) {
-      this.submitError = 'All epics and tasks must be completed before proceeding.';
+      this.submitError = 'All epics and user stories must be completed before proceeding.';
       return false;
     }
 
@@ -321,9 +398,9 @@ export class ProjectBuilderComponent implements OnInit {
   }
 
   nextStep(): void {
-    if (!this.validateCreatePage()) {
-      return;
-    }
+    // if (!this.validateCreatePage()) {
+    //   return;
+    // }
     this.reviewMode = true;
     this.selectedEpicIndex = 0;
   }
@@ -332,18 +409,24 @@ export class ProjectBuilderComponent implements OnInit {
     this.reviewMode = false;
   }
 
-  getPredecessorOptions(epicIndex: number, taskIndex: number): string[] {
-    const currentTaskName = this.tasks(epicIndex).at(taskIndex).get('taskName')?.value?.trim();
-    const allTaskNames: string[] = [];
+  
+  getPredecessorOptions(epicIndex: number, usIndex: number): string[] {
+    const stories = this.userStories(epicIndex);
+    const currentUserStoryName = stories.at(usIndex)?.get('userStoryName')?.value?.trim() || null;
+
+    const allUserStoryNames: string[] = [];
     this.epics.controls.forEach((epic, epicPosition) => {
-      this.tasks(epicPosition).controls.forEach(task => {
-        const name = task.get('taskName')?.value?.trim();
-        if (name && name !== currentTaskName) {
-          allTaskNames.push(`Epic${epicPosition + 1}.${name}`);
+      const stories = (epic.get('userStories') as FormArray) || this.fb.array([]);
+      console.log('Epic', epicPosition, 'stories', stories);
+      stories.controls.forEach((userStory: AbstractControl) => {
+        const name = userStory.get('userStoryName')?.value?.trim();
+        if (name && name !== currentUserStoryName) {
+          // allUserStoryNames.push(`Epic${epicPosition + 1}.${name}`);
+          allUserStoryNames.push(userStory.get('userStoryId')?.value);
         }
       });
     });
-    return Array.from(new Set(allTaskNames));
+    return Array.from(new Set(allUserStoryNames));
   }
 
   getCompanyName(leadId: string | number | null | undefined): string {
@@ -355,8 +438,8 @@ export class ProjectBuilderComponent implements OnInit {
     return company?.companyName || 'N/A';
   }
 
-  removeLead(epicIndex: number, taskIndex: number, leadId: number | string): void {
-    const leadControl = this.tasks(epicIndex).at(taskIndex).get('leadIds');
+  removeLead(epicIndex: number, userStoryIndex: number, leadId: number | string): void {
+    const leadControl = this.userStories(epicIndex).at(userStoryIndex).get('leadIds');
     const selectedLeadIds = leadControl?.value || [];
     const updatedLeadIds = selectedLeadIds.filter((id: any) => String(id) !== String(leadId));
     leadControl?.setValue(updatedLeadIds);
@@ -378,13 +461,14 @@ export class ProjectBuilderComponent implements OnInit {
       epicName: epic.epicName,
       epicDesc: epic.epicDesc || '',
       epicSequence: epicIndex + 1,
-      userStories: epic.tasks.map((task: any) => ({
-        mappingStoryId : task.taskId,
-        title: task.taskName,
-        leads: (task.leadIds || []).map((id: any) => ({ companyId: Number(id) })),
-        plannedStartDate: this.normalizeDateValue(task.startDate),
-        plannedEndDate: this.normalizeDateValue(task.endDate),
-        mappingPredecessorId: task.predecessorTaskName ? this.findTaskIdByName(task.predecessorTaskName) : 0
+      userStories: (epic.userStories || []).map((userStory: any) => ({
+        mappingStoryId: userStory.userStoryId,
+        title: userStory.userStoryName,
+        leads: (userStory.leadIds || []).map((id: any) => ({ companyId: Number(id) })),
+        plannedStartDate: this.normalizeDateValue(userStory.startDate),
+        plannedEndDate: this.normalizeDateValue(userStory.endDate),
+        // mappingPredecessorId: userStory.predecessorUserStoryName ? this.findUserStoryIdByName(userStory.predecessorUserStoryName) : 0
+        mappingPredecessorId: userStory.predecessorUserStoryName || 0
       })),
     }));
 
@@ -436,6 +520,7 @@ export class ProjectBuilderComponent implements OnInit {
     }
     this.addEpic();
     this.selectedEpicIndex = 0;
+    this.selectedUserStoryIndex = null;
     this.reviewMode = false;
     this.submitError = '';
     this.submitSuccess = '';

@@ -54,18 +54,35 @@
     <form [formGroup]="builderForm" class="builder-layout" *ngIf="!reviewMode">
       <aside class="sidebar-panel" [class.open]="isSidebarOpen">
         <div class="sidebar-card">
-          <div class="sidebar-title">Epics</div>
+          <div class="sidebar-title">Epics & User Stories</div>
           <div class="epic-list">
-            <div class="epic-row" *ngFor="let epic of epics.controls; let epicIndex = index"
-                    [class.active]="selectedEpicIndex === epicIndex"
-                    (click)="selectEpic(epicIndex)">
-              <div class="epic-index">{{ epicIndex + 1 }}</div>
-              <div class="epic-info">
-                <div class="epic-name">{{ epic.get('epicName')?.value || 'Untitled Epic' }}</div>
-                <div class="epic-meta">{{ tasks(epicIndex).length }} {{ tasks(epicIndex).length === 1 ? 'task' : 'tasks' }}</div>
+            <ng-container *ngFor="let epic of epics.controls; let epicIndex = index">
+              <div class="epic-row" 
+                      [class.active]="selectedEpicIndex === epicIndex && selectedUserStoryIndex === null"
+                      (click)="selectEpic(epicIndex)">
+                <div class="epic-index">{{ epicIndex + 1 }}</div>
+                <div class="epic-info">
+                  <div class="epic-name">{{ epic.get('epicName')?.value || 'Untitled Epic' }}</div>
+                  <div class="epic-meta">{{ userStories(epicIndex).length }} {{ userStories(epicIndex).length === 1 ? 'story' : 'stories' }}</div>
+                </div>
+                <button type="button" class="icon-button" title="Remove epic" (click)="removeEpic(epicIndex); $event.stopPropagation()"><mat-icon>delete</mat-icon></button>
               </div>
-              <button type="button" class="icon-button" title="Remove epic" (click)="removeEpic(epicIndex); $event.stopPropagation()"><mat-icon>delete</mat-icon></button>
-            </div>
+              <!-- Indented User Stories -->
+              <div class="user-story-list" *ngIf="selectedEpicIndex === epicIndex && epic.get('epicDesc')?.value" cdkDropList [cdkDropListData]="userStories(epicIndex).controls" (cdkDropListDropped)="dropUserStory($event, epicIndex)">
+                <ng-container *ngFor="let userStory of userStories(epicIndex).controls; let userStoryIndex = index">
+                  <div class="user-story-row"
+                        cdkDrag
+                        [class.active]="selectedEpicIndex === epicIndex && selectedUserStoryIndex === userStoryIndex"
+                        (click)="selectUserStory(epicIndex, userStoryIndex)">
+                    <div class="user-story-indent"></div>
+                    <div class="user-story-name">
+                      {{ userStory.get('userStoryId')?.value || userStory.get('userStoryName')?.value || 'Untitled Story' }}
+                    </div>
+                    <button type="button" class="icon-button" title="Remove user story" (click)="removeUserStory(epicIndex, userStoryIndex); $event.stopPropagation()"><mat-icon>delete</mat-icon></button>
+                  </div>
+                </ng-container>
+              </div>
+            </ng-container>
           </div>
           <button type="button" class="outline-btn add-epic-btn" (click)="addEpic()">+ Add Epic</button>
         </div>
@@ -76,9 +93,8 @@
           <div class="content-header">
             <div>
               <div class="section-title">Epic {{ selectedEpic.get('epicName')?.value || selectedEpicIndex + 1 }}</div>
-              <!-- <div class="subtitle">Selected Epic: {{ selectedEpicIndex + 1 }}</div> -->
             </div>
-            <button type="button" class="outline-btn add-task-btn" (click)="addTask(selectedEpicIndex)">+ Add Task</button>
+            <button type="button" class="outline-btn add-user-story-btn" (click)="addUserStory(selectedEpicIndex)" *ngIf="selectedEpic.get('epicDesc')?.value">+ Add User Story</button>
           </div>
 
           <div [formGroup]="selectedEpic" class="field">
@@ -93,7 +109,7 @@
           </div>
 
           <div [formGroup]="selectedEpic">
-            <div class="tasks-table">
+            <div class="user-stories-table" *ngIf="selectedEpic.get('epicDesc')?.value">
               <table>
                 <thead>
                   <tr>
@@ -105,42 +121,41 @@
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody formArrayName="tasks">
-                  <ng-container *ngFor="let task of tasks(selectedEpicIndex).controls; let taskIndex = index" [formGroupName]="taskIndex">
+                <tbody formArrayName="userStories">
+                  <ng-container *ngFor="let userStory of userStories(selectedEpicIndex).controls; let userStoryIndex = index" [formGroupName]="userStoryIndex">
                     <tr>
-                      <td>{{ selectedEpicIndex + 1 }}.{{ taskIndex + 1 }}</td>
+                      <td>{{ selectedEpicIndex + 1 }}.{{ userStoryIndex + 1 }}</td>
                       <td>
-                        <input type="text" formControlName="taskId" hidden value="{{ selectedEpicIndex }}.{{ taskIndex + 1 }}">
-                        <input type="text" formControlName="taskName" placeholder="Enter user story">
-                        <span *ngIf="task.get('taskName')?.invalid && task.get('taskName')?.touched" class="error-text">User Story is required.</span>
+                        <input type="text" formControlName="userStoryId" hidden value="{{ selectedEpicIndex }}.{{ userStoryIndex + 1 }}">
+                        <input type="text" formControlName="userStoryName" placeholder="Enter user story">
+                        <span *ngIf="userStory.get('userStoryName')?.invalid && userStory.get('userStoryName')?.touched" class="error-text">User Story is required.</span>
                       </td>
                       <td>
                         <div class="lead-selector">
-                          <select #leadSelect title="Leads" id="leadIds-{{ selectedEpicIndex }}-{{ taskIndex }}" class="lead-dropdown" (change)="addLeadToTask(leadSelect.value, selectedEpicIndex, taskIndex, leadSelect)">
+                          <select #leadSelect title="Leads" id="leadIds-{{ selectedEpicIndex }}-{{ userStoryIndex }}" class="lead-dropdown" (change)="addLeadToUserStory(leadSelect.value, selectedEpicIndex, userStoryIndex, leadSelect)">
                             <option value="" disabled selected>Select lead</option>
-                            <option *ngIf="getAvailableCompanyLeads(task).length === 0" value="" disabled>All available leads selected</option>
-                            <option *ngFor="let company of getAvailableCompanyLeads(task)" [value]="company.companyId">{{ company.companyName }}</option>
+                            <option *ngIf="getAvailableCompanyLeads(userStory).length === 0" value="" disabled>All available leads selected</option>
+                            <option *ngFor="let company of getAvailableCompanyLeads(userStory)" [value]="company.companyId">{{ company.companyName }}</option>
                           </select>
                         </div>
-                        <span *ngIf="task.get('leadIds')?.invalid && task.get('leadIds')?.touched" class="error-text">At least one lead is required.</span>
+                        <span *ngIf="userStory.get('leadIds')?.invalid && userStory.get('leadIds')?.touched" class="error-text">At least one lead is required.</span>
                       </td>
                       <td>
                         <input title="Start date" type="date" formControlName="startDate">
-                        <span *ngIf="task.get('startDate')?.invalid && task.get('startDate')?.touched" class="error-text">Start Date is required.</span>
+                        <span *ngIf="userStory.get('startDate')?.invalid && userStory.get('startDate')?.touched" class="error-text">Start Date is required.</span>
                       </td>
                       <td>
                         <input title="End date" type="date" formControlName="endDate">
-                        <span *ngIf="task.get('endDate')?.invalid && task.get('endDate')?.touched" class="error-text">End Date is required.</span>
+                        <span *ngIf="userStory.get('endDate')?.invalid && userStory.get('endDate')?.touched" class="error-text">End Date is required.</span>
                       </td>
                       <td>
-                        <button type="button" class="icon-button" title="Remove task" (click)="removeTask(selectedEpicIndex, taskIndex)"><mat-icon>delete</mat-icon></button>
+                        <button type="button" class="icon-button" title="Remove User Story" (click)="removeUserStory(selectedEpicIndex, userStoryIndex)"><mat-icon>delete</mat-icon></button>
                       </td>
                     </tr>
-                    <tr *ngIf="task.get('leadIds')?.value?.length" class="selected-leads-row">
+                    <tr *ngIf="userStory.get('leadIds')?.value?.length" class="selected-leads-row">
                       <td colspan="6" class="leads-cell">
-                        <!-- <div class="leads-label">Selected Leads:</div> -->
                         <mat-chip-set aria-label="Selected leads">
-                          <mat-chip *ngFor="let id of task.get('leadIds')?.value" removable (removed)="removeLead(selectedEpicIndex, taskIndex, id)" class="lead-chip">
+                          <mat-chip *ngFor="let id of userStory.get('leadIds')?.value" removable (removed)="removeLead(selectedEpicIndex, userStoryIndex, id)" class="lead-chip">
                             {{ getCompanyName(id) }}
                             <button matChipRemove>
                               <mat-icon>close</mat-icon>
@@ -154,50 +169,52 @@
               </table>
             </div>
 
-            <div class="mobile-tasks" formArrayName="tasks">
-              <div class="task-card" *ngFor="let task of tasks(selectedEpicIndex).controls; let taskIndex = index" [formGroupName]="taskIndex">
-                <div class="card-header">
-                  <div class="story-no" >WSA</div>
-                   <input type="text" formControlName="taskId" hidden value="{{ selectedEpicIndex }}.{{ taskIndex + 1 }}">
-                  <button type="button" class="icon-button remove-task-btn" title="Remove task" (click)="removeTask(selectedEpicIndex, taskIndex)"><mat-icon>delete</mat-icon></button>
-                </div>
-                <div class="card-field">
-                  <label for="taskName-mobile-{{ selectedEpicIndex }}-{{ taskIndex }}">User Stories</label>
-                  <input id="taskName-mobile-{{ selectedEpicIndex }}-{{ taskIndex }}" type="text" formControlName="taskName" placeholder="Enter user story">
-                  <span *ngIf="task.get('taskName')?.invalid && task.get('taskName')?.touched" class="error-text">User Story is required.</span>
-                </div>
-                <div class="card-field">
-                  <label for="leadIds-mobile-{{ selectedEpicIndex }}-{{ taskIndex }}">Lead</label>
-                  <div class="lead-selector">
-                    <select #leadSelectMobile title="Leads" id="leadIds-mobile-{{ selectedEpicIndex }}-{{ taskIndex }}" class="lead-dropdown" (change)="addLeadToTask(leadSelectMobile.value, selectedEpicIndex, taskIndex, leadSelectMobile)">
-                      <option value="" disabled selected>Select lead</option>
-                      <option *ngIf="getAvailableCompanyLeads(task).length === 0" value="" disabled>All available leads selected</option>
-                      <option *ngFor="let company of getAvailableCompanyLeads(task)" [value]="company.companyId">{{ company.companyName }}</option>
-                    </select>
-                    <div *ngIf="task.get('leadIds')?.value?.length" class="lead-display-wrapper mobile-lead-display">
-                      <mat-chip-set aria-label="Selected leads">
-                        <mat-chip *ngFor="let id of task.get('leadIds')?.value" removable (removed)="removeLead(selectedEpicIndex, taskIndex, id)" class="lead-chip">
-                          {{ getCompanyName(id) }}
-                          <button matChipRemove>
-                            <mat-icon>close</mat-icon>
-                          </button>
-                        </mat-chip>
-                      </mat-chip-set>
-                    </div>
+            <div class="mobile-user-stories" formArrayName="userStories">
+              <ng-container *ngFor="let userStory of userStories(selectedEpicIndex).controls; let userStoryIndex = index" [formGroupName]="userStoryIndex">
+                <div class="user-story-card">
+                  <div class="card-header">
+                    <div class="story-no">WSA</div>
+                    <input type="text" formControlName="userStoryId" hidden value="{{ selectedEpicIndex }}.{{ userStoryIndex + 1 }}">
+                    <button type="button" class="icon-button remove-user-story-btn" title="Remove User Story" (click)="removeUserStory(selectedEpicIndex, userStoryIndex)"><mat-icon>delete</mat-icon></button>
                   </div>
-                  <span *ngIf="task.get('leadIds')?.invalid && task.get('leadIds')?.touched" class="error-text">At least one lead is required.</span>
+                  <div class="card-field">
+                    <label for="userStoryName-mobile-{{ selectedEpicIndex }}-{{ userStoryIndex }}">User Stories</label>
+                    <input id="userStoryName-mobile-{{ selectedEpicIndex }}-{{ userStoryIndex }}" type="text" formControlName="userStoryName" placeholder="Enter user story">
+                    <span *ngIf="userStory.get('userStoryName')?.invalid && userStory.get('userStoryName')?.touched" class="error-text">User Story is required.</span>
+                  </div>
+                  <div class="card-field">
+                    <label for="leadIds-mobile-{{ selectedEpicIndex }}-{{ userStoryIndex }}">Lead</label>
+                    <div class="lead-selector">
+                      <select #leadSelectMobile title="Leads" id="leadIds-mobile-{{ selectedEpicIndex }}-{{ userStoryIndex }}" class="lead-dropdown" (change)="addLeadToUserStory(leadSelectMobile.value, selectedEpicIndex, userStoryIndex, leadSelectMobile)">
+                        <option value="" disabled selected>Select lead</option>
+                        <option *ngIf="getAvailableCompanyLeads(userStory).length === 0" value="" disabled>All available leads selected</option>
+                        <option *ngFor="let company of getAvailableCompanyLeads(userStory)" [value]="company.companyId">{{ company.companyName }}</option>
+                      </select>
+                      <div *ngIf="userStory.get('leadIds')?.value?.length" class="lead-display-wrapper mobile-lead-display">
+                        <mat-chip-set aria-label="Selected leads">
+                          <mat-chip *ngFor="let id of userStory.get('leadIds')?.value" removable (removed)="removeLead(selectedEpicIndex, userStoryIndex, id)" class="lead-chip">
+                            {{ getCompanyName(id) }}
+                            <button matChipRemove>
+                              <mat-icon>close</mat-icon>
+                            </button>
+                          </mat-chip>
+                        </mat-chip-set>
+                      </div>
+                    </div>
+                    <span *ngIf="userStory.get('leadIds')?.invalid && userStory.get('leadIds')?.touched" class="error-text">At least one lead is required.</span>
+                  </div>
+                  <div class="card-field">
+                    <label for="startDate-mobile-{{ selectedEpicIndex }}-{{ userStoryIndex }}">Start Date</label>
+                    <input id="startDate-mobile-{{ selectedEpicIndex }}-{{ userStoryIndex }}" title="Start date" type="date" formControlName="startDate">
+                    <span *ngIf="userStory.get('startDate')?.invalid && userStory.get('startDate')?.touched" class="error-text">Start Date is required.</span>
+                  </div>
+                  <div class="card-field">
+                    <label for="endDate-mobile-{{ selectedEpicIndex }}-{{ userStoryIndex }}">End Date</label>
+                    <input id="endDate-mobile-{{ selectedEpicIndex }}-{{ userStoryIndex }}" title="End date" type="date" formControlName="endDate">
+                    <span *ngIf="userStory.get('endDate')?.invalid && userStory.get('endDate')?.touched" class="error-text">End Date is required.</span>
+                  </div>
                 </div>
-                <div class="card-field">
-                  <label for="startDate-mobile-{{ selectedEpicIndex }}-{{ taskIndex }}">Start Date</label>
-                  <input id="startDate-mobile-{{ selectedEpicIndex }}-{{ taskIndex }}" title="Start date" type="date" formControlName="startDate">
-                  <span *ngIf="task.get('startDate')?.invalid && task.get('startDate')?.touched" class="error-text">Start Date is required.</span>
-                </div>
-                <div class="card-field">
-                  <label for="endDate-mobile-{{ selectedEpicIndex }}-{{ taskIndex }}">End Date</label>
-                  <input id="endDate-mobile-{{ selectedEpicIndex }}-{{ taskIndex }}" title="End date" type="date" formControlName="endDate">
-                  <span *ngIf="task.get('endDate')?.invalid && task.get('endDate')?.touched" class="error-text">End Date is required.</span>
-                </div>
-              </div>
+              </ng-container>
             </div>
           </div>
         </div>
@@ -221,7 +238,7 @@
                 <div class="epic-index">{{ epicIndex + 1 }}</div>
                 <div class="epic-info">
                   <div class="epic-name">{{ epic.get('epicName')?.value || 'Untitled Epic' }}</div>
-                  <div class="epic-meta">{{ tasks(epicIndex).length }} {{ tasks(epicIndex).length === 1 ? 'task' : 'tasks' }}</div>
+                  <div class="epic-meta">{{ userStories(epicIndex).length }} {{ userStories(epicIndex).length === 1 ? 'user story' : 'user stories' }}</div>
                 </div>
               </button>
             </div>
@@ -247,7 +264,7 @@
               <textarea title="Epic summary" rows="3" [value]="selectedEpic.get('epicDesc')?.value" disabled></textarea>
             </div>
 
-            <div class="tasks-table">
+            <div class="user-stories-table">
               <table>
                 <thead>
                   <tr>
@@ -259,20 +276,20 @@
                     <th>Predecessor</th>
                   </tr>
                 </thead>
-                <tbody formArrayName="tasks">
-                  <tr *ngFor="let task of tasks(selectedEpicIndex).controls; let taskIndex = index" [formGroupName]="taskIndex">
-                    <!-- <td>{{ selectedEpicIndex + 1 }}.{{ taskIndex + 1 }}</td> -->
-                     <td>{{ task.get('taskId')?.value }}</td>
-                    <td>{{ task.get('taskName')?.value }}</td>
-                    <td>{{ getCompanyNames(task.get('leadIds')?.value) }}</td>
-                    <td>{{ task.get('startDate')?.value }}</td>
-                    <td>{{ task.get('endDate')?.value }}</td>
+                <tbody formArrayName="userStories">
+                  <tr *ngFor="let userStory of userStories(selectedEpicIndex).controls; let usIndex = index" [formGroupName]="usIndex">
+                    <!-- <td>{{ selectedEpicIndex + 1 }}.{{ usIndex + 1 }}</td> -->
+                     <td>{{ userStory.get('userStoryId')?.value }}</td>
+                    <td>{{ userStory.get('userStoryName')?.value }}</td>
+                    <td>{{ getCompanyNames(userStory.get('leadIds')?.value) }}</td>
+                    <td>{{ userStory.get('startDate')?.value }}</td>
+                    <td>{{ userStory.get('endDate')?.value }}</td>
                     <td>
-                      <ng-container *ngIf="selectedEpicIndex === 0 && taskIndex === 0">—</ng-container>
-                      <ng-container *ngIf="!(selectedEpicIndex === 0 && taskIndex === 0)">
-                        <select title="Predecessor task" formControlName="predecessorTaskName">
+                      <ng-container *ngIf="selectedEpicIndex === 0 && usIndex === 0">—</ng-container>
+                      <ng-container *ngIf="!(selectedEpicIndex === 0 && usIndex === 0)">
+                        <select title="Predecessor User Story" formControlName="predecessorUserStoryName">
                           <option value="0">None</option>
-                          <option *ngFor="let previousTask of getPredecessorOptions(selectedEpicIndex, taskIndex)" [value]="previousTask">{{ previousTask }}</option>
+                          <option *ngFor="let previousUserStory of getPredecessorOptions(selectedEpicIndex, usIndex)" [value]="previousUserStory">{{ previousUserStory }}</option>
                         </select>
                       </ng-container>
                     </td>
