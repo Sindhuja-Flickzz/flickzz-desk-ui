@@ -17,9 +17,10 @@ import { Router } from '@angular/router';
 })
 export class ProjectBuilderComponent implements OnInit {
   activeTab: 'create' | 'list' = 'create';
-  reviewMode = false;
+  currentStep = 1;
   selectedEpicIndex = 0;
   selectedUserStoryIndex: number | null = null;
+  selectedTaskIndex: number | null = null;
   isMobile = false;
   isSidebarOpen = true;
   builderForm: FormGroup;
@@ -33,6 +34,11 @@ export class ProjectBuilderComponent implements OnInit {
   pageSizeOptions = [5, 10, 25, 50];
   totalRecords = 0;
   currentPage = 0;
+  isEditMode = false;
+  editingProjectId: number | null = null;
+  editingProject?: ProjectVO;
+  currentSortField: 'projectName' | 'company' | 'plannedStartDate' | 'plannedEndDate' | null = null;
+  currentSortDirection: 'asc' | 'desc' = 'asc';
 
   submitError = '';
   submitSuccess = '';
@@ -50,6 +56,7 @@ export class ProjectBuilderComponent implements OnInit {
     this.orgId = localStorage.getItem('userOrgId') || '';
     this.builderForm = this.fb.group({
       projectName: ['', Validators.required],
+      projectDesc: [''],
       epics: this.fb.array([])
     });
   }
@@ -88,6 +95,10 @@ export class ProjectBuilderComponent implements OnInit {
     return this.builderForm.get('epics') as FormArray;
   }
 
+  get createTabLabel(): string {
+    return this.isEditMode ? 'Edit' : 'Create';
+  }
+
   userStories(epicIndex: number): FormArray {
     return this.epics.at(epicIndex).get('userStories') as FormArray;
   }
@@ -109,6 +120,23 @@ export class ProjectBuilderComponent implements OnInit {
   selectUserStory(epicIndex: number, userStoryIndex: number): void {
     this.selectedEpicIndex = epicIndex;
     this.selectedUserStoryIndex = userStoryIndex;
+
+    if (this.currentStep === 3) {
+      const selectedStory = this.selectedUserStory;
+      selectedStory?.markAsUntouched();
+    }
+  }
+
+  createTaskForm(taskId: string = ''): FormGroup {
+    return this.fb.group({
+      taskId: [taskId],
+      taskName: ['', Validators.required],
+      leadIds: [[]],
+      startDate: ['', Validators.required],
+      endDate: ['', Validators.required],
+      predecessorTaskName: [null],
+      predecessorId: [null]
+    });
   }
 
   createUserStoryForm(userStoryId: string = ''): FormGroup {
@@ -118,18 +146,14 @@ export class ProjectBuilderComponent implements OnInit {
       leadIds: [[], Validators.required],
       startDate: ['', Validators.required],
       endDate: ['', Validators.required],
-      predecessorUserStoryName: [null]
+      predecessorUserStoryName: [null],
+      tasks: this.fb.array([this.createTaskForm(`${userStoryId}.1`)])
     });
   }
 
-  // createUserStoryForm(userStoryId: string = ''): FormGroup {
-  //   return this.fb.group({
-  //     userStoryId: [userStoryId],
-  //     userStoryName: ['', Validators.required],
-  //     userStoryDesc: [''],
-  //     userStories: this.fb.array([this.createUserStoryForm(`${userStoryId}.1`)])
-  //   });
-  // }
+  tasks(epicIndex: number, userStoryIndex: number): FormArray {
+    return this.userStories(epicIndex).at(userStoryIndex).get('tasks') as FormArray;
+  }
 
   createEpicForm(): FormGroup {
     return this.fb.group({
@@ -226,6 +250,56 @@ export class ProjectBuilderComponent implements OnInit {
     this.syncUserStoryIds();
   }
 
+  addTask(epicIndex: number, userStoryIndex: number): void {
+    const taskArray = this.tasks(epicIndex, userStoryIndex);
+    const newIndex = taskArray.length;
+    taskArray.push(this.createTaskForm(`${epicIndex + 1}.${userStoryIndex + 1}.${newIndex + 1}`));
+    this.selectedEpicIndex = epicIndex;
+    this.selectedUserStoryIndex = userStoryIndex;
+    this.syncTaskIds();
+  }
+
+  removeTask(epicIndex: number, userStoryIndex: number, taskIndex: number): void {
+    const taskArray = this.tasks(epicIndex, userStoryIndex);
+    taskArray.removeAt(taskIndex);
+    if (this.selectedTaskIndex !== null && this.selectedTaskIndex >= taskArray.length) {
+      this.selectedTaskIndex = taskArray.length - 1;
+    }
+    this.syncTaskIds();
+  }
+
+  dropTask(event: CdkDragDrop<AbstractControl[]>, epicIndex: number, userStoryIndex: number): void {
+    const taskArray = this.tasks(epicIndex, userStoryIndex);
+    moveItemInArray(taskArray.controls, event.previousIndex, event.currentIndex);
+    taskArray.updateValueAndValidity();
+    this.syncTaskIds();
+  }
+
+  syncTaskIds(): void {
+    this.epics.controls.forEach((epic, epicIndex) => {
+      const stories = epic.get('userStories') as FormArray;
+      stories.controls.forEach((story, storyIndex) => {
+        const tasks = story.get('tasks') as FormArray;
+        tasks.controls.forEach((task, taskIndex) => {
+          task.get('taskId')?.setValue(`${epicIndex + 1}.${storyIndex + 1}.${taskIndex + 1}`, { emitEvent: false });
+        });
+      });
+    });
+  }
+
+  ensureSelectedStory(): void {
+    if (this.selectedUserStoryIndex !== null) {
+      return;
+    }
+    if (this.epics.length === 0) {
+      return;
+    }
+    const stories = this.userStories(this.selectedEpicIndex);
+    if (stories.length > 0) {
+      this.selectedUserStoryIndex = 0;
+    }
+  }
+
   addLeadToUserStory(selectedLeadId: string, epicIndex: number, userStoryIndex: number, selectEl: HTMLSelectElement): void {
     if (!selectedLeadId) {
       return;
@@ -260,6 +334,7 @@ export class ProjectBuilderComponent implements OnInit {
         userStory.get('userStoryId')?.setValue(`${epicIndex + 1}.${userStoryIndex + 1}`, { emitEvent: false });
       });
     });
+    this.syncTaskIds();
   }
 
   findUserStoryIdByName(userStoryName: string | null | undefined): string | null {
@@ -338,8 +413,76 @@ export class ProjectBuilderComponent implements OnInit {
         .filter(Boolean)
         .some(value => value?.toLowerCase().includes(search));
     });
+    this.sortFilteredProjects();
     this.totalRecords = this.filteredProjects.length;
     this.currentPage = 0;
+  }
+
+  sortBy(field: 'projectName' | 'company' | 'plannedStartDate' | 'plannedEndDate'): void {
+    if (this.currentSortField === field) {
+      this.currentSortDirection = this.currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.currentSortField = field;
+      this.currentSortDirection = 'asc';
+    }
+    this.sortFilteredProjects();
+    this.currentPage = 0;
+  }
+
+  private sortFilteredProjects(): void {
+    if (!this.currentSortField) {
+      return;
+    }
+
+    const dir = this.currentSortDirection === 'asc' ? 1 : -1;
+    this.filteredProjects.sort((a, b) => {
+      let aValue: string | number | Date | null = null;
+      let bValue: string | number | Date | null = null;
+
+      switch (this.currentSortField) {
+        case 'projectName':
+          aValue = a.projectName || '';
+          bValue = b.projectName || '';
+          break;
+        case 'company':
+          aValue = a.company?.companyName || '';
+          bValue = b.company?.companyName || '';
+          break;
+        case 'plannedStartDate':
+          aValue = a.plannedStartDate ? new Date(a.plannedStartDate) : null;
+          bValue = b.plannedStartDate ? new Date(b.plannedStartDate) : null;
+          break;
+        case 'plannedEndDate':
+          aValue = a.plannedEndDate ? new Date(a.plannedEndDate) : null;
+          bValue = b.plannedEndDate ? new Date(b.plannedEndDate) : null;
+          break;
+      }
+
+      if (aValue === null && bValue === null) {
+        return 0;
+      }
+      if (aValue === null) {
+        return 1 * dir;
+      }
+      if (bValue === null) {
+        return -1 * dir;
+      }
+
+      if (aValue instanceof Date && bValue instanceof Date) {
+        return (aValue.getTime() - bValue.getTime()) * dir;
+      }
+
+      const aStr = String(aValue).toLowerCase();
+      const bStr = String(bValue).toLowerCase();
+      return aStr.localeCompare(bStr) * dir;
+    });
+  }
+
+  getSortIndicator(field: 'projectName' | 'company' | 'plannedStartDate' | 'plannedEndDate'): string {
+    if (this.currentSortField !== field) {
+      return '';
+    }
+    return this.currentSortDirection === 'asc' ? ' ▲' : ' ▼';
   }
 
   onPageChange(event: PageEvent): void {
@@ -355,11 +498,23 @@ export class ProjectBuilderComponent implements OnInit {
   selectTab(tab: 'create' | 'list'): void {
     this.submitError = '';
     this.submitSuccess = '';
-    this.activeTab = tab;
-    this.reviewMode = false;
-    this.selectedProjectForView = undefined;
     if (tab === 'list') {
+      this.clearEditState();
+      this.resetForm();
+      this.activeTab = tab;
+      this.selectedProjectForView = undefined;
       this.loadProjectList();
+      return;
+    }
+
+    if (tab === 'create') {
+      if (!this.isEditMode) {
+        this.clearEditState();
+        this.resetForm();
+      }
+      this.activeTab = tab;
+      this.currentStep = 1;
+      this.selectedProjectForView = undefined;
     }
   }
 
@@ -367,7 +522,7 @@ export class ProjectBuilderComponent implements OnInit {
     this.submitError = '';
     this.builderForm.markAllAsTouched();
 
-    if (this.builderForm.invalid) {
+    if (!this.builderForm.get('projectName')?.value?.trim()) {
       this.submitError = 'Please fill in all required fields before continuing.';
       return false;
     }
@@ -398,18 +553,79 @@ export class ProjectBuilderComponent implements OnInit {
   }
 
   nextStep(): void {
-    // if (!this.validateCreatePage()) {
-    //   return;
-    // }
-    this.reviewMode = true;
-    this.selectedEpicIndex = 0;
+    if (this.currentStep === 1) {
+      if (!this.validateCreatePage()) {
+        return;
+      }
+      this.currentStep = 2;
+      this.selectedEpicIndex = 0;
+      this.selectedUserStoryIndex = null;
+      return;
+    }
+
+    if (this.currentStep === 2) {
+      this.selectedEpicIndex = 0;
+      this.selectedUserStoryIndex = null;
+      this.ensureSelectedStory();
+      this.clearTaskErrors();
+      this.currentStep = 3;
+      return;
+    }
+  }
+
+  private clearTaskErrors(): void {
+    this.epics.controls.forEach(epic => {
+      const stories = epic.get('userStories') as FormArray;
+      stories.controls.forEach(userStory => {
+        const taskArray = userStory.get('tasks') as FormArray;
+        taskArray.controls.forEach(task => task.markAsUntouched());
+      });
+    });
   }
 
   backToEdit(): void {
-    this.reviewMode = false;
+    if (this.currentStep === 3) {
+      this.currentStep = 2;
+      return;
+    }
+    if (this.currentStep === 2) {
+      this.currentStep = 1;
+    }
   }
 
-  
+  validateTaskStep(): { valid: boolean; missingUserStories: boolean; missingTasks: boolean } {
+    this.builderForm.markAllAsTouched();
+    let valid = true;
+    let missingUserStories = false;
+    let missingTasks = false;
+
+    this.epics.controls.forEach((epic, epicIndex) => {
+      const stories = this.userStories(epicIndex);
+      if (!stories || stories.length === 0) {
+        missingUserStories = true;
+      }
+
+      // stories.controls.forEach((story: AbstractControl) => {
+      //   const taskArray = (story.get('tasks') as FormArray) || this.fb.array([]);
+      //   if (!taskArray || taskArray.length === 0) {
+      //     missingTasks = true;
+      //   }
+
+      //   taskArray.controls.forEach(task => {
+      //     if (!task.get('taskName')?.value?.trim() || !task.get('startDate')?.value || !task.get('endDate')?.value) {
+      //       valid = false;
+      //     }
+      //   });
+      // });
+    });
+
+    if (!valid) {
+      this.submitError = 'Please complete all task details before submitting or saving.';
+    }
+
+    return { valid, missingUserStories, missingTasks };
+  }
+
   getPredecessorOptions(epicIndex: number, usIndex: number): string[] {
     const stories = this.userStories(epicIndex);
     const currentUserStoryName = stories.at(usIndex)?.get('userStoryName')?.value?.trim() || null;
@@ -417,7 +633,6 @@ export class ProjectBuilderComponent implements OnInit {
     const allUserStoryNames: string[] = [];
     this.epics.controls.forEach((epic, epicPosition) => {
       const stories = (epic.get('userStories') as FormArray) || this.fb.array([]);
-      console.log('Epic', epicPosition, 'stories', stories);
       stories.controls.forEach((userStory: AbstractControl) => {
         const name = userStory.get('userStoryName')?.value?.trim();
         if (name && name !== currentUserStoryName) {
@@ -445,6 +660,31 @@ export class ProjectBuilderComponent implements OnInit {
     leadControl?.setValue(updatedLeadIds);
   }
 
+  addLeadToTask(selectedLeadId: string, epicIndex: number, userStoryIndex: number, taskIndex: number, selectEl: HTMLSelectElement): void {
+    if (!selectedLeadId) {
+      return;
+    }
+
+    const taskControl = this.tasks(epicIndex, userStoryIndex).at(taskIndex);
+    const leadControl = taskControl.get('leadIds');
+    const selectedLeadIds: number[] = Array.isArray(leadControl?.value) ? [...(leadControl?.value as number[])] : [];
+    const leadIdNumber = Number(selectedLeadId);
+
+    if (!selectedLeadIds.includes(leadIdNumber)) {
+      leadControl?.setValue([...selectedLeadIds, leadIdNumber]);
+    }
+
+    selectEl.value = '';
+  }
+
+  removeTaskLead(epicIndex: number, userStoryIndex: number, taskIndex: number, leadId: number | string): void {
+    const taskControl = this.tasks(epicIndex, userStoryIndex).at(taskIndex);
+    const leadControl = taskControl.get('leadIds');
+    const selectedLeadIds = leadControl?.value || [];
+    const updatedLeadIds = selectedLeadIds.filter((id: any) => String(id) !== String(leadId));
+    leadControl?.setValue(updatedLeadIds);
+  }
+
   getCompanyNames(leadIds: number[] | null | undefined): string {
     if (!leadIds || !leadIds.length) {
       return 'N/A';
@@ -455,29 +695,38 @@ export class ProjectBuilderComponent implements OnInit {
       .join(', ');
   }
 
-  buildCreatePayload(): ProjectCreateRequest {
+  buildCreatePayload(actionType: 'save' | 'submit'): ProjectCreateRequest {
     const raw = this.builderForm.value;
     const epicsPayload = raw.epics.map((epic: any, epicIndex: number) => ({
       epicName: epic.epicName,
       epicDesc: epic.epicDesc || '',
       epicSequence: epicIndex + 1,
-      userStories: (epic.userStories || []).map((userStory: any) => ({
+      userStories: (epic.userStories || []).map((userStory: any, storyIndex: number) => ({
         mappingStoryId: userStory.userStoryId,
         title: userStory.userStoryName,
         leads: (userStory.leadIds || []).map((id: any) => ({ companyId: Number(id) })),
         plannedStartDate: this.normalizeDateValue(userStory.startDate),
         plannedEndDate: this.normalizeDateValue(userStory.endDate),
-        // mappingPredecessorId: userStory.predecessorUserStoryName ? this.findUserStoryIdByName(userStory.predecessorUserStoryName) : 0
-        mappingPredecessorId: userStory.predecessorUserStoryName || 0
-      })),
+        mappingPredecessorId: userStory.predecessorUserStoryName || null,
+        tasks: (userStory.tasks || []).map((task: any, taskIndex: number) => ({
+          title: task.taskName,
+          plannedStartDate: this.normalizeDateValue(task.startDate),
+          plannedEndDate: this.normalizeDateValue(task.endDate),
+          taskSequence: taskIndex + 1
+        }))
+      }))
     }));
 
     return {
+      projectId: this.editingProjectId ?? undefined,
       projectName: raw.projectName,
+      projectDesc: raw.projectDesc || '',
       orgId: Number(this.orgId),
       epics: epicsPayload,
-      createdBy : localStorage.getItem('userRole') || ''
-    };
+      createdBy: localStorage.getItem('userRole') || '',
+      isSave: actionType === 'save',
+      isSubmit: actionType === 'submit'
+    } as ProjectCreateRequest;
   }
 
   normalizeDateValue(value: any): string {
@@ -491,24 +740,94 @@ export class ProjectBuilderComponent implements OnInit {
     return date.toISOString().split('T')[0];
   }
 
-  onCreateProject(): void {
-    if (!this.reviewMode) {
+  saveProject(): void {
+    this.handleProjectAction('save');
+  }
+
+  submitProject(): void {
+    this.handleProjectAction('submit');
+  }
+
+  private handleProjectAction(actionType: 'save' | 'submit'): void {
+    this.submitError = '';
+    const validation = this.validateTaskStep();
+    if (!validation.valid) {
       return;
     }
-    const payload = this.buildCreatePayload();
+
+    const payload = this.buildCreatePayload(actionType);
+
+    // if (validation.missingUserStories || validation.missingTasks) {
+    //   const missingParts: string[] = [];
+    //   if (validation.missingUserStories) {
+    //     missingParts.push('one or more epics do not have any user stories');
+    //   }
+    //   if (validation.missingTasks) {
+    //     missingParts.push('one or more user stories do not have any tasks');
+    //   }
+    //   const dialogData: ConfirmationDialogData = {
+    //     title: 'Incomplete Task Structure',
+    //     message: `The project is missing ${missingParts.join(' and ')}. Do you want to continue ${actionType === 'save' ? 'saving' : 'submitting'}?`,
+    //     confirmText: actionType === 'save' ? 'Continue Save' : 'Continue Submit',
+    //     cancelText: 'Edit',
+    //     showCancel: true,
+    //     type: 'info'
+    //   };
+
+    //   const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+    //     width: '440px',
+    //     data: dialogData
+    //   });
+
+    //   dialogRef.afterClosed().subscribe(confirmed => {
+    //     if (!confirmed) {
+    //       return;
+    //     }
+    //     this.sendProjectRequest(payload, actionType);
+    //   });
+    //   return;
+    // }
+
+    this.sendProjectRequest(payload, actionType);
+  }
+
+  private sendProjectRequest(payload: ProjectCreateRequest, actionType: 'save' | 'submit'): void {
     this.isSubmitting = true;
+
+    if (this.isEditMode) {
+      this.projectService.updateProject(payload).subscribe({
+        next: () => {
+          this.isSubmitting = false;
+          this.submitSuccess = actionType === 'submit' ? 'Project submitted successfully.' : 'Project saved successfully.';
+          if (actionType === 'submit') {
+            this.resetForm();
+            this.clearEditState();
+            this.selectTab('list');
+          }
+        },
+        error: (err) => {
+          console.error('Project update failed', err);  
+          this.isSubmitting = false;
+          this.submitError = err?.error?.message || `Failed to ${actionType} project. Please try again.`;
+        }
+      });
+      return;
+    }
+
     this.projectService.createProject(payload).subscribe({
       next: () => {
         this.isSubmitting = false;
-        this.submitSuccess = 'Project created successfully.';
-        this.reviewMode = false;
-        this.resetForm();
-        this.selectTab('list');
+        this.submitSuccess = actionType === 'submit' ? 'Project submitted successfully.' : 'Project saved successfully.';
+        if (actionType === 'submit' || this.isEditMode) {
+          this.resetForm();
+          this.clearEditState();
+          this.selectTab('list');
+        }
       },
       error: (err) => {
-        console.error('Project create failed', err);
+        console.error('Project request failed', err);
         this.isSubmitting = false;
-        this.submitError = err?.error?.message || 'Failed to create project. Please try again.';
+        this.submitError = err?.error?.message || `Failed to ${actionType} project. Please try again.`;
       }
     });
   }
@@ -521,18 +840,151 @@ export class ProjectBuilderComponent implements OnInit {
     this.addEpic();
     this.selectedEpicIndex = 0;
     this.selectedUserStoryIndex = null;
-    this.reviewMode = false;
+    this.selectedTaskIndex = null;
+    this.currentStep = 1;
     this.submitError = '';
     this.submitSuccess = '';
+  }
+
+  private clearEditState(): void {
+    this.isEditMode = false;
+    this.editingProjectId = null;
+    this.editingProject = undefined;
+  }
+
+  onEditProject(project: ProjectVO): void {
+    this.projectService.getProjectInfo(String(project.projectId)).subscribe({
+      next: (result) => {
+        const projectDetail = (result as any).attributes || project;
+        this.startEditingProject(projectDetail);
+      },
+      error: (err) => {
+        console.error('Failed to load project details for edit', err);
+        this.submitError = 'Unable to fetch project details for editing.';
+      }
+    });
+  }
+
+  private startEditingProject(project: ProjectVO): void {
+    this.isEditMode = true;
+    this.editingProjectId = project.projectId;
+    this.editingProject = project;
+    this.activeTab = 'create';
+    this.currentStep = 1;
+    this.selectedEpicIndex = 0;
+    this.selectedUserStoryIndex = null;
+    this.selectedTaskIndex = null;
+    this.resetForm();
+    this.populateProjectForm(project);
+    this.setProjectFormEditability(project);
+  }
+
+  private populateProjectForm(project: ProjectVO): void {
+    this.builderForm.patchValue({
+      projectName: project.projectName || '',
+      projectDesc: project.projectDesc || ''
+    });
+
+    const storyCodeMap = new Map<string, string>();
+    (project.epics || []).forEach((epic: any) => {
+      (epic.userStories || []).forEach((story: any) => {
+        const storyKey = story.storyId ?? story.mappingStoryId ?? story.storyCode;
+        if (storyKey != null) {
+          storyCodeMap.set(String(storyKey), story.storyCode || String(story.mappingStoryId ?? story.storyId));
+        }
+      });
+    });
+
+    while (this.epics.length > 0) {
+      this.epics.removeAt(0);
+    }
+
+    if (project.epics?.length) {
+      project.epics.forEach((epic: any, epicIndex: number) => {
+        const epicGroup = this.fb.group({
+          epicName: [epic.epicName || '', Validators.required],
+          epicDesc: [epic.epicDesc || ''],
+          epicSequence: [epic.epicSequence || epicIndex + 1],
+          userStories: this.fb.array([])
+        });
+
+        const storyArray = epicGroup.get('userStories') as FormArray;
+        const sortedStories = [...(epic.userStories || [])].sort((a: any, b: any) => (a.storySequence ?? 0) - (b.storySequence ?? 0));
+        sortedStories.forEach((story: any, storyIndex: number) => {
+          console.log('Processing story:', story);
+          const storyCode = story.storyCode || String(story.mappingStoryId ?? `${epicIndex + 1}.${storyIndex + 1}`);
+          const predecessorKey = story.mappingPredecessorId ?? story.predecessorId;
+          const predecessorValue = predecessorKey != null ? storyCodeMap.get(String(predecessorKey)) || String(predecessorKey) : null;
+
+          const storyGroup = this.fb.group({
+            userStoryId: [storyCode],
+            userStoryName: [story.title || '', Validators.required],
+            leadIds: [((story.leads || []) as any[]).map(lead => Number(lead.company.companyId)).filter((id: number) => !Number.isNaN(id)), Validators.required],
+            startDate: [this.normalizeDateValue(story.plannedStartDate) || '', Validators.required],
+            endDate: [this.normalizeDateValue(story.plannedEndDate) || '', Validators.required],
+            predecessorUserStoryName: [predecessorValue],
+            tasks: this.fb.array([])
+          });
+
+          const taskArray = storyGroup.get('tasks') as FormArray;
+          if (story.tasks?.length) {
+            story.tasks.forEach((task: any, taskIndex: number) => {
+              taskArray.push(this.fb.group({
+                taskId: [task.taskId || `${epicIndex + 1}.${storyIndex + 1}.${taskIndex + 1}`],
+                taskName: [task.title || '', Validators.required],
+                leadIds: [[]],
+                startDate: [this.normalizeDateValue(task.plannedStartDate) || '', Validators.required],
+                endDate: [this.normalizeDateValue(task.plannedEndDate) || '', Validators.required],
+                predecessorTaskName: { value: task.predecessorId != null ? String(task.predecessorId) : null, disabled: false },
+                predecessorId: { value: task.predecessorId != null ? String(task.predecessorId) : null, disabled: false }
+              }));
+            });
+          } else {
+            taskArray.push(this.createTaskForm(`${epicIndex + 1}.${storyIndex + 1}.1`));
+          }
+
+          storyArray.push(storyGroup);
+        });
+
+        this.epics.push(epicGroup);
+      });
+    } else {
+      this.addEpic();
+    }
+  }
+
+  private setProjectFormEditability(project: ProjectVO): void {
+    if (project.isSaved) {
+      this.builderForm.enable();
+      return;
+    }
+
+    if (project.isSubmitted) {
+      this.builderForm.disable();
+      this.epics.controls.forEach((epic, epicIndex) => {
+        const stories = this.userStories(epicIndex);
+        stories.controls.forEach((story, storyIndex) => {
+          story.get('predecessorUserStoryName')?.enable({ emitEvent: false });
+          story.get('startDate')?.enable({ emitEvent: false });
+          story.get('endDate')?.enable({ emitEvent: false });
+          const tasksArray = this.tasks(epicIndex, storyIndex);
+          tasksArray.controls.forEach(task => {
+            task.get('startDate')?.enable({ emitEvent: false });
+            task.get('endDate')?.enable({ emitEvent: false });
+          });
+        });
+      });
+    } else {
+      this.builderForm.enable();
+    }
   }
 
   onViewProject(project: ProjectVO): void {
     this.selectedProjectForView = project;
     this.activeTab = 'list';
-    // this.router.navigate(['/project-builder', project.projectId]);
     this.projectService.getProjectInfo(String(project.projectId)).subscribe({
       next: (result) => {
-        this.selectedProjectForView = (result as any).attributes || project;  
+        this.selectedProjectForView = (result as any).attributes || project;
       },
       error: (err) => {
         console.error('Failed to load project details', err);

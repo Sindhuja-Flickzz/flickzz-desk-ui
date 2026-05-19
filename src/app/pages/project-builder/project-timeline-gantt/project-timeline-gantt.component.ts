@@ -17,8 +17,12 @@ export class ProjectTimelineGanttComponent implements OnInit, OnChanges {
   @Output() backClicked = new EventEmitter<void>();
   
   @ViewChild('timelineScroll') timelineScroll?: ElementRef;
+  @ViewChild('timelineContainer') timelineContainer?: ElementRef;
   @ViewChild('leftPanel') leftPanel?: ElementRef;
   @ViewChild('taskRows') taskRows?: ElementRef;
+
+  private isLeftPanelScrolling = false;
+  private isTimelineContainerScrolling = false;
 
   // Data
   epics: EpicVO[] = [];
@@ -155,14 +159,38 @@ export class ProjectTimelineGanttComponent implements OnInit, OnChanges {
 
   // Scroll synchronization
   onLeftPanelScroll(event: Event): void {
-    if (!this.leftPanel || !this.taskRows) {
+    if (!this.taskRows || !this.timelineContainer) {
       return;
     }
-    
-    // Sync vertical scroll between left panel and task rows
+
     const scrollTop = (event.target as HTMLElement).scrollTop;
     if (this.taskRows.nativeElement.scrollTop !== scrollTop) {
       this.taskRows.nativeElement.scrollTop = scrollTop;
+    }
+
+    if (!this.isTimelineContainerScrolling && this.timelineContainer.nativeElement.scrollTop !== scrollTop) {
+      this.isLeftPanelScrolling = true;
+      this.timelineContainer.nativeElement.scrollTop = scrollTop;
+      this.isLeftPanelScrolling = false;
+    }
+  }
+
+  onTimelineContainerScroll(event: Event): void {
+    if (!this.taskRows || !this.timelineContainer) {
+      return;
+    }
+
+    const scrollTop = (event.target as HTMLElement).scrollTop;
+    if (this.isLeftPanelScrolling) {
+      return;
+    }
+
+    if (this.timelineContainer.nativeElement.scrollTop !== scrollTop) {
+      this.isTimelineContainerScrolling = true;
+      if (this.taskRows.nativeElement.scrollTop !== scrollTop) {
+        this.taskRows.nativeElement.scrollTop = scrollTop;
+      }
+      this.isTimelineContainerScrolling = false;
     }
   }
 

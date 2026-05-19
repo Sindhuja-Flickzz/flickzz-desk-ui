@@ -62,7 +62,7 @@
       </div>
 
       <!-- Task Rows -->
-      <div class="task-rows" #taskRows>
+      <div class="task-rows" #taskRows (scroll)="onLeftPanelScroll($event)">
         <div *ngFor="let row of ganttRows; trackBy: trackByRow" [class]="'gantt-row ' + row.type + '-row level-' + row.level">
           <!-- Epic Row -->
           <div *ngIf="row.type === 'epic'" class="epic-row-content">
@@ -172,7 +172,7 @@
       </div>
 
       <!-- Timeline Grid with Today Indicator -->
-      <div class="timeline-container">
+      <div class="timeline-container" #timelineContainer (scroll)="onTimelineContainerScroll($event)">
         <!-- Today Indicator -->
         <div *ngIf="showToday" class="today-indicator" [style.left.%]="todayPosition">
           <div class="today-line"></div>
