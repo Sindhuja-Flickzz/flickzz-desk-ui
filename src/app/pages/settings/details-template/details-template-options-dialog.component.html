@@ -1,0 +1,106 @@
+<div class="options-dialog-container">
+  <h2 class="dialog-title">{{ title }}</h2>
+
+  <form [formGroup]="optionsForm">
+    <div formArrayName="options" class="options-table-wrapper">
+      <table class="options-table">
+        <thead>
+          <tr>
+            <th>{{ isCheckboxType() ? 'Left / Right Label' : 'Label' }}</th>
+            <th *ngIf="shouldShowValueColumn()">{{ isCheckboxType() ? 'Field data' : 'Value' }}</th>
+            <th *ngIf="shouldShowDefaultColumn()">Default</th>
+            <th *ngIf="!isCheckboxType()">Actions</th>
+          </tr>
+        </thead>
+        <tbody cdkDropList [cdkDropListData]="optionsControl.controls" (cdkDropListDropped)="dropOption($event)">
+          <tr *ngFor="let option of optionsControl.controls; let index = index" [formGroupName]="index" cdkDrag>
+            <td>
+              <span class="drag-handle" cdkDragHandle title="Drag to reorder">☰</span>
+              <input
+                type="text"
+                title="Option label"
+                formControlName="label"
+                [placeholder]="isCheckboxType() ? (index === 0 ? 'Left label' : 'Right label') : 'Option label'"
+              />
+              <div class="error-text" *ngIf="option.get('label')?.touched && option.get('label')?.invalid">
+                <span *ngIf="option.get('label')?.hasError('required')">Label is required.</span>
+                <span *ngIf="option.get('label')?.hasError('trimmedEmpty')">Label cannot be blank.</span>
+              </div>
+            </td>
+            <td *ngIf="shouldShowValueColumn()">
+              <input
+                type="text"
+                title="Option value"
+                formControlName="value"
+                [placeholder]="isCheckboxType() ? (index === 0 ? 'Left data' : 'Right data') : 'Option value'"
+              />
+              <div class="error-text" *ngIf="option.get('value')?.touched && option.get('value')?.invalid">
+                <span *ngIf="option.get('value')?.hasError('required')">Value is required.</span>
+                <span *ngIf="option.get('value')?.hasError('trimmedEmpty')">Value cannot be blank.</span>
+              </div>
+            </td>
+            <td *ngIf="shouldShowDefaultColumn()" class="default-cell">
+              <label>
+                <input
+                  type="checkbox"
+                  title="Default selection"
+                  [checked]="option.get('defaultSelected')?.value"
+                  (change)="toggleDefaultSelection(index)"
+                />
+              </label>
+            </td>
+            <td *ngIf="!isCheckboxType()">
+              <button type="button" class="action-icon" (click)="removeOption(index)" [disabled]="optionsControl.length <= 1">
+                <mat-icon>close</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </form>
+
+  <div class="options-actions" *ngIf="!isCheckboxType()">
+    <button type="button" class="save-btn" (click)="addOption()">Add option</button>
+  </div>
+
+  <div class="options-preview">
+    <h3>Preview</h3>
+    <ng-container *ngIf="isDropdownType()">
+      <!-- <label class="preview-label">Sample dropdown</label> -->
+      <select title="Sample dropdown">
+        <option *ngFor="let option of optionsControl.value" [selected]="option.defaultSelected">{{ option.label }}</option>
+      </select>
+    </ng-container>
+
+    <ng-container *ngIf="isMultiSelectType()">
+      <!-- <label class="preview-label">Sample multi-select</label> -->
+      <div class="multi-select-dropdown-preview">
+        <div class="dropdown-box" title="Sample multiselect">
+          <div class="dropdown-header">Choose options</div>
+          <div class="dropdown-list">
+            <label class="dropdown-item" *ngFor="let option of optionsControl.controls">
+              <input type="checkbox" disabled [checked]="option.get('defaultSelected')?.value" />
+              <span>{{ option.get('label')?.value }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="isCheckboxType()">
+      <label class="preview-label">Sample checkbox data</label>
+      <div class="checkbox-preview">
+        <label class="checkbox-item" *ngFor="let option of optionsControl.controls; let index = index">
+          <input type="checkbox" disabled [checked]="option.get('defaultSelected')?.value" />
+          <span>{{ option.get('label')?.value || getOptionSideLabel(index) }}</span>
+        </label>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="dialog-footer">
+    <button type="button" class="cancel-btn" (click)="cancel()">Cancel</button>
+    <button type="button" class="save-btn" (click)="save()">Save</button>
+  </div>
+</div>

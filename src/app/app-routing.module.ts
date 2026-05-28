@@ -17,9 +17,10 @@ import {BusinessOfferingComponent} from "./pages/business-offering/business-offe
 import {NumberRangeComponent} from "./pages/number-range/number-range.component";
 import {VerifyComponent} from './pages/verify/verify.component';
 import {EnquiryRegistrationComponent} from './pages/enquiry-registration/enquiry-registration.component';
-import {SettingsComponent} from './pages/settings/settings.component';
-import {ProfileComponent} from './pages/profile/profile.component';
-import {authGuard} from "./service/auth/auth.guard";
+import { SettingsComponent } from './pages/settings/settings.component';
+import { DetailsTemplateComponent } from './pages/settings/details-template/details-template.component';
+import { ProfileComponent } from './pages/profile/profile.component';
+import { authGuard } from './service/auth/auth.guard';
 
 const routes: Routes = [
   {
@@ -49,6 +50,11 @@ const routes: Routes = [
   {
     path: 'calendar',
     component: CalendarComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'details-template',
+    component: DetailsTemplateComponent,
     canActivate: [authGuard]
   },
   {

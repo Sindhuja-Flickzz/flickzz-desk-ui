@@ -1,0 +1,119 @@
+<div class="details-template-page">
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ createTabLabel }}</button>
+    <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <h2>{{ pageTitle }}</h2>
+
+    <form [formGroup]="templateForm" (ngSubmit)="onSave()">
+      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label>Template Name</label>
+          <input type="text" formControlName="templateName" placeholder="Enter template name" [disabled]="isSubmitting" />
+          <span *ngIf="formError.templateName" class="error-text">{{ formError.templateName }}</span>
+        </div>
+
+        <div class="field">
+          <label>Work Item</label>
+          <select title="Work item" formControlName="workItem" [disabled]="isSubmitting">
+            <option value="">Select work item</option>
+            <option *ngFor="let item of workItemOptions" [value]="item.value">{{ item.label }}</option>
+          </select>
+          <span *ngIf="formError.workItem" class="error-text">{{ formError.workItem }}</span>
+        </div>
+      </div>
+
+      <div class="table-actions">
+        <button type="button" class="save-btn" (click)="addRow()" [disabled]="isSubmitting">Add Field</button>
+      </div>
+
+      <div class="table-wrapper" formArrayName="templateDetails">
+        <table>
+          <thead>
+            <tr>
+              <th>Field Name</th>
+              <th>Field Type</th>
+              <th>Mandatory</th>
+              <th>Configure</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let row of rows; let i = index">
+              <tr [formGroupName]="i" class="template-row">
+                <td>
+                  <input type="text" formControlName="fieldName" placeholder="Field name" [disabled]="isSubmitting"
+                    (blur)="row.get('fieldName')?.setValue(row.get('fieldName')?.value?.toString().trim())" />
+                  <span *ngIf="getFieldErrorMessage(row.get('fieldName'))" class="error-text">{{ getFieldErrorMessage(row.get('fieldName')) }}</span>
+                </td>
+                <td>
+                  <select title="Field type" formControlName="fieldType" (change)="onFieldTypeChange(i)" [disabled]="isSubmitting">
+                    <option value="">Select field type</option>
+                    <option *ngFor="let type of fieldTypeOptions" [value]="type.value">{{ type.label }}</option>
+                  </select>
+                  <span *ngIf="row.get('fieldType')?.touched && row.get('fieldType')?.hasError('required')" class="error-text">Field type is required.</span>
+                </td>
+                <td class="mandatory-cell">
+                  <label class="toggle-row">
+                    <input type="checkbox" formControlName="mandatory" [disabled]="isSubmitting" />
+                    Mandatory
+                  </label>
+                </td>
+                <td>
+                  <button type="button" class="save-btn" (click)="openOptionsDialog(i)" [disabled]="isSubmitting || !isOptionFieldType(row.get('fieldType')?.value)">
+                    Configure
+                  </button>
+                  <!-- <div class="help-text" *ngIf="isOptionFieldType(row.get('fieldType')?.value)">
+                    {{ getOptionSummary(i) }}
+                  </div> -->
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Saving Template' : 'Save Template' }}</button>
+        <button type="button" *ngIf="!isEditMode" class="reset-btn" (click)="resetForm()" [disabled]="isSubmitting">Reset</button>
+        <button type="button" *ngIf="isEditMode" class="reset-btn" (click)="cancelForm()" [disabled]="isSubmitting">Cancel</button>
+        <button type="button" class="reset-btn" (click)="backToHome()">Back</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <h2>Saved Templates</h2>
+    <div *ngIf="templateListLoading" class="loading-spinner">Loading templates...</div>
+    <div *ngIf="!templateListLoading && submitError" class="error-text">{{ submitError }}</div>
+    <div *ngIf="!templateListLoading && templates.length === 0" class="empty-state">No templates found.</div>
+    <div class="table-wrapper" *ngIf="!templateListLoading && templates.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>Template Name</th>
+            <th>Work Item</th>
+            <th>Field Count</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let template of templates">
+            <td>{{ template.templateName }}</td>
+            <td>{{ template.workItemLabel || template.workItemCode || '-' }}</td>
+            <td>{{ template.templateDetails.length || 0 }}</td>
+            <td class="action-buttons">
+              <button type="button" class="action-icon" (click)="onEditTemplate(template)">Edit</button>
+              <!-- <button type="button" class="action-icon" (click)="onViewTemplateConfig(template)">View Config</button> -->
+              <button type="button" class="action-icon delete-icon" (click)="onDeleteTemplate(template)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

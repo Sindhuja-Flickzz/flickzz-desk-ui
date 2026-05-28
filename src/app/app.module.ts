@@ -33,6 +33,8 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -53,6 +55,8 @@ import { ProfileIconComponent } from './shared/profile-icon/profile-icon.compone
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
 import { ProjectTimelineGanttComponent } from './pages/project-builder/project-timeline-gantt/project-timeline-gantt.component';
+import { DetailsTemplateComponent } from './pages/settings/details-template/details-template.component';
+import { DetailsTemplateOptionsDialogComponent } from './pages/settings/details-template/details-template-options-dialog.component';
 
 @NgModule({
   declarations: [
@@ -78,6 +82,8 @@ import { ProjectTimelineGanttComponent } from './pages/project-builder/project-t
     VerifyComponent,
     EnquiryRegistrationComponent,
     SettingsComponent,
+    DetailsTemplateComponent,
+    DetailsTemplateOptionsDialogComponent,
     ProfileIconComponent,
     ProfileComponent,
     ProjectBuilderComponent,
@@ -102,6 +108,8 @@ import { ProjectTimelineGanttComponent } from './pages/project-builder/project-t
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatCheckboxModule,
+    MatSnackBarModule,
     MatDatepickerModule,
     MatNativeDateModule,
     MatSlideToggleModule,

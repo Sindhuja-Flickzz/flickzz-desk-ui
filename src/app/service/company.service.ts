@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
-import { CountryMaster, CompanyMaster, CompanyRequest, EnquiryRegistration, StateMaster } from '../models/company-master';
+import { CountryMaster, CompanyMaster, CompanyRequest, EnquiryRegistration, StateMaster, CompanyRole } from '../models/company-master';
 import { CityMaster } from '../models/city-master';
 
 @Injectable({
@@ -34,6 +34,10 @@ export class CompanyService {
 
   getAllCompanies(): Observable<CompanyMaster[]> {
     return this.http.get<CompanyMaster[]>(`${this.baseUrl}/company/list`);
+  }
+
+  getServiceProviderList(orgId: number): Observable<CompanyRole[]> {
+     return this.http.get<CompanyRole[]>(`${this.baseUrl}/company/provider/list/${orgId}`);
   }
 
   // getEnquiryByUserEmail(userEmail: string): Observable<EnquiryRegistration> {

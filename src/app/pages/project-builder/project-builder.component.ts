@@ -371,9 +371,17 @@ export class ProjectBuilderComponent implements OnInit {
   }
 
   loadCompanies(): void {
-    this.companyService.getAllCompanies().subscribe({
+    if (!this.orgId) {
+      this.companies = [];
+      return;
+    }
+
+    this.companyService.getServiceProviderList(Number(this.orgId)).subscribe({
       next: (result) => {
-        this.companies = (result as any).attributes || [];
+        const roles = (result as any).attributes || (Array.isArray(result) ? result : []);
+        this.companies = Array.isArray(roles)
+          ? roles.map((role: any) => role.mappedCompany).filter((company: CompanyMaster) => !!company)
+          : [];
       },
       error: () => {
         this.companies = [];
@@ -696,7 +704,7 @@ export class ProjectBuilderComponent implements OnInit {
   }
 
   buildCreatePayload(actionType: 'save' | 'submit'): ProjectCreateRequest {
-    const raw = this.builderForm.value;
+    const raw = this.builderForm.getRawValue();
     const epicsPayload = raw.epics.map((epic: any, epicIndex: number) => ({
       epicName: epic.epicName,
       epicDesc: epic.epicDesc || '',

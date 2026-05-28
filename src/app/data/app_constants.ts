@@ -225,7 +225,24 @@ export const MENU_INFO: MenuItem[] = [
                 "isActive": true,
                 "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
                 "route": "/settings",
-                "childSubMenus": []}
+                "childSubMenus": []
+            },
+            {
+                "subMenuId": 302,
+                "subMenuName": "Template",
+                "isActive": true,
+                "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+                "childSubMenus": [
+                    {
+                        "subMenuId": 30201,
+                        "subMenuName": "Details Template",
+                        "isActive": true,
+                        "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+                        "route": "/details-template",
+                        "childSubMenus": []
+                    }
+                ]
+            }
         ]
     },
     {
