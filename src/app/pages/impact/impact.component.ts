@@ -313,7 +313,7 @@ export class ImpactComponent implements OnInit {
   }
 
   private getUserOrganizationId(): number | null {
-    const organizationValue = localStorage.getItem('userOrg');
+    const organizationValue = localStorage.getItem('userOrgId');
     return organizationValue ? Number(organizationValue) : null;
   }
 }

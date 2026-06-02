@@ -1,0 +1,157 @@
+<div class="project-status-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <h2 class="page-title">{{ selectedProject?.projectName ? (selectedProject?.projectName + ' Status Board') : 'Project Status Board' }}</h2>
+    
+    <!-- Project Selector -->
+    <div class="project-selector">
+      <label for="project-select" class="label">Select Project:</label>
+      <select id="project-select" class="select-control" (change)="onProjectChange($event)" 
+              *ngIf="projects.length > 0" [disabled]="isLoading" [ngModel]="selectedProject?.projectId">
+        <option value="">-- Choose a Project --</option>
+        <option *ngFor="let project of projects" [value]="project.projectId" [selected]="selectedProject?.projectId === project.projectId">
+          {{ project.projectName }} ({{ project.projectCode }})
+        </option>
+      </select>
+      <div *ngIf="projects.length === 0 && !isLoading" class="no-projects">
+        No projects available
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading...</p>
+  </div>
+
+  <!-- Kanban Board -->
+  <div *ngIf="!isLoading && selectedProject" class="kanban-board">
+    <!-- Progress Status Columns -->
+    <div *ngFor="let status of progressStatuses" 
+         class="status-column"
+         [style.border-top-color]="getStatusColor(status.progressId)"
+         [class.minimized]="columnStates[status.progressId]?.isMinimized">
+      
+      <!-- Column Header -->
+      <div class="column-header" [style.background-color]="getStatusColor(status.progressId) + '20'">
+        <div class="header-content">
+          <h3 class="status-title">{{ status.progressName }}</h3>
+          <span class="item-count">({{ getItemsForStatus(status.progressId).length }})</span>
+        </div>
+        
+        <div class="header-actions">
+          <!-- Add Button -->
+          <button class="icon-button add-button" *ngIf="!columnStates[status.progressId]?.isMinimized"
+                  (click)="openCreateStatusDialog()" 
+                  title="Add new progress status"
+                  matTooltip="Add new progress status">
+            <mat-icon>add</mat-icon>
+          </button>
+          
+          <!-- Minimize/Maximize Button -->
+          <button class="icon-button minimize-button" 
+                  (click)="toggleColumnMinimize(status.progressId)"
+                  [attr.aria-label]="columnStates[status.progressId]?.isMinimized ? 'Expand column' : 'Collapse column'"
+                  matTooltip="Toggle column">
+            <mat-icon>{{ columnStates[status.progressId]?.isMinimized ? 'chevron_right' : 'expand_less' }}</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Column Body -->
+      <div *ngIf="!columnStates[status.progressId]?.isMinimized" class="column-body">
+        <div cdkDropList
+             [id]="getDropListId(status.progressId)"
+             [cdkDropListData]="getItemsForStatus(status.progressId)"
+             [cdkDropListConnectedTo]="connectedDropListIds"
+             class="status-drop-list"
+             (cdkDropListDropped)="onStatusDrop($event, status.progressId)">
+
+          <!-- Items in this status -->
+          <div *ngIf="getItemsForStatus(status.progressId).length === 0" class="empty-state">
+            <p>No items in this status</p>
+          </div>
+
+          <div *ngFor="let item of getItemsForStatus(status.progressId)" 
+               class="status-item"
+               cdkDrag
+               (click)="item.type === 'epic' && openEpicPopup(item)"
+               [style.margin-left]="getItemPadding(item.type)"
+               [class.clickable]="item.type === 'epic'"
+               [class.item-epic]="item.type === 'epic'"
+               [class.item-story]="item.type === 'story'"
+               [class.item-task]="item.type === 'task'"
+               [class.item-subtask]="item.type === 'subtask'">
+          
+          <!-- Item Header -->
+          <div class="item-header">
+            <div class="item-type-badge" [ngClass]="'badge-' + item.type">
+              {{ getItemTypeLabel(item.type) }}
+            </div>
+            <div class="item-title-section">
+              <div *ngIf="item.type === 'epic'" class="item-number">
+                Epic 
+                <a class="item-id-link"
+                   [href]="getEpicPageUrl(item.data.epicId)"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   (click)="$event.stopPropagation()">
+                  #{{ item.data.epicId }}
+                </a>
+              </div>
+              <p class="item-title">{{ getItemTitle(item) }}</p>
+              <div *ngIf="item.type === 'epic'" class="epic-meta">
+                <span>Sequence: {{ item.data.epicSequence ?? '-' }}</span>
+                <span>Stories: {{ item.data.userStories?.length ?? 0 }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Item Body -->
+          <div class="item-body">
+            <div *ngIf="item.type === 'epic' && (item.data.epicDesc || item.data.description)" class="item-description">
+              {{ item.data.epicDesc || item.data.description }}
+            </div>
+            <div *ngIf="item.type !== 'epic' && getItemDescription(item)" class="item-description">
+              {{ getItemDescription(item) }}
+            </div>
+
+            <!-- Item Dates -->
+            <div *ngIf="getItemDates(item).start || getItemDates(item).end" class="item-dates">
+              <span *ngIf="getItemDates(item).start" class="date-info">
+                <mat-icon>calendar_today</mat-icon>
+                <small>{{ getItemDates(item).start | date: 'short' }}</small>
+              </span>
+              <span *ngIf="getItemDates(item).end" class="date-info">
+                <mat-icon>event</mat-icon>
+                <small>{{ getItemDates(item).end | date: 'short' }}</small>
+              </span>
+            </div>
+
+            <!-- Story Points (for stories and tasks) -->
+            <div *ngIf="item.type === 'story' && item.data.storyPoints" class="story-points">
+              <span class="points-badge">{{ item.data.storyPoints }} pts</span>
+            </div>
+
+            <!-- Priority (if available) -->
+            <div *ngIf="item.data.priorityId" class="item-priority">
+              <small>Priority ID: {{ item.data.priorityId }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Project Selected -->
+  <div *ngIf="!selectedProject && !isLoading && projects.length > 0" class="no-selection">
+    <mat-icon class="large-icon">inbox</mat-icon>
+    <p>Please select a project to view the status board</p>
+  </div>
+</div>

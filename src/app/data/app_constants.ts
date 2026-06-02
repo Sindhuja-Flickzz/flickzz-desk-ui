@@ -254,6 +254,16 @@ export const MENU_INFO: MenuItem[] = [
         "isParent": true,
         "route": "/project-builder",
         "subMenus": []
+    },
+    {
+        "menuId": 5,
+        "menuName": "Project Status",
+        "isActive": true,
+        "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+        "icon": "📊",
+        "isParent": true,
+        "route": "/project-status",
+        "subMenus": []
     }
 ];
 

@@ -57,6 +57,9 @@ import { ProjectBuilderComponent } from './pages/project-builder/project-builder
 import { ProjectTimelineGanttComponent } from './pages/project-builder/project-timeline-gantt/project-timeline-gantt.component';
 import { DetailsTemplateComponent } from './pages/settings/details-template/details-template.component';
 import { DetailsTemplateOptionsDialogComponent } from './pages/settings/details-template/details-template-options-dialog.component';
+import { ProjectStatusComponent } from './pages/project-status/project-status.component';
+import { ProjectStatusCreateDialogComponent } from './pages/project-status/project-status-create-dialog/project-status-create-dialog.component';
+import { ProjectStatusEpicDetailComponent } from './pages/project-status/project-status-epic-detail/project-status-epic-detail.component';
 
 @NgModule({
   declarations: [
@@ -87,7 +90,10 @@ import { DetailsTemplateOptionsDialogComponent } from './pages/settings/details-
     ProfileIconComponent,
     ProfileComponent,
     ProjectBuilderComponent,
-    ProjectTimelineGanttComponent
+    ProjectTimelineGanttComponent,
+    ProjectStatusComponent,
+    ProjectStatusCreateDialogComponent,
+    ProjectStatusEpicDetailComponent
   ],
   imports: [
     BrowserModule,

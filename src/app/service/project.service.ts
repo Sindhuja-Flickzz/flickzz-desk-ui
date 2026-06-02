@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
-import { ProjectCreateRequest, ProjectVO } from '../models/project-builder';
+import { ProjectCreateRequest, ProjectVO, ProgressStatusVO, ProgressStatusRequestVO, ProgressStatusMoveRequest, EpicVO } from '../models/project-builder';
 
 @Injectable({
   providedIn: 'root'
@@ -30,5 +30,25 @@ export class ProjectService {
 
   deleteProject(projectId: number): Observable<any> {
     return this.http.delete(`${this.baseUrl}/project/delete/${projectId}`);
+  }
+
+  updateEpic(epic: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/project/epic/update`, epic);
+  }
+
+  getEpicById(epicId: number | string): Observable<EpicVO> {
+    return this.http.get<EpicVO>(`${this.baseUrl}/epic/${epicId}`);
+  }
+
+  getProgressStatuses(orgId: string): Observable<ProgressStatusVO[]> {
+    return this.http.get<ProgressStatusVO[]>(`${this.baseUrl}/project/status/list/${orgId}`);
+  }
+
+  createProgressStatus(request: ProgressStatusRequestVO): Observable<ProgressStatusVO> {
+    return this.http.post<ProgressStatusVO>(`${this.baseUrl}/project/status/create`, request);
+  }
+
+  moveProjectStatus(request: ProgressStatusMoveRequest): Observable<any> {
+    return this.http.put(`${this.baseUrl}/project/status`, request);
   }
 }

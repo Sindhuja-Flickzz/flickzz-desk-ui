@@ -9,6 +9,25 @@ export interface ProgressStatusVO {
   colorCode: string;
 }
 
+export interface ProgressStatusRequestVO {
+  progressId?: number;
+  company?: CompanyMaster;
+  progressName: string;
+  progressSequence: number;
+  colorCode: string;
+  updatedBy?: string;
+  createdBy?: string;
+  orgId: number;
+}
+
+export interface ProgressStatusMoveRequest {
+  itemId: number;
+  projectId: number;
+  currentStatusId: number;
+  newStatusId: number;
+  itemType: 'epic' | 'story' | 'task' | 'subtask';
+}
+
 export interface EpicVO {
   epicId: number;
   project: ProjectVO;

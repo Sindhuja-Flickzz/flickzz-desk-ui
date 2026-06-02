@@ -20,6 +20,8 @@ import {EnquiryRegistrationComponent} from './pages/enquiry-registration/enquiry
 import { SettingsComponent } from './pages/settings/settings.component';
 import { DetailsTemplateComponent } from './pages/settings/details-template/details-template.component';
 import { ProfileComponent } from './pages/profile/profile.component';
+import { ProjectStatusComponent } from './pages/project-status/project-status.component';
+import { ProjectStatusEpicDetailComponent } from './pages/project-status/project-status-epic-detail/project-status-epic-detail.component';
 import { authGuard } from './service/auth/auth.guard';
 
 const routes: Routes = [
@@ -70,6 +72,21 @@ const routes: Routes = [
   {
     path: 'project-builder',
     component: ProjectBuilderComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'project-status',
+    component: ProjectStatusComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'project-status/epic',
+    component: ProjectStatusEpicDetailComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'project-status/epic/:epicId',
+    component: ProjectStatusEpicDetailComponent,
     canActivate: [authGuard]
   },
   // {

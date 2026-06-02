@@ -572,7 +572,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
+  padding: 4px 20px;
   background: #ffffff;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
@@ -636,7 +636,7 @@
 }
 
 .page-content {
-  padding: 20px;
+  padding: 10px;
   overflow: auto;
   color: #00246B;
 }
@@ -803,9 +803,9 @@
 
 .popup-hamburger {
   position: fixed;
-  top: 14px;
+  top: 7px;
   left: 14px;
-  z-index: 1100;
+  // z-index: 1100;
   display: flex;
   align-items: center;
   justify-content: center;

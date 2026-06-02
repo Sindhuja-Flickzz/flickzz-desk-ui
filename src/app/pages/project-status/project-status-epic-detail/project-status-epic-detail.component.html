@@ -1,0 +1,187 @@
+<div class="epic-detail-root" *ngIf="!isLoading && !error">
+  <div class="detail-topbar">
+    <div class="topbar-left">
+      <span class="topbar-label">
+      <a class="epic-id-link" href="#" (click)="openEpicInNewTab($event)">
+        Epic {{ epic?.epicId || '---' }} {{ epic?.epicName || 'Epic details' }}
+      </a> </span>
+      <div class="topbar-actions">
+        <div class="field field-inline">
+          <label for="statusSelect">Status</label>
+          <select id="statusSelect" name="progressSelect" [(ngModel)]="selectedProgress" (change)="updateProgress(selectedProgress)" class="form-select">
+            <option value="" disabled selected>Select status</option>
+            <option *ngFor="let s of progressStatuses" [ngValue]="s">{{ s.progressName }}</option>
+          </select>
+        </div>
+        <div class="field field-inline">
+          <label for="templateSelect">Template</label>
+          <select id="templateSelect" name="templateSelect" [(ngModel)]="selectedTemplateId" (change)="onTemplateChange($event)" class="form-select">
+            <option value="" disabled selected>Select template</option>
+            <option *ngFor="let t of templates" [value]="t.templateId">{{ t.templateName }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button mat-icon-button color="primary" aria-label="Save epic" (click)="saveEpic()"m]0>
+        <mat-icon>save</mat-icon>
+      </button>
+      <button mat-icon-button *ngIf="dialogRef" aria-label="Close" (click)="close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <mat-tab-group dynamicHeight>
+    <mat-tab label="General">
+      <div class="tab-content">
+        <div class="detail-grid">
+          <main class="main-column">
+            <section class="section-card acceptance-card">
+              <div class="section-head">
+                <h2>Acceptance criteria</h2>
+                <span class="section-note">
+                  <button mat-icon-button color="primary" aria-label="Save epic" (click)="saveAcceptance()">
+                    <mat-icon>save</mat-icon>
+                  </button>
+                </span>
+              </div>
+              <div class="section-body">
+                <textarea class="acceptance-editor" [(ngModel)]="acceptanceText" rows="6" title="Acceptance criteria" placeholder="Enter acceptance criteria"></textarea>
+              </div>
+            </section>
+
+            <section class="section-card template-fields-card" *ngIf="selectedTemplate">
+              <div class="section-head">
+                <h2>Template fields</h2>
+                <span class="section-note">
+                  <button mat-icon-button color="primary" aria-label="Save epic" (click)="saveAcceptance()">
+                    <mat-icon>save</mat-icon>
+                  </button>
+                </span>
+              </div>
+              <div class="section-body">
+                <div class="field" *ngFor="let detail of selectedTemplate.templateDetails">
+                  <label class="field-label">
+                    {{ detail.fieldName }}<span *ngIf="detail.mandatory">*</span>
+                  </label>
+                  <div class="field-control">
+                    <ng-container [ngSwitch]="getTemplateFieldControlType(detail)">
+                      <textarea *ngSwitchCase="'textarea'" [(ngModel)]="templateFieldValues[detail.fieldName]" rows="3" title="{{ detail.fieldName }}" placeholder="Enter {{ detail.fieldName }}"></textarea>
+                      <input *ngSwitchCase="'number'" type="number" [(ngModel)]="templateFieldValues[detail.fieldName]" title="{{ detail.fieldName }}" placeholder="Enter {{ detail.fieldName }}" />
+                      <input *ngSwitchCase="'date'" type="date" [(ngModel)]="templateFieldValues[detail.fieldName]" title="{{ detail.fieldName }}" />
+                      <input *ngSwitchCase="'email'" type="email" [(ngModel)]="templateFieldValues[detail.fieldName]" title="{{ detail.fieldName }}" placeholder="Enter {{ detail.fieldName }}" />
+                      <input *ngSwitchCase="'url'" type="url" [(ngModel)]="templateFieldValues[detail.fieldName]" title="{{ detail.fieldName }}" placeholder="Enter {{ detail.fieldName }}" />
+                      <select *ngSwitchCase="'select'" [(ngModel)]="templateFieldValues[detail.fieldName]" class="form-select" title="{{ detail.fieldName }}">
+                        <option value="" disabled>Select an option</option>
+                        <option *ngFor="let option of detail.options" [value]="option.value">{{ option.label }}</option>
+                      </select>
+                      <div *ngSwitchCase="'radio'" class="option-group">
+                        <label *ngFor="let option of detail.options" class="option-inline">
+                          <input type="radio" [name]="detail.fieldName" [value]="option.value" [(ngModel)]="templateFieldValues[detail.fieldName]" />
+                          {{ option.label }}
+                        </label>
+                      </div>
+                      <div *ngSwitchCase="'checkboxes'" class="option-group">
+                        <label *ngFor="let option of detail.options" class="option-inline">
+                          <input type="checkbox" [checked]="isCheckboxOptionSelected(detail, option.value)" (change)="toggleTemplateFieldCheckbox(detail, option.value)" />
+                          {{ option.label }}
+                        </label>
+                      </div>
+                      <input *ngSwitchDefault type="text" [(ngModel)]="templateFieldValues[detail.fieldName]" title="{{ detail.fieldName }}" placeholder="Enter {{ detail.fieldName }}" />
+                    </ng-container>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="section-card discussion-card">
+              <div class="section-head">
+                <h2>Discussion</h2>
+                <span class="section-note">
+                  <button mat-icon-button color="primary" aria-label="Save epic" (click)="saveDiscussion()">
+                    <mat-icon>save</mat-icon>
+                  </button>
+                </span>
+              </div>
+              <div class="discussion-panel">
+                <textarea class="discussion-editor" [(ngModel)]="discussionText" rows="4" placeholder="Add a comment, mention a person, or link a work item."></textarea>
+              </div>
+            </section>
+          </main>
+
+          <aside class="side-column">
+            <section class="section-card detail-panel">
+              <div class="section-head">
+                <h2>General</h2>
+              </div>
+              <div class="detail-row"><span>Project</span><strong>{{ epic?.project?.projectName || 'N/A' }}</strong></div>
+              <div class="detail-row"><span>Sequence</span><strong>{{ epic?.epicSequence ?? 'N/A' }}</strong></div>
+              <div class="detail-row"><span>Start date</span><strong>{{ epic?.plannedStartDate ? (epic?.plannedStartDate | date:'mediumDate') : 'N/A' }}</strong></div>
+              <div class="detail-row"><span>End date</span><strong>{{ epic?.plannedEndDate ? (epic?.plannedEndDate | date:'mediumDate') : 'N/A' }}</strong></div>
+              <div class="detail-row"><span>Stories</span><strong>{{ epic?.userStories?.length ?? 0 }}</strong></div>
+            </section>
+
+            <section class="section-card related-card" *ngIf="epic?.userStories?.length">
+              <div class="section-head">
+                <h2>Related work</h2>
+              </div>
+              <ul class="related-list">
+                <li *ngFor="let story of epic?.userStories">
+                  <strong>{{ story.storyCode || 'Story' }}:</strong> {{ story.title }}
+                </li>
+              </ul>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </mat-tab>
+    <mat-tab label="Scan">
+      <div class="tab-placeholder">Scan content will be available here.</div>
+    </mat-tab>
+    <mat-tab label="Prioritisation">
+      <div class="tab-placeholder">Prioritisation content will be available here.</div>
+    </mat-tab>
+    <mat-tab label="Execution">
+      <div class="tab-placeholder">Execution content will be available here.</div>
+    </mat-tab>
+    <mat-tab label="Governance">
+      <div class="tab-placeholder">Governance details will be available here.</div>
+    </mat-tab>
+    <mat-tab label="Jira Fields">
+      <div class="tab-placeholder">Jira fields will be available here.</div>
+    </mat-tab>
+    <mat-tab label="Impact Assessment">
+      <div class="tab-placeholder">Impact assessment will be available here.</div>
+    </mat-tab>
+    <mat-tab label="Benefits/Initiation">
+      <div class="tab-placeholder">Benefits / Initiation will be available here.</div>
+    </mat-tab>
+    <mat-tab label="Planning/Forecasting">
+      <div class="tab-placeholder">Planning / Forecasting will be available here.</div>
+    </mat-tab>
+    <mat-tab label="Attachments">
+      <div class="tab-content">
+        <section class="section-card attachments-card">
+          <div class="section-head">
+            <h2>Attachments</h2>
+          </div>
+          <div class="section-body">
+            <input type="file" title="Upload attachments" (change)="onFileSelected($event)" multiple />
+            <ul>
+              <li *ngFor="let a of attachments">{{ a.name }}</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>
+
+<div class="loading-state" *ngIf="isLoading">
+  <p>Loading epic details...</p>
+</div>
+
+<div class="error-state" *ngIf="error">
+  <p>{{ error }}</p>
+</div>

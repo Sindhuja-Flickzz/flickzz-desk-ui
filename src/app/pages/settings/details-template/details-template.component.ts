@@ -3,7 +3,7 @@ import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Valida
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Subscription } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../../shared/confirmation-dialog/confirmation-dialog.component';
 import { DetailsTemplateOptionsDialogComponent } from './details-template-options-dialog.component';
@@ -31,6 +31,9 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
   workItemMap: Map<string, WorkItem> = new Map();
   fieldTypeMap: Map<string, FieldTypeItem> = new Map();
   orgId = '';
+  private dataLoadReady = false;
+  private dataLoadPromise: Promise<void>;
+  private dataLoadResolve?: () => void;
 
   templates: TemplatesDetails[] = [];
   isEditMode = false;
@@ -47,6 +50,9 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
     private detailsTemplateService: DetailsTemplateService
   ) {
     this.orgId = localStorage.getItem('userOrgId') || '';
+    this.dataLoadPromise = new Promise((resolve) => {
+      this.dataLoadResolve = resolve;
+    });
     this.templateForm = this.fb.group({
       templateName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100), this.trimValidator]],
       workItem: ['', Validators.required],
@@ -73,16 +79,21 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
 
   private loadWorkItemsAndFieldTypes(): void {
     if (!this.orgId) {
+      this.dataLoadReady = true;
+      this.dataLoadResolve?.();
       return;
     }
 
     this.subscriptions.add(
-      this.detailsTemplateService.getWorkItemList(this.orgId).subscribe({
-        next: (result) => {
-          const items = (result as any).attributes || (Array.isArray(result) ? result : []);
+      forkJoin({
+        workItems: this.detailsTemplateService.getWorkItemList(this.orgId),
+        fieldTypes: this.detailsTemplateService.getFieldTypeList(this.orgId)
+      }).subscribe({
+        next: ({ workItems, fieldTypes }) => {
+          const workItemsData = (workItems as any).attributes || (Array.isArray(workItems) ? workItems : []);
           this.workItemMap.clear();
-          this.workItemOptions = Array.isArray(items)
-            ? items.map((item: WorkItem) => {
+          this.workItemOptions = Array.isArray(workItemsData)
+            ? workItemsData.map((item: WorkItem) => {
                 this.workItemMap.set(item.code, item);
                 return {
                   label: item.label,
@@ -90,21 +101,11 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
                 };
               })
             : [];
-        },
-        error: (err) => {
-          console.error('Failed to load work items', err);
-          this.workItemOptions = [];
-        }
-      })
-    );
 
-    this.subscriptions.add(
-      this.detailsTemplateService.getFieldTypeList(this.orgId).subscribe({
-        next: (result) => {
-          const items = (result as any).attributes || (Array.isArray(result) ? result : []);
+          const fieldTypesData = (fieldTypes as any).attributes || (Array.isArray(fieldTypes) ? fieldTypes : []);
           this.fieldTypeMap.clear();
-          this.fieldTypeOptions = Array.isArray(items)
-            ? items.map((item: FieldTypeItem) => {
+          this.fieldTypeOptions = Array.isArray(fieldTypesData)
+            ? fieldTypesData.map((item: FieldTypeItem) => {
                 this.fieldTypeMap.set(item.code, item);
                 return {
                   label: item.label,
@@ -112,10 +113,16 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
                 };
               })
             : [];
+
+          this.dataLoadReady = true;
+          this.dataLoadResolve?.();
         },
         error: (err) => {
-          console.error('Failed to load field types', err);
+          console.error('Failed to load work items or field types', err);
+          this.workItemOptions = [];
           this.fieldTypeOptions = [];
+          this.dataLoadReady = true;
+          this.dataLoadResolve?.();
         }
       })
     );
@@ -539,7 +546,11 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
       next: (result) => {
         const templateDetail = (result as any).attributes || template;
         console.log('Loaded template details for editing:', templateDetail);
-        this.populateEditForm(templateDetail);
+        if (!this.dataLoadReady) {
+          this.dataLoadPromise.then(() => this.populateEditForm(templateDetail));
+        } else {
+          this.populateEditForm(templateDetail);
+        }
         this.isEditMode = true;
         this.editingTemplateId = template.templateId;
         this.activeTab = 'create';
