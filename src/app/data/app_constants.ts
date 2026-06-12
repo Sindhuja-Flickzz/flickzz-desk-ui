@@ -269,7 +269,10 @@ export const MENU_INFO: MenuItem[] = [
 
 export const APP_CONSTANTS = {
   APP_NAME: 'FlickzzDesk',
-  API_BASE_URL: 'http://localhost:5000/flickzz-desk'
+//   Local base url for backend API
+//   API_BASE_URL: 'http://localhost:5000/flickzz-desk'
+//   Railway internal base url for backend API
+  API_BASE_URL: 'https://flickzz-desk-service.railway.internal/flickzz-desk'
 };
 
 export const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
