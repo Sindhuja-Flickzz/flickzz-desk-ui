@@ -272,7 +272,7 @@ export const APP_CONSTANTS = {
 //   Local base url for backend API
 //   API_BASE_URL: 'http://localhost:5000/flickzz-desk'
 //   Railway internal base url for backend API
-  API_BASE_URL: 'https://flickzz-desk-service.railway.internal/flickzz-desk'
+  API_BASE_URL: 'https://flickzz-desk-service.up.railway.app/flickzz-desk'
 };
 
 export const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

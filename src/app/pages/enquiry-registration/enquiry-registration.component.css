@@ -187,7 +187,7 @@ button:disabled {
 h2 {
   margin-top: 25px;
   font-size: 22px;
-  color: #F4F4F4;
+  /* color: #F4F4F4; */
 }
 
 p {
