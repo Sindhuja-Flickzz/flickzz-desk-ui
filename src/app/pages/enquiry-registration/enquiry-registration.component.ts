@@ -49,9 +49,9 @@ export class EnquiryRegistrationComponent implements OnInit {
       delay: Math.random() * 5
     }));
     
-    setTimeout(() => {
-      this.registrationSuccess = true;
-    }, 1500);
+    // setTimeout(() => {
+    //   this.registrationSuccess = true;
+    // }, 1500);
     this.loadCountries();
   }
 
