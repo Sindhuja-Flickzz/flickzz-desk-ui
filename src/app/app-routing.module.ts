@@ -22,6 +22,7 @@ import { DetailsTemplateComponent } from './pages/settings/details-template/deta
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ProjectStatusComponent } from './pages/project-status/project-status.component';
 import { ProjectStatusEpicDetailComponent } from './pages/project-status/project-status-epic-detail/project-status-epic-detail.component';
+import { ProjectStatusItemDetailComponent } from './pages/project-status/project-status-item-detail/project-status-item-detail.component';
 import { authGuard } from './service/auth/auth.guard';
 
 const routes: Routes = [
@@ -86,6 +87,21 @@ const routes: Routes = [
   },
   {
     path: 'project-status/epic/:epicId',
+    component: ProjectStatusEpicDetailComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'project-status/story/:storyId',
+    component: ProjectStatusEpicDetailComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'project-status/task/:taskId',
+    component: ProjectStatusEpicDetailComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'project-status/item/:itemType/:itemId',
     component: ProjectStatusEpicDetailComponent,
     canActivate: [authGuard]
   },

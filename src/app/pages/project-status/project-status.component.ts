@@ -6,6 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProjectStatusCreateDialogComponent } from './project-status-create-dialog/project-status-create-dialog.component';
 import { ProjectStatusEpicDetailComponent } from './project-status-epic-detail/project-status-epic-detail.component';
+import { ProjectStatusItemDetailComponent } from './project-status-item-detail/project-status-item-detail.component';
 
 interface ColumnState {
   [key: number]: {
@@ -145,7 +146,43 @@ export class ProjectStatusComponent implements OnInit {
       panelClass: 'epic-detail-dialog-panel',
       autoFocus: false,
       data: {
-        epic: item.data,
+        itemType: 'epic',
+        item: item.data,
+        projectId: this.selectedProject.projectId
+      }
+    });
+  }
+
+  openItemPopup(item: any): void {
+    if (!this.selectedProject || !item?.type) {
+      return;
+    }
+
+    if (item.type === 'epic' || item.type === 'story' || item.type === 'task' || item.type === 'subtask') {
+      this.dialog.open(ProjectStatusEpicDetailComponent, {
+        width: '95vw',
+        maxWidth: '1200px',
+        maxHeight: '95vh',
+        panelClass: 'epic-detail-dialog-panel',
+        autoFocus: false,
+        data: {
+          itemType: item.type,
+          item: item.data,
+          projectId: this.selectedProject.projectId
+        }
+      });
+      return;
+    }
+
+    this.dialog.open(ProjectStatusItemDetailComponent, {
+      width: '95vw',
+      maxWidth: '1200px',
+      maxHeight: '95vh',
+      panelClass: 'item-detail-dialog-panel',
+      autoFocus: false,
+      data: {
+        itemType: item.type,
+        item: item.data,
         projectId: this.selectedProject.projectId
       }
     });
@@ -156,6 +193,61 @@ export class ProjectStatusComponent implements OnInit {
       return '#';
     }
     return `${window.location.origin}/project-status/epic/${epicId}?projectId=${this.selectedProject.projectId}`;
+  }
+
+  getItemId(item: any): string | number {
+    if (!item || !item.type) {
+      return '';
+    }
+    if (item.type === 'epic') {
+      return item.data?.epicId ?? '';
+    }
+    if (item.type === 'story') {
+      return item.data?.storyCode || item.data?.storyId || '';
+    }
+    if (item.type === 'task') {
+      return item.data?.taskId ?? '';
+    }
+    if (item.type === 'subtask') {
+      return item.data?.subTaskId ?? '';
+    }
+    return '';
+  }
+
+  getItemPageUrl(item: any): string {
+    if (!this.selectedProject || !item || !item.type) {
+      return '#';
+    }
+
+    if (item.type === 'epic') {
+      return this.getEpicPageUrl(item.data?.epicId);
+    }
+
+    if (item.type === 'story') {
+      const storyId = item.data?.storyId;
+      if (!storyId) {
+        return '#';
+      }
+      return `${window.location.origin}/project-status/story/${storyId}?projectId=${this.selectedProject.projectId}`;
+    }
+
+    if (item.type === 'task') {
+      const taskId = item.data?.taskId;
+      if (!taskId) {
+        return '#';
+      }
+      return `${window.location.origin}/project-status/task/${taskId}?projectId=${this.selectedProject.projectId}`;
+    }
+
+    const id = item.type === 'subtask'
+      ? item.data?.subTaskId
+      : null;
+
+    if (!id) {
+      return '#';
+    }
+
+    return `${window.location.origin}/project-status/item/${item.type}/${id}?projectId=${this.selectedProject.projectId}`;
   }
 
   organizeItemsByStatus(): void {

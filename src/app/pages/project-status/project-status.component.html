@@ -81,9 +81,9 @@
           <div *ngFor="let item of getItemsForStatus(status.progressId)" 
                class="status-item"
                cdkDrag
-               (click)="item.type === 'epic' && openEpicPopup(item)"
+               (click)="openItemPopup(item)"
                [style.margin-left]="getItemPadding(item.type)"
-               [class.clickable]="item.type === 'epic'"
+               [class.clickable]="item.type === 'epic' || item.type === 'story' || item.type === 'task' || item.type === 'subtask'"
                [class.item-epic]="item.type === 'epic'"
                [class.item-story]="item.type === 'story'"
                [class.item-task]="item.type === 'task'"
@@ -95,20 +95,29 @@
               {{ getItemTypeLabel(item.type) }}
             </div>
             <div class="item-title-section">
-              <div *ngIf="item.type === 'epic'" class="item-number">
-                Epic 
+              <div class="item-number">
+                <ng-container [ngSwitch]="item.type">
+                  <span *ngSwitchCase="'epic'">Epic</span>
+                  <span *ngSwitchCase="'story'">Story</span>
+                  <span *ngSwitchCase="'task'">Task</span>
+                  <span *ngSwitchCase="'subtask'">Subtask</span>
+                </ng-container>
                 <a class="item-id-link"
-                   [href]="getEpicPageUrl(item.data.epicId)"
+                   [href]="getItemPageUrl(item)"
                    target="_blank"
                    rel="noopener noreferrer"
                    (click)="$event.stopPropagation()">
-                  #{{ item.data.epicId }}
+                  {{ getItemId(item) }}
                 </a>
               </div>
               <p class="item-title">{{ getItemTitle(item) }}</p>
-              <div *ngIf="item.type === 'epic'" class="epic-meta">
-                <span>Sequence: {{ item.data.epicSequence ?? '-' }}</span>
-                <span>Stories: {{ item.data.userStories?.length ?? 0 }}</span>
+              <div class="item-meta">
+                <span *ngIf="item.type === 'epic'">Sequence: {{ item.data.epicSequence ?? '-' }}</span>
+                <span *ngIf="item.type === 'epic'">Stories: {{ item.data.userStories?.length ?? 0 }}</span>
+                <span *ngIf="item.type === 'story'">Story code: {{ item.data.storyCode || '-' }}</span>
+                <span *ngIf="item.type === 'story'">Tasks: {{ item.data.tasks?.length ?? 0 }}</span>
+                <span *ngIf="item.type === 'task'">Sequence: {{ item.data.taskSequence ?? '-' }}</span>
+                <span *ngIf="item.type === 'task'">Subtasks: {{ item.data.subTasks?.length ?? 0 }}</span>
               </div>
             </div>
           </div>

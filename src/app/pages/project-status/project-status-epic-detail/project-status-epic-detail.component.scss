@@ -9,6 +9,31 @@
   border-left: 4px solid #3b82f6;
 }
 
+/* Color variants to match item badges on the board */
+.epic-detail-root.item-epic {
+  border-left-color: #1976d2;
+}
+
+.epic-detail-root.item-story {
+  border-left-color: #7b1fa2;
+}
+
+.epic-detail-root.item-task {
+  border-left-color: #f57c00;
+}
+
+.epic-detail-root.item-subtask {
+  border-left-color: #388e3c;
+}
+
+.epic-detail-root .epic-color {
+  border-color: rgba(0,0,0,0.08);
+}
+.epic-detail-root.item-epic .epic-color { background: #1976d2; }
+.epic-detail-root.item-story .epic-color { background: #7b1fa2; }
+.epic-detail-root.item-task .epic-color { background: #f57c00; }
+.epic-detail-root.item-subtask .epic-color { background: #388e3c; }
+
 .detail-topbar {
   display: flex;
   flex-wrap: wrap;

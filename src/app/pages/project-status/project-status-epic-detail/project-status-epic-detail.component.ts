@@ -3,12 +3,13 @@ import { ActivatedRoute } from '@angular/router';
 import { Location } from '@angular/common';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ProjectService } from '../../../service/project.service';
-import { EpicVO, ProgressStatusVO } from '../../../models/project-builder';
+import { EpicVO, ProgressStatusVO, UserStory, Task, SubTask } from '../../../models/project-builder';
 import { DetailsTemplateService } from '../../../service/details-template.service';
 import { FieldTypeItem, TemplateDetail, TemplateDetailField, TemplatesDetails } from '../../../models/details-template.model';
 
 export interface EpicDetailDialogData {
-  epic?: EpicVO;
+  itemType?: 'epic' | 'story' | 'task' | 'subtask';
+  item?: EpicVO | UserStory | Task | SubTask;
   projectId?: number;
 }
 
@@ -18,7 +19,11 @@ export interface EpicDetailDialogData {
   styleUrls: ['./project-status-epic-detail.component.scss']
 })
 export class ProjectStatusEpicDetailComponent implements OnInit {
+  itemType: 'epic' | 'story' | 'task' | 'subtask' = 'epic';
   epic: EpicVO | null = null;
+  story: UserStory | null = null;
+  task: Task | null = null;
+  subtask: SubTask | null = null;
   projectId?: number;
   isLoading = false;
   error: string | null = null;
@@ -44,15 +49,23 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    if (this.data?.epic && this.data.projectId) {
-      this.epic = this.data.epic;
+    if (this.data?.item && this.data.projectId) {
+      this.itemType = this.data.itemType || 'epic';
       this.projectId = this.data.projectId;
-      this.initializeEpicState();
+      if (this.itemType === 'story') {
+        this.story = this.data.item as UserStory;
+      } else if (this.itemType === 'task') {
+        this.task = this.data.item as Task;
+      } else if (this.itemType === 'subtask') {
+        this.subtask = this.data.item as SubTask;
+      } else {
+        this.epic = this.data.item as EpicVO;
+      }
+      this.initializeItemState();
       this.discussionText = '';
       this.loadProgressStatuses();
       this.loadTemplates();
     } else if (this.checkAndLoadFromHash()) {
-      // Token found and loaded from sessionStorage
       return;
     } else {
       this.loadFromRoute();
@@ -60,9 +73,8 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
   }
 
   private checkAndLoadFromHash(): boolean {
-    // Get hash from window location (hash includes '#' so we need to remove it)
     const hash = window.location.hash.substring(1);
-    if (!hash || !hash.startsWith('epic_')) {
+    if (!hash || (!hash.startsWith('epic_') && !hash.startsWith('story_') && !hash.startsWith('task_') && !hash.startsWith('subtask_'))) {
       return false;
     }
 
@@ -74,18 +86,43 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
       }
 
       const payload = JSON.parse(payloadJson);
-      const { projectId, epicId } = payload;
+      const { projectId, epicId, storyId, taskId, subtaskId } = payload;
+      this.projectId = projectId;
 
-      if (!epicId) {
-        console.warn('Invalid payload structure:', payload);
-        return false;
+      if (subtaskId) {
+        this.itemType = 'subtask';
+        this.loadSubtaskById(subtaskId, projectId, () => {
+          sessionStorage.removeItem(hash);
+        });
+        return true;
       }
 
-      this.projectId = projectId;
-      this.loadEpicById(epicId, projectId, () => {
-        sessionStorage.removeItem(hash);
-      });
-      return true;
+      if (taskId) {
+        this.itemType = 'task';
+        this.loadTaskById(taskId, projectId, () => {
+          sessionStorage.removeItem(hash);
+        });
+        return true;
+      }
+
+      if (storyId) {
+        this.itemType = 'story';
+        this.loadStoryById(storyId, projectId, () => {
+          sessionStorage.removeItem(hash);
+        });
+        return true;
+      }
+
+      if (epicId) {
+        this.itemType = 'epic';
+        this.loadEpicById(epicId, projectId, () => {
+          sessionStorage.removeItem(hash);
+        });
+        return true;
+      }
+
+      console.warn('Invalid payload structure:', payload);
+      return false;
     } catch (e) {
       console.error('Error parsing token from hash:', e);
       return false;
@@ -93,16 +130,57 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
   }
 
   loadFromRoute(): void {
+    const itemType = this.route.snapshot.paramMap.get('itemType') as 'epic' | 'story' | 'task' | 'subtask' | null;
+    const itemId = Number(this.route.snapshot.paramMap.get('itemId'));
     const epicId = Number(this.route.snapshot.paramMap.get('epicId'));
+    const storyId = Number(this.route.snapshot.paramMap.get('storyId'));
+    const taskId = Number(this.route.snapshot.paramMap.get('taskId'));
     const projectId = Number(this.route.snapshot.queryParamMap.get('projectId'));
-    console.log('Route params - projectId:', projectId, 'epicId:', epicId);
-    if (!epicId) {
-      this.error = 'Missing epic identifier.';
+    console.log('Route params - projectId:', projectId, 'itemType:', itemType, 'itemId:', itemId, 'epicId:', epicId, 'storyId:', storyId, 'taskId:', taskId);
+
+    if (itemType && itemId) {
+      this.itemType = itemType;
+      this.projectId = projectId || undefined;
+      if (itemType === 'subtask') {
+        this.loadSubtaskById(itemId, projectId);
+        return;
+      }
+      if (itemType === 'task') {
+        this.loadTaskById(itemId, projectId);
+        return;
+      }
+      if (itemType === 'story') {
+        this.loadStoryById(itemId, projectId);
+        return;
+      }
+      if (itemType === 'epic') {
+        this.loadEpicById(itemId, projectId);
+        return;
+      }
+    }
+
+    if (epicId) {
+      this.itemType = 'epic';
+      this.projectId = projectId || undefined;
+      this.loadEpicById(epicId, projectId);
       return;
     }
 
-    this.projectId = projectId || undefined;
-    this.loadEpicById(epicId, projectId);
+    if (storyId) {
+      this.itemType = 'story';
+      this.projectId = projectId || undefined;
+      this.loadStoryById(storyId, projectId);
+      return;
+    }
+
+    if (taskId) {
+      this.itemType = 'task';
+      this.projectId = projectId || undefined;
+      this.loadTaskById(taskId, projectId);
+      return;
+    }
+
+    this.error = 'Missing item identifier.';
   }
 
   private loadEpicById(epicId: number, projectId?: number, onFinally?: () => void): void {
@@ -115,7 +193,7 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
         }
         this.epic = (epic as any)?.attributes || epic;
         this.projectId = this.projectId || projectId || this.epic?.project?.projectId;
-        this.initializeEpicState();
+        this.initializeItemState();
         this.discussionText = '';
         this.loadProgressStatuses();
         this.loadTemplates();
@@ -143,7 +221,7 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
         project = (project as any)?.attributes || project;
         this.projectId = projectId;
         this.findEpic(project.epics, epicId);
-        this.initializeEpicState();
+        this.initializeItemState();
         this.discussionText = '';
         this.loadProgressStatuses();
         this.loadTemplates();
@@ -151,6 +229,102 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
       error: (err) => {
         this.isLoading = false;
         this.error = 'Failed to load epic details.';
+        console.error(err);
+      }
+    });
+  }
+
+  private loadStoryById(storyId: number, projectId?: number, onFinally?: () => void): void {
+    if (!projectId) {
+      this.error = 'Missing project identifier for story.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.projectService.getProjectInfo(String(projectId)).subscribe({
+      next: (project) => {
+        this.isLoading = false;
+        if (onFinally) {
+          onFinally();
+        }
+        project = (project as any)?.attributes || project;
+        this.projectId = projectId;
+        this.findStory(project.epics, storyId);
+        this.initializeItemState();
+        this.discussionText = '';
+        this.loadProgressStatuses();
+        this.loadTemplates();
+      },
+      error: (err) => {
+        if (onFinally) {
+          onFinally();
+        }
+        this.isLoading = false;
+        this.error = 'Failed to load story details.';
+        console.error(err);
+      }
+    });
+  }
+
+  private loadTaskById(taskId: number, projectId?: number, onFinally?: () => void): void {
+    if (!projectId) {
+      this.error = 'Missing project identifier for task.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.projectService.getProjectInfo(String(projectId)).subscribe({
+      next: (project) => {
+        this.isLoading = false;
+        if (onFinally) {
+          onFinally();
+        }
+        project = (project as any)?.attributes || project;
+        this.projectId = projectId;
+        this.findTask(project.epics, taskId);
+        this.initializeItemState();
+        this.discussionText = '';
+        this.loadProgressStatuses();
+        this.loadTemplates();
+      },
+      error: (err) => {
+        if (onFinally) {
+          onFinally();
+        }
+        this.isLoading = false;
+        this.error = 'Failed to load task details.';
+        console.error(err);
+      }
+    });
+  }
+
+  private loadSubtaskById(subtaskId: number, projectId?: number, onFinally?: () => void): void {
+    if (!projectId) {
+      this.error = 'Missing project identifier for subtask.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.projectService.getProjectInfo(String(projectId)).subscribe({
+      next: (project) => {
+        this.isLoading = false;
+        if (onFinally) {
+          onFinally();
+        }
+        project = (project as any)?.attributes || project;
+        this.projectId = projectId;
+        this.findSubtask(project.epics, subtaskId);
+        this.initializeItemState();
+        this.discussionText = '';
+        this.loadProgressStatuses();
+        this.loadTemplates();
+      },
+      error: (err) => {
+        if (onFinally) {
+          onFinally();
+        }
+        this.isLoading = false;
+        this.error = 'Failed to load subtask details.';
         console.error(err);
       }
     });
@@ -171,34 +345,133 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
     this.epic = found;
   }
 
-  private initializeEpicState(): void {
-    if (!this.epic) {
+  private findStory(epics: EpicVO[] | undefined, storyId: number): void {
+    if (!epics) {
+      this.error = 'Story not found.';
       return;
     }
 
-    this.acceptanceText = (this.epic as any)?.epicDesc || '';
-    this.selectedProgress = this.epic.progress || null;
-    this.selectedTemplateId = (this.epic as any).templateId ?? '';
+    for (const epic of epics) {
+      if (!epic.userStories) {
+        continue;
+      }
+      const found = epic.userStories.find(s => s.storyId === storyId);
+      if (found) {
+        this.story = found;
+        return;
+      }
+    }
+
+    this.error = 'Story not found.';
   }
 
-  getEpicPageUrl(): string {
-    if (!this.epic) {
+  private findTask(epics: EpicVO[] | undefined, taskId: number): void {
+    if (!epics) {
+      this.error = 'Task not found.';
+      return;
+    }
+
+    for (const epic of epics) {
+      if (!epic.userStories) {
+        continue;
+      }
+      for (const story of epic.userStories) {
+        if (!story.tasks) {
+          continue;
+        }
+        const found = story.tasks.find(t => t.taskId === taskId);
+        if (found) {
+          this.task = found;
+          return;
+        }
+      }
+    }
+
+    this.error = 'Task not found.';
+  }
+
+  private findSubtask(epics: EpicVO[] | undefined, subtaskId: number): void {
+    if (!epics) {
+      this.error = 'Subtask not found.';
+      return;
+    }
+
+    for (const epic of epics) {
+      if (!epic.userStories) {
+        continue;
+      }
+      for (const story of epic.userStories) {
+        if (!story.tasks) {
+          continue;
+        }
+        for (const task of story.tasks) {
+          if (!task.subTasks) {
+            continue;
+          }
+          const found = task.subTasks.find(st => st.subTaskId === subtaskId);
+          if (found) {
+            this.subtask = found;
+            return;
+          }
+        }
+      }
+    }
+
+    this.error = 'Subtask not found.';
+  }
+
+  private initializeItemState(): void {
+    const item = this.itemType === 'story'
+      ? this.story
+      : this.itemType === 'task'
+        ? this.task
+        : this.itemType === 'subtask'
+          ? this.subtask
+          : this.epic;
+    if (!item) {
+      return;
+    }
+
+    if (this.itemType === 'epic') {
+      this.acceptanceText = (item as any)?.epicDesc || '';
+    } else {
+      this.acceptanceText = (item as any)?.description || '';
+    }
+    this.selectedProgress = (item as any)?.progress || null;
+    this.selectedTemplateId = (item as any).templateId ?? '';
+  }
+
+  getItemPageUrl(): string {
+    const itemId = this.itemType === 'story'
+      ? this.story?.storyId
+      : this.itemType === 'task'
+        ? this.task?.taskId
+        : this.itemType === 'subtask'
+          ? this.subtask?.subTaskId
+          : this.epic?.epicId;
+    if (!itemId) {
       return '#';
     }
 
-    const projectId = this.projectId || this.epic.project?.projectId;
-    const baseRoute = `/project-status/epic/${this.epic.epicId}`;
+    const projectId = this.projectId || this.epic?.project?.projectId;
+    let baseRoute = '/project-status/epic/' + itemId;
+    if (this.itemType === 'story') {
+      baseRoute = `/project-status/story/${itemId}`;
+    } else if (this.itemType === 'task') {
+      baseRoute = `/project-status/task/${itemId}`;
+    } else if (this.itemType === 'subtask') {
+      baseRoute = `/project-status/item/subtask/${itemId}`;
+    }
+
     return projectId ? `${window.location.origin}${baseRoute}?projectId=${projectId}` : `${window.location.origin}${baseRoute}`;
   }
 
-  openEpicInNewTab(event: MouseEvent): void {
+  openItemInNewTab(event: MouseEvent): void {
     event.preventDefault();
-    if (!this.epic) {
-      return;
+    const url = this.getItemPageUrl();
+    if (url !== '#') {
+      window.open(url, '_blank', 'noopener');
     }
-
-    const url = `/project-status/epic/${this.epic.epicId}`;
-    window.open(url, '_blank', 'noopener');
   }
 
   loadProgressStatuses(): void {
@@ -210,19 +483,26 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
       next: (data: ProgressStatusVO[]) => {
         const statuses = (data as any)?.attributes || [];
         this.progressStatuses = (statuses as ProgressStatusVO[]).sort((a, b) => a.progressSequence - b.progressSequence);
-        // Ensure the epic has a selectedProgress when opened. If none, pick the epic's current progress or default to first status and persist.
-        if (this.epic) {
-          // Try to match epic progress to one of the loaded statuses
-          if (this.epic.progress) {
-            const matched = this.progressStatuses.find(s => s.progressId === this.epic!.progress!.progressId);
-            this.selectedProgress = matched || this.epic.progress;
+        const item = this.itemType === 'story'
+          ? this.story
+          : this.itemType === 'task'
+            ? this.task
+            : this.epic;
+        if (item) {
+          if ((item as any).progress) {
+            const matched = this.progressStatuses.find(s => s.progressId === (item as any).progress?.progressId);
+            this.selectedProgress = matched || (item as any).progress || null;
           } else if (this.progressStatuses.length) {
-            // No progress set on epic — default to first status and update backend
             this.selectedProgress = this.progressStatuses[0];
-            this.epic.progress = this.selectedProgress;
-            this.projectService.updateEpic(this.epic).subscribe({
+            (item as any).progress = this.selectedProgress;
+            const saveMethod = this.itemType === 'story'
+              ? this.projectService.updateStory(item)
+              : this.itemType === 'task'
+                ? this.projectService.updateTask(item)
+                : this.projectService.updateEpic(item);
+            saveMethod.subscribe({
               next: () => {},
-              error: (err: any) => console.error('Failed to set default epic progress', err)
+              error: (err: any) => console.error('Failed to set default item progress', err)
             });
           }
         }
@@ -283,35 +563,79 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
   }
 
   updateProgress(status: ProgressStatusVO | null): void {
-    if (!this.epic || !status) return;
+    const item = this.itemType === 'story'
+      ? this.story
+      : this.itemType === 'task'
+        ? this.task
+        : this.itemType === 'subtask'
+          ? this.subtask
+          : this.epic;
+    if (!item || !status) return;
     this.selectedProgress = status;
-    this.epic.progress = status;
-    this.projectService.updateEpic(this.epic).subscribe({
+    (item as any).progress = status;
+
+    const save$ = this.itemType === 'story'
+      ? this.projectService.updateStory(item)
+      : this.itemType === 'task'
+        ? this.projectService.updateTask(item)
+        : this.itemType === 'subtask'
+          ? this.projectService.updateTask((item as any).taskId || item)
+          : this.projectService.updateEpic(item);
+
+    save$.subscribe({
       next: () => {},
-      error: (err: any) => console.error('Failed to update epic progress', err)
+      error: (err: any) => console.error('Failed to update item progress', err)
     });
   }
 
   saveAcceptance(): void {
-    if (!this.epic) return;
-    (this.epic as any).epicDesc = this.acceptanceText;
-    this.projectService.updateEpic(this.epic).subscribe({
+    const item = this.itemType === 'story'
+      ? this.story
+      : this.itemType === 'task'
+        ? this.task
+        : this.itemType === 'subtask'
+          ? this.subtask
+          : this.epic;
+    if (!item) return;
+
+    if (this.itemType === 'epic') {
+      (item as any).epicDesc = this.acceptanceText;
+    } else {
+      (item as any).description = this.acceptanceText;
+    }
+
+    const save$ = this.itemType === 'story'
+      ? this.projectService.updateStory(item)
+      : this.itemType === 'task'
+        ? this.projectService.updateTask(item)
+        : this.itemType === 'subtask'
+          ? this.projectService.updateTask((item as any).taskId || item)
+          : this.projectService.updateEpic(item);
+
+    save$.subscribe({
       next: () => {},
       error: (err: any) => console.error('Failed to save acceptance', err)
     });
   }
 
-  saveEpic(): void {
-    if (!this.epic) {
+  saveItem(): void {
+    const item = this.itemType === 'story'
+      ? this.story
+      : this.itemType === 'task'
+        ? this.task
+        : this.itemType === 'subtask'
+          ? this.subtask
+          : this.epic;
+    if (!item) {
       return;
     }
 
     if (this.selectedTemplateId) {
-      (this.epic as any).templateId = this.selectedTemplateId;
+      (item as any).templateId = this.selectedTemplateId;
     }
 
     if (this.selectedTemplate) {
-      (this.epic as any).templateDetails = this.selectedTemplate.templateDetails?.map((detail) => ({
+      (item as any).templateDetails = this.selectedTemplate.templateDetails?.map((detail) => ({
         fieldName: detail.fieldName,
         fieldTypeId: detail.fieldTypeId,
         mandatory: detail.mandatory,
@@ -320,23 +644,37 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
       })) || [];
     }
 
-    this.projectService.updateEpic(this.epic).subscribe({
+    const save$ = this.itemType === 'story'
+      ? this.projectService.updateStory(item)
+      : this.itemType === 'task'
+        ? this.projectService.updateTask(item)
+        : this.itemType === 'subtask'
+          ? this.projectService.updateTask((item as any).taskId || item)
+          : this.projectService.updateEpic(item);
+
+    save$.subscribe({
       next: () => {
-        console.log('Epic updated successfully');
+        console.log('Item updated successfully');
       },
-      error: (err: any) => console.error('Failed to save epic template data', err)
+      error: (err: any) => console.error('Failed to save template data', err)
     });
   }
 
   saveDiscussion(): void {
-    // Discussion is UI-only for now; implement backend when available
     console.log('Saved discussion:', this.discussionText);
   }
 
   selectTemplate(templateId: number): void {
+    const item = this.itemType === 'story'
+      ? this.story
+      : this.itemType === 'task'
+        ? this.task
+        : this.itemType === 'subtask'
+          ? this.subtask
+          : this.epic;
     this.selectedTemplateId = templateId;
-    if (this.epic) {
-      (this.epic as any).templateId = templateId;
+    if (item) {
+      (item as any).templateId = templateId;
     }
 
     this.selectedTemplate = this.templates.find((template) => template.templateId === templateId) || null;
@@ -370,7 +708,12 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
 
   private initializeTemplateFieldValues(): void {
     this.templateFieldValues = {};
-    const existingDetails = Array.isArray((this.epic as any)?.templateDetails) ? (this.epic as any).templateDetails : [];
+    const item = this.itemType === 'story'
+      ? this.story
+      : this.itemType === 'task'
+        ? this.task
+        : this.epic;
+    const existingDetails = Array.isArray((item as any)?.templateDetails) ? (item as any).templateDetails : [];
 
     this.selectedTemplate?.templateDetails?.forEach((detail) => {
       const existingDetail = existingDetails.find((item: any) => item.fieldName === detail.fieldName);
@@ -449,12 +792,101 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
     return Array.isArray(currentValue) && currentValue.includes(optionValue);
   }
 
-  getEpicDescription(): string {
-    return (this.epic as any)?.epicDesc || (this.epic as any)?.description || this.epic?.project?.projectDesc || 'No description available.';
+  getItemDescription(): string {
+    const item = this.itemType === 'story'
+      ? this.story
+      : this.itemType === 'task'
+        ? this.task
+        : this.epic;
+    return (item as any)?.epicDesc || (item as any)?.description || 'No description available.';
   }
 
   getAcceptanceCriteria(): string {
-    return (this.epic as any)?.epicDesc || (this.epic as any)?.description || 'No acceptance criteria documented.';
+    const item = this.itemType === 'story'
+      ? this.story
+      : this.itemType === 'task'
+        ? this.task
+        : this.epic;
+    return (item as any)?.epicDesc || (item as any)?.description || 'No acceptance criteria documented.';
+  }
+
+  getItemTitle(): string {
+    if (this.itemType === 'story') {
+      return this.story?.title || '';
+    }
+    if (this.itemType === 'task') {
+      return this.task?.title || '';
+    }
+    return this.epic?.epicName || '';
+  }
+
+  getItemIdLabel(): string {
+    if (this.itemType === 'story') {
+      return `Story ${this.story?.storyId || '---'}`;
+    }
+    if (this.itemType === 'task') {
+      return `Task ${this.task?.taskId || '---'}`;
+    }
+    if (this.itemType === 'subtask') {
+      return `Subtask ${this.subtask?.subTaskId || '---'}`;
+    }
+    return `Epic ${this.epic?.epicId || '---'}`;
+  }
+
+  getItemProjectName(): string {
+    if (this.itemType === 'story') {
+      return (this.story as any)?.project?.projectName || this.epic?.project?.projectName || 'N/A';
+    }
+    if (this.itemType === 'task') {
+      return (this.task as any)?.storyId?.project?.projectName || (this.task as any)?.project?.projectName || this.epic?.project?.projectName || 'N/A';
+    }
+    if (this.itemType === 'subtask') {
+      return (this.subtask as any)?.taskId?.storyId?.project?.projectName || (this.subtask as any)?.taskId?.project?.projectName || this.epic?.project?.projectName || 'N/A';
+    }
+    return this.epic?.project?.projectName || 'N/A';
+  }
+
+  getItemSequence(): string {
+    if (this.itemType === 'story') {
+      return (this.story as any)?.storySequence?.toString() || 'N/A';
+    }
+    if (this.itemType === 'task') {
+      return (this.task as any)?.taskSequence?.toString() || 'N/A';
+    }
+    if (this.itemType === 'subtask') {
+      return (this.subtask as any)?.subTaskId?.toString() || 'N/A';
+    }
+    return this.epic?.epicSequence?.toString() || 'N/A';
+  }
+
+  getItemStartDate(): string {
+    const item = this.itemType === 'story'
+      ? this.story
+      : this.itemType === 'task'
+        ? this.task
+        : this.epic;
+    const date = (item as any)?.plannedStartDate;
+    return date ? new Date(date).toLocaleDateString() : 'N/A';
+  }
+
+  getItemEndDate(): string {
+    const item = this.itemType === 'story'
+      ? this.story
+      : this.itemType === 'task'
+        ? this.task
+        : this.epic;
+    const date = (item as any)?.plannedEndDate;
+    return date ? new Date(date).toLocaleDateString() : 'N/A';
+  }
+
+  getItemStoryCount(): string {
+    if (this.itemType === 'story' || this.itemType === 'subtask') {
+      return '1';
+    }
+    if (this.itemType === 'task') {
+      return (this.task?.subTasks?.length ?? 0).toString();
+    }
+    return this.epic?.userStories?.length?.toString() || '0';
   }
 
   close(): void {

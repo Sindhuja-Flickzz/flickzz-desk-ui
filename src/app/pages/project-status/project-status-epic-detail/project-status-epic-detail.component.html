@@ -1,9 +1,9 @@
-<div class="epic-detail-root" *ngIf="!isLoading && !error">
+<div class="epic-detail-root" [ngClass]="{ 'item-epic': itemType === 'epic', 'item-story': itemType === 'story', 'item-task': itemType === 'task', 'item-subtask': itemType === 'subtask' }" *ngIf="!isLoading && !error">
   <div class="detail-topbar">
     <div class="topbar-left">
       <span class="topbar-label">
-      <a class="epic-id-link" href="#" (click)="openEpicInNewTab($event)">
-        Epic {{ epic?.epicId || '---' }} {{ epic?.epicName || 'Epic details' }}
+      <a class="epic-id-link" href="#" (click)="openItemInNewTab($event)">
+        {{ getItemIdLabel() }} {{ getItemTitle() }}
       </a> </span>
       <div class="topbar-actions">
         <div class="field field-inline">
@@ -23,7 +23,7 @@
       </div>
     </div>
     <div class="topbar-right">
-      <button mat-icon-button color="primary" aria-label="Save epic" (click)="saveEpic()"m]0>
+      <button mat-icon-button color="primary" aria-label="Save item" (click)="saveItem()">
         <mat-icon>save</mat-icon>
       </button>
       <button mat-icon-button *ngIf="dialogRef" aria-label="Close" (click)="close()">
@@ -115,14 +115,14 @@
               <div class="section-head">
                 <h2>General</h2>
               </div>
-              <div class="detail-row"><span>Project</span><strong>{{ epic?.project?.projectName || 'N/A' }}</strong></div>
-              <div class="detail-row"><span>Sequence</span><strong>{{ epic?.epicSequence ?? 'N/A' }}</strong></div>
-              <div class="detail-row"><span>Start date</span><strong>{{ epic?.plannedStartDate ? (epic?.plannedStartDate | date:'mediumDate') : 'N/A' }}</strong></div>
-              <div class="detail-row"><span>End date</span><strong>{{ epic?.plannedEndDate ? (epic?.plannedEndDate | date:'mediumDate') : 'N/A' }}</strong></div>
-              <div class="detail-row"><span>Stories</span><strong>{{ epic?.userStories?.length ?? 0 }}</strong></div>
+              <div class="detail-row"><span>Project</span><strong>{{ getItemProjectName() }}</strong></div>
+              <div class="detail-row"><span>Sequence</span><strong>{{ getItemSequence() }}</strong></div>
+              <div class="detail-row"><span>Start date</span><strong>{{ getItemStartDate() }}</strong></div>
+              <div class="detail-row"><span>End date</span><strong>{{ getItemEndDate() }}</strong></div>
+              <div class="detail-row"><span>Stories</span><strong>{{ getItemStoryCount() }}</strong></div>
             </section>
 
-            <section class="section-card related-card" *ngIf="epic?.userStories?.length">
+            <section class="section-card related-card" *ngIf="itemType === 'epic' && epic?.userStories?.length">
               <div class="section-head">
                 <h2>Related work</h2>
               </div>

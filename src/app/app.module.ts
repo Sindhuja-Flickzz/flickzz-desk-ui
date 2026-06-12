@@ -60,6 +60,7 @@ import { DetailsTemplateOptionsDialogComponent } from './pages/settings/details-
 import { ProjectStatusComponent } from './pages/project-status/project-status.component';
 import { ProjectStatusCreateDialogComponent } from './pages/project-status/project-status-create-dialog/project-status-create-dialog.component';
 import { ProjectStatusEpicDetailComponent } from './pages/project-status/project-status-epic-detail/project-status-epic-detail.component';
+import { ProjectStatusItemDetailComponent } from './pages/project-status/project-status-item-detail/project-status-item-detail.component';
 
 @NgModule({
   declarations: [
@@ -93,7 +94,8 @@ import { ProjectStatusEpicDetailComponent } from './pages/project-status/project
     ProjectTimelineGanttComponent,
     ProjectStatusComponent,
     ProjectStatusCreateDialogComponent,
-    ProjectStatusEpicDetailComponent
+    ProjectStatusEpicDetailComponent,
+    ProjectStatusItemDetailComponent
   ],
   imports: [
     BrowserModule,

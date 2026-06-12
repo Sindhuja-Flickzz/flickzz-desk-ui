@@ -36,6 +36,14 @@ export class ProjectService {
     return this.http.put(`${this.baseUrl}/project/epic/update`, epic);
   }
 
+  updateStory(story: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/project/story/update`, story);
+  }
+
+  updateTask(task: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/project/task/update`, task);
+  }
+
   getEpicById(epicId: number | string): Observable<EpicVO> {
     return this.http.get<EpicVO>(`${this.baseUrl}/epic/${epicId}`);
   }
