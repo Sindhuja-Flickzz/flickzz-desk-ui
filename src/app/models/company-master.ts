@@ -90,3 +90,14 @@ export interface CompanyRequest {
   createdBy: string;
   updatedBy: string;
 }
+
+export interface CompanyRole {
+  roleId: number;
+  company: CompanyMaster;
+  mappedCompany: CompanyMaster;
+  isServiceProvider: boolean;
+  isRequestor: boolean;
+  isBoth: boolean;  
+  createdBy: string;
+  updatedBy: string;
+}

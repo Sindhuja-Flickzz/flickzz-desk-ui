@@ -1,3 +1,4 @@
+import { AgentMaster } from "./agent-master";
 import { CompanyMaster } from "./company-master";
 
 export interface ProgressStatusVO {
@@ -8,15 +9,36 @@ export interface ProgressStatusVO {
   colorCode: string;
 }
 
+export interface ProgressStatusRequestVO {
+  progressId?: number;
+  company?: CompanyMaster;
+  progressName: string;
+  progressSequence: number;
+  colorCode: string;
+  updatedBy?: string;
+  createdBy?: string;
+  orgId: number;
+}
+
+export interface ProgressStatusMoveRequest {
+  itemId: number;
+  projectId: number;
+  currentStatusId: number;
+  newStatusId: number;
+  itemType: 'epic' | 'story' | 'task' | 'subtask';
+}
+
 export interface EpicVO {
   epicId: number;
-  projectId: ProjectVO;
+  project: ProjectVO;
   epicName: string;
   epicSequence: number;
   progress?: ProgressStatusVO;
   maxProgress?: number;
-  startDate?: string;
-  endDate?: string;
+  plannedStartDate?: string;
+  plannedEndDate?: string;
+  actualStartDate?: string;
+  actualEndDate?: string;
   userStories: UserStory[];
 }
 
@@ -29,6 +51,10 @@ export interface ProjectVO {
   epics?: EpicVO[];
   plannedStartDate?: string;
   plannedEndDate?: string;
+  actualStartDate?: string;
+  actualEndDate?: string;
+  isSaved?: boolean;
+  isSubmitted?: boolean;
 }
 
 export interface ProjectTaskRequest {
@@ -39,20 +65,37 @@ export interface ProjectTaskRequest {
   endDate: string;
   predecessorTaskName?: string | null;
   predecessorId?: string | null;
+  userStoryId?: string;
+  userStoryName?: string;
+  taskSequence?: number;
+}
+
+export interface ProjectUserStoryRequest {
+  userStoryId: string;
+  userStoryName: string;
+  leadIds: number[];
+  plannedStartDate: string;
+  plannedEndDate: string;
+  predecessorUserStoryName?: string | null;
+  tasks: ProjectTaskRequest[];
 }
 
 export interface ProjectEpicRequest {
   epicName: string;
   epicDesc: string;
   epicSequence: number;
-  tasks: ProjectTaskRequest[];
+  userStories: ProjectUserStoryRequest[];
 }
 
 export interface ProjectCreateRequest {
+  projectId?: number;
   projectName: string;
+  projectDesc: string;
   orgId: number;
   epics: ProjectEpicRequest[];
   createdBy: string;
+  isSave?: boolean;
+  isSubmit?: boolean;
 }
 
 export interface UserStory {
@@ -75,6 +118,7 @@ export interface UserStory {
   storyPoints: number | null;
   mappingStoryId: number | null;
   mappingPredecessorId: number | null;
+  tasks: Task[];
 }
 
 export interface LeadAssignment {
@@ -82,4 +126,34 @@ export interface LeadAssignment {
   company: CompanyMaster;
   story: UserStory | null;
   companyId: number | null;
+}
+
+export interface Task {
+  taskId: number;
+  storyId: UserStory | null;
+  agentId: AgentMaster | null;
+  progress: ProgressStatusVO;
+  maxProgress?: number;
+  title: string;
+  description: string;
+  taskSequence: number;
+  plannedStartDate: string | null;
+  plannedEndDate: string | null;
+  actualStartDate: string | null;
+  actualEndDate: string | null;
+  subTasks: SubTask[] | null;
+}
+
+export interface SubTask {
+  subTaskId: number;
+  taskId: Task | null;
+  agentId: AgentMaster | null;
+  progress: ProgressStatusVO;
+  maxProgress?: number;
+  title: string;
+  description: string;
+  plannedStartDate: string | null;
+  plannedEndDate: string | null;
+  actualStartDate: string | null;
+  actualEndDate: string | null;
 }

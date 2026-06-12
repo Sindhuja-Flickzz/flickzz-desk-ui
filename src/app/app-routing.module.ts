@@ -17,9 +17,13 @@ import {BusinessOfferingComponent} from "./pages/business-offering/business-offe
 import {NumberRangeComponent} from "./pages/number-range/number-range.component";
 import {VerifyComponent} from './pages/verify/verify.component';
 import {EnquiryRegistrationComponent} from './pages/enquiry-registration/enquiry-registration.component';
-import {SettingsComponent} from './pages/settings/settings.component';
-import {ProfileComponent} from './pages/profile/profile.component';
-import {authGuard} from "./service/auth/auth.guard";
+import { SettingsComponent } from './pages/settings/settings.component';
+import { DetailsTemplateComponent } from './pages/settings/details-template/details-template.component';
+import { ProfileComponent } from './pages/profile/profile.component';
+import { ProjectStatusComponent } from './pages/project-status/project-status.component';
+import { ProjectStatusEpicDetailComponent } from './pages/project-status/project-status-epic-detail/project-status-epic-detail.component';
+import { ProjectStatusItemDetailComponent } from './pages/project-status/project-status-item-detail/project-status-item-detail.component';
+import { authGuard } from './service/auth/auth.guard';
 
 const routes: Routes = [
   {
@@ -52,6 +56,11 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'details-template',
+    component: DetailsTemplateComponent,
+    canActivate: [authGuard]
+  },
+  {
     path: 'calendar-type',
     component: CalendarTypeComponent,
     canActivate: [authGuard]
@@ -64,6 +73,36 @@ const routes: Routes = [
   {
     path: 'project-builder',
     component: ProjectBuilderComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'project-status',
+    component: ProjectStatusComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'project-status/epic',
+    component: ProjectStatusEpicDetailComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'project-status/epic/:epicId',
+    component: ProjectStatusEpicDetailComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'project-status/story/:storyId',
+    component: ProjectStatusEpicDetailComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'project-status/task/:taskId',
+    component: ProjectStatusEpicDetailComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'project-status/item/:itemType/:itemId',
+    component: ProjectStatusEpicDetailComponent,
     canActivate: [authGuard]
   },
   // {

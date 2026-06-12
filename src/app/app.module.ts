@@ -33,6 +33,8 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -40,6 +42,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 import { PriorityComponent } from './pages/priority/priority.component';
 import { ImpactComponent } from './pages/impact/impact.component';
 import { RitmComponent } from './pages/ritm/ritm.component';
@@ -52,6 +55,12 @@ import { ProfileIconComponent } from './shared/profile-icon/profile-icon.compone
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
 import { ProjectTimelineGanttComponent } from './pages/project-builder/project-timeline-gantt/project-timeline-gantt.component';
+import { DetailsTemplateComponent } from './pages/settings/details-template/details-template.component';
+import { DetailsTemplateOptionsDialogComponent } from './pages/settings/details-template/details-template-options-dialog.component';
+import { ProjectStatusComponent } from './pages/project-status/project-status.component';
+import { ProjectStatusCreateDialogComponent } from './pages/project-status/project-status-create-dialog/project-status-create-dialog.component';
+import { ProjectStatusEpicDetailComponent } from './pages/project-status/project-status-epic-detail/project-status-epic-detail.component';
+import { ProjectStatusItemDetailComponent } from './pages/project-status/project-status-item-detail/project-status-item-detail.component';
 
 @NgModule({
   declarations: [
@@ -77,10 +86,16 @@ import { ProjectTimelineGanttComponent } from './pages/project-builder/project-t
     VerifyComponent,
     EnquiryRegistrationComponent,
     SettingsComponent,
+    DetailsTemplateComponent,
+    DetailsTemplateOptionsDialogComponent,
     ProfileIconComponent,
     ProfileComponent,
     ProjectBuilderComponent,
-    ProjectTimelineGanttComponent
+    ProjectTimelineGanttComponent,
+    ProjectStatusComponent,
+    ProjectStatusCreateDialogComponent,
+    ProjectStatusEpicDetailComponent,
+    ProjectStatusItemDetailComponent
   ],
   imports: [
     BrowserModule,
@@ -101,13 +116,16 @@ import { ProjectTimelineGanttComponent } from './pages/project-builder/project-t
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatCheckboxModule,
+    MatSnackBarModule,
     MatDatepickerModule,
     MatNativeDateModule,
     MatSlideToggleModule,
     MatTabsModule,
     MatProgressSpinnerModule,
     MatChipsModule,
-    MatTooltipModule
+    MatTooltipModule,
+    DragDropModule
   ],
   providers: [
     HttpClient,

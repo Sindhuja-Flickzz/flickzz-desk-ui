@@ -225,7 +225,24 @@ export const MENU_INFO: MenuItem[] = [
                 "isActive": true,
                 "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
                 "route": "/settings",
-                "childSubMenus": []}
+                "childSubMenus": []
+            },
+            {
+                "subMenuId": 302,
+                "subMenuName": "Template",
+                "isActive": true,
+                "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+                "childSubMenus": [
+                    {
+                        "subMenuId": 30201,
+                        "subMenuName": "Details Template",
+                        "isActive": true,
+                        "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+                        "route": "/details-template",
+                        "childSubMenus": []
+                    }
+                ]
+            }
         ]
     },
     {
@@ -236,6 +253,16 @@ export const MENU_INFO: MenuItem[] = [
         "icon": "🏗️",
         "isParent": true,
         "route": "/project-builder",
+        "subMenus": []
+    },
+    {
+        "menuId": 5,
+        "menuName": "Project Status",
+        "isActive": true,
+        "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+        "icon": "📊",
+        "isParent": true,
+        "route": "/project-status",
         "subMenus": []
     }
 ];

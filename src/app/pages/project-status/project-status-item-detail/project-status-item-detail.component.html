@@ -1,0 +1,76 @@
+<div class="item-detail-root" *ngIf="!isLoading && !error">
+  <div class="detail-topbar">
+    <div class="topbar-left">
+      <span class="topbar-label">
+        {{ getItemTypeLabel() }} {{ getItemDisplayId() }}
+      </span>
+      <div class="topbar-actions">
+        <div class="field field-inline">
+          <label>Status</label>
+          <span>{{ getItemProgress() }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button mat-icon-button color="primary" aria-label="Open item in new tab" (click)="openItemInNewTab($event)">
+        <mat-icon>open_in_new</mat-icon>
+      </button>
+      <button mat-icon-button *ngIf="dialogRef" aria-label="Close" (click)="close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <mat-tab-group dynamicHeight>
+    <mat-tab label="General">
+      <div class="tab-content">
+        <div class="detail-grid">
+          <main class="main-column">
+            <section class="section-card">
+              <div class="section-head">
+                <h2>Summary</h2>
+              </div>
+              <div class="section-body">
+                <h3>{{ getItemSubtitle() }}</h3>
+                <p>{{ getItemDescription() }}</p>
+              </div>
+            </section>
+
+            <section class="section-card" *ngIf="getRelatedItems().length">
+              <div class="section-head">
+                <h2>Related work</h2>
+              </div>
+              <ul class="related-list">
+                <li *ngFor="let related of getRelatedItems()">
+                  <strong>{{ related.title || related.description || getItemTypeLabel() }}</strong>
+                </li>
+              </ul>
+            </section>
+          </main>
+
+          <aside class="side-column">
+            <section class="section-card detail-panel">
+              <div class="section-head">
+                <h2>Details</h2>
+              </div>
+              <div class="detail-row"><span>Type</span><strong>{{ getItemTypeLabel() }}</strong></div>
+              <div class="detail-row" *ngIf="getParentInfo()"><span>Parent</span><strong>{{ getParentInfo() }}</strong></div>
+              <div class="detail-row"><span>Start date</span><strong>{{ getItemDates().start ? (getItemDates().start | date:'mediumDate') : 'N/A' }}</strong></div>
+              <div class="detail-row"><span>End date</span><strong>{{ getItemDates().end ? (getItemDates().end | date:'mediumDate') : 'N/A' }}</strong></div>
+              <div class="detail-row" *ngIf="item?.storyPoints !== undefined"><span>Story points</span><strong>{{ item?.storyPoints ?? 'N/A' }}</strong></div>
+              <div class="detail-row" *ngIf="item?.priorityId !== undefined"><span>Priority</span><strong>{{ item?.priorityId || 'N/A' }}</strong></div>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>
+
+<div class="loading-state" *ngIf="isLoading">
+  <p>Loading item details...</p>
+</div>
+
+<div class="error-state" *ngIf="error">
+  <p>{{ error }}</p>
+</div>
