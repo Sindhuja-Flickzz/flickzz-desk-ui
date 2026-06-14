@@ -11,7 +11,7 @@ export const MENU_INFO: MenuItem[] = [
         "menuId": 1,
         "menuName": "ServiceCentral",
         "isActive": true,
-        "enableForRoles": [USER_ROLES.AGENT, USER_ROLES.ADMIN_AGENT],
+        "enableForRoles": ['abc'],
         "icon" : "🗐",
         "isParent": true,
         "subMenus": [
@@ -19,7 +19,7 @@ export const MENU_INFO: MenuItem[] = [
                 "subMenuId": 101,
                 "subMenuName": "RITM",
                 "isActive": true,
-                "enableForRoles": [USER_ROLES.AGENT, USER_ROLES.ADMIN_AGENT],
+                "enableForRoles": ['abc'],
                 "route": "/ritm",
                 "childSubMenus": []
             },
@@ -27,7 +27,7 @@ export const MENU_INFO: MenuItem[] = [
                 "subMenuId": 102,
                 "subMenuName": "Incident",
                 "isActive": true,
-                "enableForRoles": [USER_ROLES.AGENT, USER_ROLES.ADMIN_AGENT],
+                "enableForRoles": ['abc'],
                 "route": "/welcome",
                 "childSubMenus": []
             }
@@ -215,7 +215,7 @@ export const MENU_INFO: MenuItem[] = [
         "menuId": 3,
         "menuName": "Settings",
         "isActive": true,
-        "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+        "enableForRoles": [USER_ROLES.ADMIN_AGENT],
         "icon": "⚙️",
         "isParent": true,
         "subMenus": [
@@ -223,7 +223,7 @@ export const MENU_INFO: MenuItem[] = [
                 "subMenuId": 301,
                 "subMenuName": "Organization",
                 "isActive": true,
-                "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+                "enableForRoles": [USER_ROLES.ADMIN_AGENT],
                 "route": "/settings",
                 "childSubMenus": []
             },
@@ -231,7 +231,7 @@ export const MENU_INFO: MenuItem[] = [
                 "subMenuId": 302,
                 "subMenuName": "Template",
                 "isActive": true,
-                "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+                "enableForRoles": [USER_ROLES.ADMIN_AGENT],
                 "childSubMenus": [
                     {
                         "subMenuId": 30201,
@@ -249,7 +249,7 @@ export const MENU_INFO: MenuItem[] = [
         "menuId": 4,
         "menuName": "Project Builder",
         "isActive": true,
-        "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+        "enableForRoles": [USER_ROLES.ADMIN_AGENT],
         "icon": "🏗️",
         "isParent": true,
         "route": "/project-builder",
@@ -259,10 +259,20 @@ export const MENU_INFO: MenuItem[] = [
         "menuId": 5,
         "menuName": "Project Status",
         "isActive": true,
-        "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+        "enableForRoles": [USER_ROLES.ADMIN_AGENT],
         "icon": "📊",
         "isParent": true,
         "route": "/project-status",
+        "subMenus": []
+    },
+    {
+        "menuId": 6,
+        "menuName": "Settings",
+        "isActive": true,
+        "enableForRoles": [USER_ROLES.ADMIN],
+        "icon": "⚙️",
+        "isParent": true,
+        "route": "/settings",
         "subMenus": []
     }
 ];

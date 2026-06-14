@@ -96,7 +96,7 @@
     <button type="submit" [disabled]="registrationForm.invalid || loading">
       {{ loading ? 'Saving...' : 'Save' }}
     </button>
-    <button type="button" class="cancel-btn" (click)="cancelRegistration()">Cancel</button>
+    <button type="button" *ngIf="!loading" class="cancel-btn" (click)="cancelRegistration()">Cancel</button>
   </form>
 </div>
 <!-- <div class="success-screen" *ngIf="registrationSuccess">
