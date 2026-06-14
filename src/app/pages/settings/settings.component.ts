@@ -12,8 +12,7 @@ export class SettingsComponent {
     { title: 'Plant', route: '/plant' },
     { title: 'Calendar', route: '/calendar' },
     { title: 'Skills', route: '/skill' },
-    { title: 'Agent', route: '/agent' },
-    { title: 'Details Template', route: '/details-template' }
+    { title: 'Agent', route: '/agent' }
     // { title: 'Support Calendar', route: '/calendar/create-calendar', queryParams: { type: 'support' } },
     // { title: 'Requestor Calendar', route: '/calendar/create-calendar', queryParams: { type: 'requestor' } },
     // { title: 'Calendar List', route: '/calendar/list' },

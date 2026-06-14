@@ -157,6 +157,7 @@
         <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isEditMode ? (isSubmitting ? 'Updating Agent...' : 'Update Agent') : (isSubmitting ? 'Saving Agent...' : 'Save Agent') }}</button>
         <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
         <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
+        <button type="button" class="reset-btn" (click)="backToHome()">Back</button>
         <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
       </div>
     </form>

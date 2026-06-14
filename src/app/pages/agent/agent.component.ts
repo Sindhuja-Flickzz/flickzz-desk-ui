@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { PageEvent } from '@angular/material/paginator';
 import { AgentService } from '../../service/agent.service';
 import { forkJoin } from 'rxjs';
@@ -61,7 +62,8 @@ export class AgentComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private agentService: AgentService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private router: Router
   ) {
     this.agentForm = this.fb.group({
       agentId: [null],
@@ -904,5 +906,9 @@ export class AgentComponent implements OnInit {
       console.error('Error getting local time:', error);
       return '';
     }
+  }
+
+  backToHome(): void {
+    this.router.navigate(['/settings']);
   }
 }
