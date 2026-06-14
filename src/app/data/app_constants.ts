@@ -11,7 +11,7 @@ export const MENU_INFO: MenuItem[] = [
         "menuId": 1,
         "menuName": "ServiceCentral",
         "isActive": true,
-        "enableForRoles": ['abc'],
+        "enableForRoles": [USER_ROLES.AGENT],
         "icon" : "🗐",
         "isParent": true,
         "subMenus": [
@@ -19,7 +19,7 @@ export const MENU_INFO: MenuItem[] = [
                 "subMenuId": 101,
                 "subMenuName": "RITM",
                 "isActive": true,
-                "enableForRoles": ['abc'],
+                "enableForRoles": [USER_ROLES.AGENT],
                 "route": "/ritm",
                 "childSubMenus": []
             },
@@ -27,7 +27,7 @@ export const MENU_INFO: MenuItem[] = [
                 "subMenuId": 102,
                 "subMenuName": "Incident",
                 "isActive": true,
-                "enableForRoles": ['abc'],
+                "enableForRoles": [USER_ROLES.AGENT],
                 "route": "/welcome",
                 "childSubMenus": []
             }

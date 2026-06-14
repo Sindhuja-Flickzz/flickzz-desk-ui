@@ -507,9 +507,12 @@ export class AgentComponent implements OnInit {
       updatedBy: currentUser
     };
 
+    this.isSubmitting = true;
+
     if (this.isEditMode) {
       if (!this.isFormChanged()) {
         this.submitError = 'No changes to update.';
+        this.isSubmitting = false;
         return;
       }
 
