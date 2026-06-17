@@ -804,6 +804,16 @@ export class AgentComponent implements OnInit {
     }
   }
 
+  allowOnlyNumbers(event: KeyboardEvent): void {
+    const allowedKeys = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete'];
+    if (allowedKeys.includes(event.key)) {
+      return;
+    }
+    if (!/^[0-9]$/.test(event.key)) {
+      event.preventDefault();
+    }
+  }
+
   getCountryFlagUrl(countryCode?: string): string {
     if (!countryCode) {
       return '';

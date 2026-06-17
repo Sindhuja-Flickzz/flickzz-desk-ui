@@ -215,7 +215,7 @@ export const MENU_INFO: MenuItem[] = [
         "menuId": 3,
         "menuName": "Settings",
         "isActive": true,
-        "enableForRoles": [USER_ROLES.ADMIN_AGENT],
+        "enableForRoles": [USER_ROLES.ADMIN_AGENT, USER_ROLES.ADMIN, USER_ROLES.AGENT],
         "icon": "⚙️",
         "isParent": true,
         "subMenus": [
@@ -247,33 +247,29 @@ export const MENU_INFO: MenuItem[] = [
     },
     {
         "menuId": 4,
-        "menuName": "Project Builder",
+        "menuName": "Project Management",
         "isActive": true,
-        "enableForRoles": [USER_ROLES.ADMIN_AGENT],
-        "icon": "🏗️",
+        "enableForRoles": [USER_ROLES.ADMIN_AGENT, USER_ROLES.ADMIN, USER_ROLES.AGENT],
+        "icon": "🗂",
         "isParent": true,
-        "route": "/project-builder",
-        "subMenus": []
-    },
-    {
-        "menuId": 5,
-        "menuName": "Project Status",
-        "isActive": true,
-        "enableForRoles": [USER_ROLES.ADMIN_AGENT],
-        "icon": "📊",
-        "isParent": true,
-        "route": "/project-status",
-        "subMenus": []
-    },
-    {
-        "menuId": 6,
-        "menuName": "Settings",
-        "isActive": true,
-        "enableForRoles": [USER_ROLES.ADMIN],
-        "icon": "⚙️",
-        "isParent": true,
-        "route": "/settings",
-        "subMenus": []
+        "subMenus": [
+            {
+                "subMenuId": 401,
+                "subMenuName": "Project Builder",
+                "isActive": true,
+                "enableForRoles": [USER_ROLES.ADMIN_AGENT, USER_ROLES.ADMIN, USER_ROLES.AGENT],
+                "route": "/project-builder",
+                "childSubMenus": []
+            },
+            {
+                "subMenuId": 402,
+                "subMenuName": "Project Status",
+                "isActive": true,
+                "enableForRoles": [USER_ROLES.ADMIN_AGENT, USER_ROLES.ADMIN, USER_ROLES.AGENT],
+                "route": "/project-status",
+                "childSubMenus": []
+            }
+        ]
     }
 ];
 
