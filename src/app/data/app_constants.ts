@@ -215,7 +215,7 @@ export const MENU_INFO: MenuItem[] = [
         "menuId": 3,
         "menuName": "Settings",
         "isActive": true,
-        "enableForRoles": [USER_ROLES.ADMIN_AGENT],
+        "enableForRoles": [USER_ROLES.ADMIN_AGENT, USER_ROLES.ADMIN, USER_ROLES.AGENT],
         "icon": "⚙️",
         "isParent": true,
         "subMenus": [
@@ -247,42 +247,38 @@ export const MENU_INFO: MenuItem[] = [
     },
     {
         "menuId": 4,
-        "menuName": "Project Builder",
+        "menuName": "Project Management",
         "isActive": true,
-        "enableForRoles": [USER_ROLES.ADMIN_AGENT],
-        "icon": "🏗️",
+        "enableForRoles": [USER_ROLES.ADMIN_AGENT, USER_ROLES.ADMIN, USER_ROLES.AGENT],
+        "icon": "🗂",
         "isParent": true,
-        "route": "/project-builder",
-        "subMenus": []
-    },
-    {
-        "menuId": 5,
-        "menuName": "Project Status",
-        "isActive": true,
-        "enableForRoles": [USER_ROLES.ADMIN_AGENT],
-        "icon": "📊",
-        "isParent": true,
-        "route": "/project-status",
-        "subMenus": []
-    },
-    {
-        "menuId": 6,
-        "menuName": "Settings",
-        "isActive": true,
-        "enableForRoles": [USER_ROLES.ADMIN],
-        "icon": "⚙️",
-        "isParent": true,
-        "route": "/settings",
-        "subMenus": []
+        "subMenus": [
+            {
+                "subMenuId": 401,
+                "subMenuName": "Project Builder",
+                "isActive": true,
+                "enableForRoles": [USER_ROLES.ADMIN_AGENT, USER_ROLES.ADMIN, USER_ROLES.AGENT],
+                "route": "/project-builder",
+                "childSubMenus": []
+            },
+            {
+                "subMenuId": 402,
+                "subMenuName": "Project Status",
+                "isActive": true,
+                "enableForRoles": [USER_ROLES.ADMIN_AGENT, USER_ROLES.ADMIN, USER_ROLES.AGENT],
+                "route": "/project-status",
+                "childSubMenus": []
+            }
+        ]
     }
 ];
 
 export const APP_CONSTANTS = {
   APP_NAME: 'FlickzzDesk',
 //   Local base url for backend API
-//   API_BASE_URL: 'http://localhost:5000/flickzz-desk'
+  API_BASE_URL: 'http://localhost:5000/flickzz-desk'
 //   Railway internal base url for backend API
-  API_BASE_URL: 'https://flickzz-desk-service-production.up.railway.app/flickzz-desk'
+//   API_BASE_URL: 'https://flickzz-desk-service-production.up.railway.app/flickzz-desk'
 };
 
 export const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

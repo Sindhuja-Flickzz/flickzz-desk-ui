@@ -351,7 +351,7 @@ export class CalendarComponent implements OnInit {
     if (!control.value) {
       return null;
     }
-    const regex = /^[a-zA-Z0-9]+$/;
+    const regex = /^[\x20-\x7E]+$/; // allow printable ASCII, including letters, numbers, spaces, and special characters
     return regex.test(control.value) ? null : { 'alphanumeric': { value: control.value } };
   }
 
@@ -483,7 +483,7 @@ export class CalendarComponent implements OnInit {
           return `${key} is required`;
         }
         if (field?.hasError('alphanumeric')) {
-          this.fieldErrors[key] = 'Calendar Code can contain only letters and numbers';
+          this.fieldErrors[key] = 'Calendar Code can contain letters, numbers, spaces, and special characters';
           return this.fieldErrors[key];
         }
         if (field?.hasError('invalidDateFormat')) {

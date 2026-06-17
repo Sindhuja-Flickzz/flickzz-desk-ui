@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, HostListener, ElementRef } from '@angular
 import { Router } from '@angular/router';
 import { AuthenticationService } from '../../service/authentication.service';
 import { ThemeService } from '../../service/theme.service';
+import { CompanyService } from '../../service/company.service';
 import { EnquiryRequest } from '../../models/enquiry-request';
 import { RegisterLoginRequest } from '../../models/register-login-request';
 import { Subject, takeUntil } from 'rxjs';
@@ -43,6 +44,7 @@ export class ProfileIconComponent implements OnInit, OnDestroy {
     private router: Router,
     private authService: AuthenticationService,
     private themeService: ThemeService,
+    private companyService: CompanyService,
     private elementRef: ElementRef
   ) {}
 
@@ -64,7 +66,6 @@ export class ProfileIconComponent implements OnInit, OnDestroy {
     const userEmail = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
     const userOrgId = localStorage.getItem('userOrgId');
-    // const userOrgName = localStorage.getItem('userOrgName');
 
     if (!userEmail || !userRole) {
       console.error('User email or role not found in localStorage');
@@ -73,17 +74,30 @@ export class ProfileIconComponent implements OnInit, OnDestroy {
 
     this.userProfile.email = userEmail;
     this.userProfile.role = userRole;
-    this.userProfile.uid = userOrgId || '';
     this.userProfile.username = userEmail.split('@')[0]; // Default username from email
+    this.userProfile.uid = userOrgId || '';
 
-    // Try to get additional user info from API
-    this.loadAdditionalUserInfo(userEmail, userRole);
-  }
-
-  private loadAdditionalUserInfo(userEmail: string, userRole: string): void {
-    // For now, we'll use localStorage values and not make API calls
-    // since the specific endpoints mentioned may not be implemented yet
     this.editProfile = { ...this.userProfile };
+
+    if (userOrgId) {
+      const companyId = Number(userOrgId);
+      if (!isNaN(companyId) && companyId > 0) {
+        this.companyService.getCompanyById(companyId).pipe(
+          takeUntil(this.destroy$)
+        ).subscribe({
+          next: (company) => {
+            company = (company as any).attributes; // Type assertion to access uid
+            if (company && company.uid) {
+              this.userProfile.uid = company.uid;
+              this.editProfile.uid = company.uid;
+            }
+          },
+          error: (error) => {
+            console.error('Failed to load company UID for profile dropdown:', error);
+          }
+        });
+      }
+    }
   }
 
   private checkDarkMode(): void {

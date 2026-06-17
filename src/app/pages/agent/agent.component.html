@@ -74,11 +74,14 @@
             {{ selectedCountry.phoneCode }}
           </div>
           <input
-            type="text"
+            type="tel"
+            inputmode="numeric"
+            pattern="[0-9]*"
             formControlName="phoneNumber"
             placeholder="Enter phone number"
             class="phone-number-input"
-            (input)="formError['phoneNumber'] = null;" 
+            (input)="formError['phoneNumber'] = null;"
+            (keypress)="allowOnlyNumbers($event)"
             [readOnly]="enquiryUser"/>
         </div>
         <span *ngIf="formError.countryCode" class="error-text">{{ formError.countryCode | fieldLabel }}</span>
