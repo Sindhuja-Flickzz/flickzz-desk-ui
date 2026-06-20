@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { PageEvent } from '@angular/material/paginator';
 import { AgentService } from '../../service/agent.service';
 import { forkJoin } from 'rxjs';
+import { USER_ROLES } from '../../data/app_constants';  
 import { AgentMaster, AgentRequest } from '../../models/agent-master';
 import { CalendarMasterVO } from '../../models/calendar-master';
 import { CompanyMaster, CountryMaster } from '../../models/company-master';
@@ -477,7 +478,7 @@ export class AgentComponent implements OnInit {
       return;
     }
 
-    const currentUser = localStorage.getItem('userRole') || '';
+    const currentUser = localStorage.getItem('userId') || '';
     const skills: SkillMaster[] = this.skillsList.map(item => {
       const matchedSkill = this.skills.find(skill => skill.skillName.toLowerCase() === item.name.toLowerCase());
       return {
@@ -503,8 +504,10 @@ export class AgentComponent implements OnInit {
       countryId: Number(this.agentForm.value.countryId),
       cityId: Number(this.agentForm.value.cityId),
       languageId: Number(this.agentForm.value.languageId),
-      createdBy: currentUser,
-      updatedBy: currentUser
+      createdBy: Number(currentUser),
+      updatedBy: Number(currentUser),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
     this.isSubmitting = true;

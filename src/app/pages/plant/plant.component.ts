@@ -7,6 +7,7 @@ import { PlantService } from '../../service/plant.service';
 import { CountryMasterVO, PlantMaster, PlantMasterRequest } from '../../models/plant-master';
 import { CalendarMasterVO } from '../../models/calendar-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-plant',
@@ -169,8 +170,10 @@ export class PlantComponent implements OnInit {
       countryId: Number(this.plantForm.value.countryId),
       calendarId: Number(this.plantForm.value.calendarId),
       companyId: Number(localStorage.getItem('userOrgId') || 0),
-      createdBy: !this.isEditMode ? localStorage.getItem('userRole') || '' : '',
-      updatedBy: this.isEditMode ? localStorage.getItem('userRole') || '' : ''
+      createdBy: Number(localStorage.getItem('userId')),
+      updatedBy: Number(localStorage.getItem('userId')),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
     if (this.isEditMode) {

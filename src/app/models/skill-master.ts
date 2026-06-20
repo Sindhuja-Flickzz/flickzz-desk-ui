@@ -10,7 +10,9 @@ export interface SkillMaster {
 export interface SkillRequest {
   skillId?: number;
   skillName: string;
-  createdBy: string;
-  updatedBy: string;
+  createdBy: number;
+  updatedBy: number;
+  isCreatedByAdmin: boolean;
+  isUpdatedByAdmin: boolean;
   companyId: number;
 }

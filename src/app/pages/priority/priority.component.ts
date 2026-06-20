@@ -5,6 +5,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { PriorityService } from '../../service/priority.service';
 import { CompanyMaster, PriorityMaster, PriorityRequest } from '../../models/priority-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-priority',
@@ -165,8 +166,10 @@ export class PriorityComponent implements OnInit {
       colorCode: this.priorityForm.value.colorCode,
       responseSla: Number(this.priorityForm.value.responseSla),
       resolutionSla: Number(this.priorityForm.value.resolutionSla),
-      createdBy: !this.isEditMode ? localStorage.getItem('userRole') || '' : '',
-      updatedBy: this.isEditMode ? localStorage.getItem('userRole') || '' : ''
+      createdBy: Number(localStorage.getItem('userId')),
+      updatedBy: Number(localStorage.getItem('userId')),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
     if (this.isEditMode) {

@@ -15,8 +15,10 @@ export interface ProgressStatusRequestVO {
   progressName: string;
   progressSequence: number;
   colorCode: string;
-  updatedBy?: string;
-  createdBy?: string;
+  updatedBy?: number;
+  createdBy?: number;
+  isCreatedByAdmin?: boolean;
+  isUpdatedByAdmin?: boolean;
   orgId: number;
 }
 
@@ -93,7 +95,8 @@ export interface ProjectCreateRequest {
   projectDesc: string;
   orgId: number;
   epics: ProjectEpicRequest[];
-  createdBy: string;
+  createdBy: number;
+  isCreatedByAdmin: boolean;
   isSave?: boolean;
   isSubmit?: boolean;
 }

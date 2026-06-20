@@ -6,6 +6,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { SkillService } from '../../service/skill.service';
 import { SkillMaster, SkillRequest } from '../../models/skill-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-skill',
@@ -84,7 +85,6 @@ export class SkillComponent implements OnInit {
         this.error = err.error?.description || 'Failed to load skills. Please try again.';
       }
     });
-    console.log('skill.lenght', this.skills.length);
   }
 
   selectTab(tab: 'create' | 'list'): void {
@@ -165,8 +165,10 @@ export class SkillComponent implements OnInit {
         skillId: this.skillForm.value.skillId,
         skillName: this.skillForm.value.skillName,
         companyId: Number(localStorage.getItem('userOrgId') || 0),
-        createdBy: localStorage.getItem('userRole') || '',
-        updatedBy: localStorage.getItem('userRole') || ''
+        createdBy: Number(localStorage.getItem('userId')),
+        updatedBy: Number(localStorage.getItem('userId')),
+        isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+        isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
       };
 
       this.skillService.updateSkill(payload).subscribe({
@@ -197,8 +199,10 @@ export class SkillComponent implements OnInit {
       const requests: SkillRequest[] = this.skillList.map(skill => ({
         skillName: skill.name,
         companyId: Number(localStorage.getItem('userOrgId') || 0),
-        createdBy: localStorage.getItem('userRole') || '',
-        updatedBy: localStorage.getItem('userRole') || ''
+        createdBy: Number(localStorage.getItem('userId')),
+        updatedBy: Number(localStorage.getItem('userId')),
+        isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+        isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
       }));
 
       this.skillService.createSkills(requests).subscribe({

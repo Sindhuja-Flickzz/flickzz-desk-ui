@@ -6,6 +6,7 @@ import { ImpactService } from '../../service/impact.service';
 import { CompanyMaster } from '../../models/company-master';
 import { ImpactMasterVO, ImpactRequest } from '../../models/impact-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-impact',
@@ -171,8 +172,10 @@ export class ImpactComponent implements OnInit {
       impactLevel: Number(formValue.rank),
       slaMultiplier: Number(formValue.slaMultiplier),
       orgId: Number(formValue.orgId),
-      createdBy: !this.isEditMode ? localStorage.getItem('userRole') || '' : '',
-      updatedBy: this.isEditMode ? localStorage.getItem('userRole') || '' : ''
+      createdBy: Number(localStorage.getItem('userId')),
+      updatedBy: Number(localStorage.getItem('userId')),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
     if (this.isEditMode) {

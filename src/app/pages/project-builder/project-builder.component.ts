@@ -9,6 +9,7 @@ import { ProjectCreateRequest, ProjectVO } from '../../models/project-builder';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { Router } from '@angular/router';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-project-builder',
@@ -43,6 +44,7 @@ export class ProjectBuilderComponent implements OnInit {
   submitError = '';
   submitSuccess = '';
   isSubmitting = false;
+  isSaving = false;
   loading = false;
   orgId = '';
 
@@ -709,6 +711,10 @@ export class ProjectBuilderComponent implements OnInit {
       epicName: epic.epicName,
       epicDesc: epic.epicDesc || '',
       epicSequence: epicIndex + 1,
+      createdBy: Number(localStorage.getItem('userId')),
+      updatedBy: Number(localStorage.getItem('userId')),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
       userStories: (epic.userStories || []).map((userStory: any, storyIndex: number) => ({
         mappingStoryId: userStory.userStoryId,
         title: userStory.userStoryName,
@@ -716,11 +722,19 @@ export class ProjectBuilderComponent implements OnInit {
         plannedStartDate: this.normalizeDateValue(userStory.startDate),
         plannedEndDate: this.normalizeDateValue(userStory.endDate),
         mappingPredecessorId: userStory.predecessorUserStoryName || null,
+        createdBy: Number(localStorage.getItem('userId')),
+        updatedBy: Number(localStorage.getItem('userId')),
+        isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+        isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
         tasks: (userStory.tasks || []).map((task: any, taskIndex: number) => ({
           title: task.taskName,
           plannedStartDate: this.normalizeDateValue(task.startDate),
           plannedEndDate: this.normalizeDateValue(task.endDate),
-          taskSequence: taskIndex + 1
+          taskSequence: taskIndex + 1,
+          createdBy: Number(localStorage.getItem('userId')),
+          updatedBy: Number(localStorage.getItem('userId')),
+          isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+          isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
         }))
       }))
     }));
@@ -731,7 +745,10 @@ export class ProjectBuilderComponent implements OnInit {
       projectDesc: raw.projectDesc || '',
       orgId: Number(this.orgId),
       epics: epicsPayload,
-      createdBy: localStorage.getItem('userRole') || '',
+      createdBy: Number(localStorage.getItem('userId')),
+      updatedBy: Number(localStorage.getItem('userId')),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
       isSave: actionType === 'save',
       isSubmit: actionType === 'submit'
     } as ProjectCreateRequest;
@@ -800,12 +817,25 @@ export class ProjectBuilderComponent implements OnInit {
   }
 
   private sendProjectRequest(payload: ProjectCreateRequest, actionType: 'save' | 'submit'): void {
-    this.isSubmitting = true;
+    // Set the appropriate busy flag depending on action
+    if (actionType === 'submit') {
+      this.isSubmitting = true;
+    } else {
+      this.isSaving = true;
+    }
+
+    const clearFlags = () => {
+      if (actionType === 'submit') {
+        this.isSubmitting = false;
+      } else {
+        this.isSaving = false;
+      }
+    };
 
     if (this.isEditMode) {
       this.projectService.updateProject(payload).subscribe({
         next: () => {
-          this.isSubmitting = false;
+          clearFlags();
           this.submitSuccess = actionType === 'submit' ? 'Project submitted successfully.' : 'Project saved successfully.';
           if (actionType === 'submit') {
             this.resetForm();
@@ -814,8 +844,8 @@ export class ProjectBuilderComponent implements OnInit {
           }
         },
         error: (err) => {
-          console.error('Project update failed', err);  
-          this.isSubmitting = false;
+          console.error('Project update failed', err);
+          clearFlags();
           this.submitError = err?.error?.message || `Failed to ${actionType} project. Please try again.`;
         }
       });
@@ -824,7 +854,7 @@ export class ProjectBuilderComponent implements OnInit {
 
     this.projectService.createProject(payload).subscribe({
       next: () => {
-        this.isSubmitting = false;
+        clearFlags();
         this.submitSuccess = actionType === 'submit' ? 'Project submitted successfully.' : 'Project saved successfully.';
         if (actionType === 'submit' || this.isEditMode) {
           this.resetForm();
@@ -834,7 +864,7 @@ export class ProjectBuilderComponent implements OnInit {
       },
       error: (err) => {
         console.error('Project request failed', err);
-        this.isSubmitting = false;
+        clearFlags();
         this.submitError = err?.error?.message || `Failed to ${actionType} project. Please try again.`;
       }
     });

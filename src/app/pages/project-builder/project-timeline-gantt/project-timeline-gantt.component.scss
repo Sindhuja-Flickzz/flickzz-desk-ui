@@ -725,6 +725,18 @@ $shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
 }
 
+.wsa-col {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 12px;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
 // =====================
 // TIMELINE HEADER
 // =====================

@@ -14,6 +14,8 @@ export interface BusinessServiceRequest {
   serviceId?: number;
   serviceName: string;
   serviceOfferings: ServiceOffering[];
-  createdBy: string;
-  updatedBy: string;
+  createdBy: number;
+  updatedBy: number;
+  isCreatedByAdmin: boolean;
+  isUpdatedByAdmin: boolean;
 }

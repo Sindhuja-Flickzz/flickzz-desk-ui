@@ -53,8 +53,10 @@ export interface DetailsTemplateRequest {
   templateName: string;
   workItemId: number;
   companyId: number;
-  createdBy: string;
-  updatedBy: string;
+  createdBy: number;
+  updatedBy: number;
+  isCreatedByAdmin: boolean;
+  isUpdatedByAdmin: boolean;
   templateDetails: TemplateDetail[];
 }
 

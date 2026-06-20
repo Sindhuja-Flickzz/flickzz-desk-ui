@@ -11,6 +11,7 @@ import { AgentService } from 'src/app/service/agent.service';
 import { SkillMaster } from 'src/app/models/skill-master';
 import { CompanyService } from 'src/app/service/company.service';
 import { CalendarMasterVO } from 'src/app/models/calendar-master';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 type ProfileData = UserVO | EnquiryRegistrationVO;
 
@@ -70,25 +71,25 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.profileForm = this.fb.group({
       agentId: [{ value: '', disabled: true }],
       enquiryId: [{ value: '', disabled: true }],
-      agentName: [{ value: '', disabled: false }, !this.isAdminRole ? Validators.required : null],
-      firstName: [{ value: '', disabled: false }, this.isAdminRole ? Validators.required : null],
-      middleName: [{ value: '', disabled: false }],
-      lastName: [{ value: '', disabled: false }],
+      agentName: [{ value: '', disabled: false }, !this.isAdminRole ? [Validators.required, Validators.minLength(2)] : []],
+      firstName: [{ value: '', disabled: false }, this.isAdminRole ? [Validators.required, Validators.minLength(2)] : []],
+      middleName: [{ value: '', disabled: false }, []],
+      lastName: [{ value: '', disabled: false }, []],
       email: [{ value: '', disabled: true }, Validators.required],
       uid: [{ value: '', disabled: true }],
       accessId: [{ value: '', disabled: true }],
       organizationName: [{ value: '', disabled: true }],
       role: [{ value: '', disabled: true }, Validators.required],
-      registeredNumber: [{ value: '', disabled: false }, Validators.required],
-      country: [{ value: '', disabled: false }],
+      registeredNumber: [{ value: '', disabled: false }, [Validators.required, Validators.pattern(/^[+\d]{1,5}-\d{4,}$/)]],
+      country: [{ value: '', disabled: false }, Validators.required],
       // Admin-specific fields
-      state: [{ value: '', disabled: false }],
-      city: [{ value: '', disabled: false }],
-      calendar: [{ value: '', disabled: false }],
-      language: [{ value: '', disabled: false }],
-      skillName: [{ value: '', disabled: false }],
-      experienceYears: [{ value: 0, disabled: false }],
-      experienceMonths: [{ value: 0, disabled: false }]
+      state: [{ value: '', disabled: false }, this.isAdminRole ? Validators.required : []],
+      city: [{ value: '', disabled: false }, Validators.required],
+      calendar: [{ value: '', disabled: false }, !this.isAdminRole ? Validators.required : []],
+      language: [{ value: '', disabled: false }, !this.isAdminRole ? Validators.required : []],
+      skillName: [{ value: '', disabled: false }, []],
+      experienceYears: [{ value: 0, disabled: false }, []],
+      experienceMonths: [{ value: 0, disabled: false }, []]
     });
   }
 
@@ -161,7 +162,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.successMessage = '';
 
-    const userEmail = localStorage.getItem('userId');
+    const userEmail = localStorage.getItem('userEmail');
     const userRole = localStorage.getItem('userRole');
 
     if (!userEmail || !userRole) {
@@ -190,7 +191,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (this.isAdminRole) {3
+    if (this.isAdminRole) {
       this.loadStatesForCountry(id);
       return;
     }
@@ -482,6 +483,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     // Enable editable fields
     this.profileForm.get('country')?.enable();
+    // Clear touched/pristine state so validation messages don't show immediately
+    this.profileForm.markAsPristine();
+    this.profileForm.markAsUntouched();
 
     if (this.isAdminRole) {
       this.profileForm.get('firstName')?.enable();
@@ -513,8 +517,59 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  saveProfile(): void {
+  private validateProfileForm(): boolean {
+    this.profileForm.markAllAsTouched();
+
     if (this.profileForm.invalid) {
+      return false;
+    }
+
+    const registeredNumber = this.profileForm.get('registeredNumber')?.value;
+    const phonePattern = /^[+\d]{1,5}-\d{4,}$/;
+    if (registeredNumber && !phonePattern.test(registeredNumber)) {
+      this.profileForm.get('registeredNumber')?.setErrors({ pattern: true });
+      return false;
+    }
+
+    if (!this.profileForm.get('country')?.value || !this.profileForm.get('city')?.value) {
+      return false;
+    }
+
+    if (!this.isAdminRole) {
+      if (!this.profileForm.get('calendar')?.value || !this.profileForm.get('language')?.value) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private requiredFieldsValid(): boolean {
+    const country = this.profileForm.get('country')?.value;
+    const city = this.profileForm.get('city')?.value;
+    if (!country || !city) return false;
+
+    if (this.isAdminRole) {
+      const state = this.profileForm.get('state')?.value;
+      if (!state) return false;
+    } else {
+      const calendar = this.profileForm.get('calendar')?.value;
+      const language = this.profileForm.get('language')?.value;
+      if (!calendar || !language) return false;
+    }
+
+    const regCtrl = this.profileForm.get('registeredNumber');
+    if (regCtrl && regCtrl.invalid) return false;
+
+    return true;
+  }
+
+  canSave(): boolean {
+    return this.isEditing && !this.isSaving && this.requiredFieldsValid();
+  }
+
+  saveProfile(): void {
+    if (!this.validateProfileForm()) {
       this.errorMessage = 'Please fill all required fields correctly.';
       return;
     }
@@ -554,7 +609,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
         cityId: formValue.city,
         languageId: formValue.language,
         calendarId: Number(formValue.calendar),
-        udaptedBy: formValue.agentName || ''
+        createdBy: Number(localStorage.getItem('userId')),
+        updatedBy: Number(localStorage.getItem('userId')),
+        isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+        isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
       };
     }
 

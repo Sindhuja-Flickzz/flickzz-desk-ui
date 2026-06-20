@@ -59,14 +59,14 @@
         <thead>
           <tr>
             <th>Type Name</th>
-            <th>Created By</th>
+            <!-- <th>Created By</th> -->
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let type of getPaginatedCalendarTypes()">
             <td>{{ type.typeName }}</td>
-            <td>{{ type.createdBy }}</td>
+            <!-- <td>{{ type.createdBy }}</td> -->
             <td class="action-buttons">
               <button type="button" (click)="onDeleteCalendarType(type)"><mat-icon>delete</mat-icon></button>
             </td>
