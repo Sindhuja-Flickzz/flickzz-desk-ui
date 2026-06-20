@@ -6,6 +6,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { CalendarService } from '../../../service/calendar.service';
 import { CalendarType, CalendarTypeRequest } from '../../../models/calendar-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../../shared/confirmation-dialog/confirmation-dialog.component';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-calendar-type',
@@ -159,13 +160,14 @@ export class CalendarTypeComponent implements OnInit {
     this.isSubmitting = true;
 
     const orgId = localStorage.getItem('userOrgId') || '0';
-    const userRole = localStorage.getItem('userRole') || '';
 
     const payload: CalendarTypeRequest = {
       calendarTypeList: this.typeNameList,
       company: orgId,
-      createdBy: userRole,
-      updatedBy: userRole
+      createdBy: Number(localStorage.getItem('userId')),
+      updatedBy: Number(localStorage.getItem('userId')),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
     this.calendarService.createCalendarType(payload).subscribe({
@@ -233,8 +235,8 @@ export class CalendarTypeComponent implements OnInit {
       this.filteredCalendarTypes = this.calendarTypes;
     } else {
       this.filteredCalendarTypes = this.calendarTypes.filter(type =>
-        type.typeName.toLowerCase().includes(term) ||
-        type.createdBy.toLowerCase().includes(term)
+        type.typeName.toLowerCase().includes(term) 
+        // || type.createdBy.toLowerCase().includes(term)
       );
     }
     this.totalRecords = this.filteredCalendarTypes.length;

@@ -63,7 +63,7 @@ export class ProfileIconComponent implements OnInit, OnDestroy {
   }
 
   private loadUserProfile(): void {
-    const userEmail = localStorage.getItem('userId');
+    const userEmail = localStorage.getItem('userEmail');
     const userRole = localStorage.getItem('userRole');
     const userOrgId = localStorage.getItem('userOrgId');
 
@@ -161,8 +161,8 @@ export class ProfileIconComponent implements OnInit, OnDestroy {
     this.isEditing = false;
 
     // Update localStorage if email changed
-    if (this.editProfile.email !== localStorage.getItem('userId')) {
-      localStorage.setItem('userId', this.editProfile.email);
+    if (this.editProfile.email !== localStorage.getItem('userEmail')) {
+      localStorage.setItem('userEmail', this.editProfile.email);
     }
   }
 

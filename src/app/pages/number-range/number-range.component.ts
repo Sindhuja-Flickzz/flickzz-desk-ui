@@ -7,6 +7,7 @@ import { PlantService } from '../../service/plant.service';
 import { RequestConfigRequest, RequestConfigVO } from '../../models/number-range';
 import { PlantMaster } from '../../models/plant-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-number-range',
@@ -157,8 +158,10 @@ export class NumberRangeComponent implements OnInit {
       rangeTo: Number(this.numberRangeForm.value.rangeTo),
       calculateBackward: this.numberRangeForm.value.calculateBackward,
       plantId: selectedPlant?.plantId,
-      createdBy: !this.isEditMode ? localStorage.getItem('userRole') || '' : '',
-      updatedBy: this.isEditMode ? localStorage.getItem('userRole') || '' : ''
+      createdBy: Number(localStorage.getItem('userId')),
+      updatedBy: Number(localStorage.getItem('userId')),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
     if (this.isEditMode) {

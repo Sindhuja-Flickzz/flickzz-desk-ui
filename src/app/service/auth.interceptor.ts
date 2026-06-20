@@ -14,7 +14,7 @@ export class AuthInterceptor implements HttpInterceptor {
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Add auth headers to request
     const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId') ?? '';
+    const userId = localStorage.getItem('userEmail') ?? '';
 
     if (token) {
       request = this.addAuthHeaders(request, token, userId);
@@ -66,7 +66,7 @@ export class AuthInterceptor implements HttpInterceptor {
               this.refreshTokenSubject.next(newToken);
 
               // Retry the original request with new token
-              const userId = localStorage.getItem('userId') ?? '';
+              const userId = localStorage.getItem('userEmail') ?? '';
               return next.handle(this.addAuthHeaders(request, newToken, userId));
             } else {
               // Refresh failed, logout
@@ -91,7 +91,7 @@ export class AuthInterceptor implements HttpInterceptor {
         filter(token => token != null),
         take(1),
         switchMap(token => {
-          const userId = localStorage.getItem('userId') ?? '';
+          const userId = localStorage.getItem('userEmail') ?? '';
           return next.handle(this.addAuthHeaders(request, token, userId));
         })
       );

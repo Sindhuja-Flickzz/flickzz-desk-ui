@@ -16,6 +16,8 @@ export interface ImpactRequest {
   impactLevel: number;
   slaMultiplier: number;
   orgId: number;
-  createdBy: string;
-  updatedBy: string;
+  createdBy: number;
+  updatedBy: number;
+  isCreatedByAdmin: boolean;
+  isUpdatedByAdmin: boolean;
 }

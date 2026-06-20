@@ -13,5 +13,6 @@ export interface CommonObject {
   refreshToken: string;
   secretImageUri: string;
   userRole: string;
+  userId: Number;
   enquiryUser?: boolean;
 }

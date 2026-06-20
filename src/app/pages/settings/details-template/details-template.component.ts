@@ -9,6 +9,7 @@ import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../../sh
 import { DetailsTemplateOptionsDialogComponent } from './details-template-options-dialog.component';
 import { DetailsTemplateService } from '../../../service/details-template.service';
 import { DetailsTemplateRequest, DropdownOption, FieldType, WorkItemType, WorkItem, FieldTypeItem, TemplatesDetails } from '../../../models/details-template.model';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-details-template',
@@ -410,8 +411,10 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
       templateName: this.templateNameControl.value.trim(),
       workItemId: workItem.itemId,
       companyId: Number(this.orgId),
-      createdBy: this.isEditMode ? '' : (localStorage.getItem('userRole') || ''),
-      updatedBy: this.isEditMode ? (localStorage.getItem('userRole') || '') : '',
+      createdBy: Number(localStorage.getItem('userId')),
+      updatedBy: Number(localStorage.getItem('userId')),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
       templateDetails: this.templateDetails.controls.map((rowControl) => {
         const row = rowControl as FormGroup;
         const fieldTypeCode = row.get('fieldType')?.value;

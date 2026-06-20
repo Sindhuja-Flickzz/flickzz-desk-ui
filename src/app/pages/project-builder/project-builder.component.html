@@ -402,9 +402,23 @@
           </ng-template>
 
           <div class="actions action-right">
-            <button type="button" class="secondary-btn" (click)="backToEdit()">← Back</button>
-            <button type="button" class="secondary-btn" [disabled]="isSubmitting" (click)="saveProject()">Save</button>
-            <button type="button" class="primary-btn" [disabled]="isSubmitting" (click)="submitProject()">{{ isSubmitting ? (currentStep === 3 ? 'Submitting...' : 'Submit') : 'Submit' }}</button>
+            <button type="button" class="secondary-btn" [disabled]="isSubmitting || isSaving"  (click)="backToEdit()">← Back</button>
+
+            <!-- Save button / Saving state -->
+            <ng-container *ngIf="!isSaving; else savingBtn">
+              <button type="button" class="primary-btn" [disabled]="isSubmitting" (click)="saveProject()">Save</button>
+            </ng-container>
+            <ng-template #savingBtn>
+              <button type="button" class="primary-btn" disabled>Saving...</button>
+            </ng-template>
+
+            <!-- Submit button / Submitting state -->
+            <ng-container *ngIf="!isSubmitting; else submittingBtn">
+              <button type="button" class="primary-btn" [disabled]="isSaving" (click)="submitProject()">Submit</button>
+            </ng-container>
+            <ng-template #submittingBtn>
+              <button type="button" class="primary-btn" disabled>Submitting...</button>
+            </ng-template>
           </div>
         </section>
       </div>

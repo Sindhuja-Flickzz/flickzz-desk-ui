@@ -17,8 +17,10 @@ export interface AgentRequest {
   countryId: number;
   cityId: number;
   languageId: number;
-  createdBy: string;
-  updatedBy: string;
+  createdBy: number;
+  updatedBy: number;
+  isCreatedByAdmin: boolean;
+  isUpdatedByAdmin: boolean;
 }
 
 export interface AgentMaster {

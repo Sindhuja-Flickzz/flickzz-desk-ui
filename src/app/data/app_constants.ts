@@ -223,7 +223,7 @@ export const MENU_INFO: MenuItem[] = [
                 "subMenuId": 301,
                 "subMenuName": "Organization",
                 "isActive": true,
-                "enableForRoles": [USER_ROLES.ADMIN_AGENT],
+                "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
                 "route": "/settings",
                 "childSubMenus": []
             },
@@ -231,7 +231,7 @@ export const MENU_INFO: MenuItem[] = [
                 "subMenuId": 302,
                 "subMenuName": "Template",
                 "isActive": true,
-                "enableForRoles": [USER_ROLES.ADMIN_AGENT],
+                "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
                 "childSubMenus": [
                     {
                         "subMenuId": 30201,

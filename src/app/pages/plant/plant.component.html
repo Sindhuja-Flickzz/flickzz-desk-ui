@@ -64,7 +64,7 @@
             <th>Plant Name</th>
             <th>Region</th>
             <th>Calendar</th>
-            <th>Created By</th>
+            <!-- <th>Created By</th> -->
             <th>Actions</th>
           </tr>
         </thead>
@@ -73,7 +73,7 @@
             <td>{{ plant.plantName }}</td>
             <td>{{ plant.region.countryName }}</td>
             <td>{{ plant.calendar.calendarCode }}</td>
-            <td>{{ plant.createdBy }}</td>
+            <!-- <td>{{ plant.createdBy }}</td> -->
             <td class="action-buttons">
               <button type="button" (click)="onViewPlant(plant)"><mat-icon>edit</mat-icon></button>
               <button type="button" (click)="onDeletePlant(plant)"><mat-icon>delete</mat-icon></button>

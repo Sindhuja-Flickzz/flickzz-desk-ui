@@ -308,15 +308,14 @@
           margin-right: 5px;
           cursor: pointer;
           display: inline-flex;
-          align-items: center;
-          justify-content: center;
+          align-items: right;
+          justify-content: right;
           background: #eff4fb;
           color: #084d8f;
 
           &:last-child {
             margin-right: 0;
           }
-
           gap: 5px;
         }
       }

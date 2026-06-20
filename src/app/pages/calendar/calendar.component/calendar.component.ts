@@ -5,7 +5,7 @@ import { CalendarService } from '../../../service/calendar.service';
 import { DateUtilsService } from '../../../service/date.util.Service ';
 import { CalendarRequest, CalendarMasterVO, CalendarType } from '../../../models/calendar-master';
 import { CalendarHolidayVO } from '../../../models/calendar-holiday';
-import { DAYS_OF_WEEK, TIMEZONES } from 'src/app/data/app_constants';
+import { DAYS_OF_WEEK, TIMEZONES, USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-calendar',
@@ -430,8 +430,10 @@ export class CalendarComponent implements OnInit {
       workFrom: this.calendarForm.get('timeFrom')?.value,
       workTo: this.calendarForm.get('timeTo')?.value,
       timezone: this.calendarForm.get('timezone')?.value,
-      createdBy: localStorage.getItem('userRole') || '',
-      updatedBy: localStorage.getItem('userRole') || ''
+      createdBy: Number(localStorage.getItem('userId')),
+      updatedBy: Number(localStorage.getItem('userId')),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
     this.submitting = true;

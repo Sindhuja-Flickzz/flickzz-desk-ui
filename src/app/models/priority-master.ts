@@ -33,6 +33,8 @@ export interface PriorityRequest {
   colorCode: string;
   responseSla: number;
   resolutionSla: number;
-  createdBy: string;
-  updatedBy: string;
+  createdBy: number;
+  updatedBy: number;
+  isCreatedByAdmin: boolean;
+  isUpdatedByAdmin: boolean;
 }

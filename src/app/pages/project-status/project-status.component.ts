@@ -7,6 +7,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProjectStatusCreateDialogComponent } from './project-status-create-dialog/project-status-create-dialog.component';
 import { ProjectStatusEpicDetailComponent } from './project-status-epic-detail/project-status-epic-detail.component';
 import { ProjectStatusItemDetailComponent } from './project-status-item-detail/project-status-item-detail.component';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 interface ColumnState {
   [key: number]: {
@@ -392,8 +393,10 @@ export class ProjectStatusComponent implements OnInit {
     const request: ProgressStatusRequestVO = {
       ...requestData,
       orgId: parseInt(this.orgId),
-      createdBy: localStorage.getItem('userId') || 'system',
-      updatedBy: localStorage.getItem('userId') || 'system'
+      createdBy: Number(localStorage.getItem('userId')),
+      updatedBy: Number(localStorage.getItem('userId')),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
     this.projectService.createProgressStatus(request).subscribe({

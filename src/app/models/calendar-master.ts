@@ -30,8 +30,10 @@ export interface CalendarRequest {
   workFrom: string;
   workTo: string;
   timezone: string;
-  createdBy: string;
-  updatedBy: string;
+  createdBy: number;
+  updatedBy: number;
+  isCreatedByAdmin: boolean;
+  isUpdatedByAdmin: boolean;
 }
 
 export interface CalendarType {
@@ -43,6 +45,8 @@ export interface CalendarType {
 export interface CalendarTypeRequest {
   calendarTypeList: string[];
   company: string;
-  createdBy: string;
-  updatedBy: string;
+  createdBy: number;
+  updatedBy: number;
+  isCreatedByAdmin: boolean;
+  isUpdatedByAdmin: boolean;
 }

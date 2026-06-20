@@ -21,7 +21,9 @@ export interface PlantMasterRequest {
   plantName: string;
   countryId: number;
   calendarId: number;
-  createdBy: string;
-  updatedBy: string;
+  createdBy: number;
+  updatedBy: number;
   companyId: number;
+  isCreatedByAdmin: boolean;
+  isUpdatedByAdmin: boolean;
 }

@@ -9,8 +9,10 @@ export interface RequestConfigRequest {
   rangeTo: number;
   calculateBackward: boolean;
   plantId: number;
-  createdBy: string;
-  updatedBy: string;
+  createdBy: number;
+  updatedBy: number;
+  isCreatedByAdmin: boolean;
+  isUpdatedByAdmin: boolean;
 }
 
 export interface RequestConfigVO {

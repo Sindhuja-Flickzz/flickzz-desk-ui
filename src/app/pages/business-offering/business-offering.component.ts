@@ -5,6 +5,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { BusinessOfferingService } from '../../service/business-offering.service';
 import { BusinessService, BusinessServiceRequest, ServiceOffering } from '../../models/business-offering';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-business-offering',
@@ -171,8 +172,10 @@ export class BusinessOfferingComponent implements OnInit {
         // serviceId: this.businessServiceForm.value.serviceId || null,
         offeringName: offering.offeringName
       })),
-      createdBy: localStorage.getItem('userRole') || '',
-      updatedBy: localStorage.getItem('userRole') || ''
+      createdBy: Number(localStorage.getItem('userId')),
+      updatedBy: Number(localStorage.getItem('userId')),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
     if (this.isEditMode) {

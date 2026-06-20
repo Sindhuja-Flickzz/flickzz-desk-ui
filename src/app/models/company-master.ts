@@ -87,8 +87,10 @@ export interface CompanyRequest {
   pinCode?: string;
   employeeSize: number;
   mail: string;
-  createdBy: string;
-  updatedBy: string;
+  createdBy: number;
+  updatedBy: number;
+  isCreatedByAdmin: boolean;
+  isUpdatedByAdmin: boolean;
 }
 
 export interface CompanyRole {

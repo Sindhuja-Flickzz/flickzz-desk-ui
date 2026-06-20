@@ -39,7 +39,8 @@ export class LoginComponent implements OnInit, OnDestroy {
       secretImageUri: '',
       userOrgId: 0,
       userOrgName: '',
-      userRole: ''
+      userRole: '',
+      userId: 0
     }
   };
 
@@ -109,7 +110,8 @@ export class LoginComponent implements OnInit, OnDestroy {
             this.isVerifying = false;
             localStorage.setItem('token', response.attributes.accessToken as string);
             localStorage.setItem('refreshToken', response.attributes.refreshToken as string);
-            localStorage.setItem('userId', this.registerLoginRequest.email as string);
+            localStorage.setItem('userEmail', this.registerLoginRequest.email as string);
+            localStorage.setItem('userId', response.attributes.userId.toString());
             localStorage.setItem('userRole', response.attributes.userRole as string);
             localStorage.setItem('userOrgId', response.attributes.userOrgId.toString());
             localStorage.setItem('userOrgName', response.attributes.userOrgName as string);
@@ -220,7 +222,8 @@ export class LoginComponent implements OnInit, OnDestroy {
           this.isVerifying = false;
           localStorage.setItem('token', response.attributes.accessToken as string);
           localStorage.setItem('refreshToken', response.attributes.refreshToken as string);
-          localStorage.setItem('userId', this.registerLoginRequest.email as string);
+          localStorage.setItem('userEmail', this.registerLoginRequest.email as string);
+          localStorage.setItem('userId', response.attributes.userId.toString());
           localStorage.setItem('userRole', response.attributes.userRole as string);
           localStorage.setItem('userOrgId', response.attributes.userOrgId.toString());
           localStorage.setItem('userOrgName', response.attributes.userOrgName as string);

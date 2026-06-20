@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { CompanyService } from '../../service/company.service';
 import { CompanyRequest, CountryMaster, EnquiryRegistration, StateMaster } from '../../models/company-master';
 import { CityMaster } from '../../models/city-master';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-company',
@@ -71,7 +72,7 @@ export class CompanyComponent implements OnInit {
 
   loadInitialData(): void {
     this.loading = true;
-    const userEmail = localStorage.getItem('userId') || '';
+    const userEmail = localStorage.getItem('userEmail') || '';
 
     if (!userEmail) {
       this.submitError = 'User identity not found in localStorage.';
@@ -154,8 +155,10 @@ export class CompanyComponent implements OnInit {
       pinCode: formValue.pincode,
       mail: formValue.mail,
       employeeSize: Number(formValue.employeeSize),
-      createdBy: localStorage.getItem('userRole') || '',
-      updatedBy: localStorage.getItem('userRole') || ''
+      createdBy: Number(localStorage.getItem('userId')),
+      updatedBy: Number(localStorage.getItem('userId')),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
     this.companyService.updateCompany(payload).subscribe({

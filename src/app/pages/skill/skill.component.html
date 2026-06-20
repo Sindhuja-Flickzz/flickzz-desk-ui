@@ -55,14 +55,14 @@
         <thead>
           <tr>
             <th>Skill Name</th>
-            <th>Created By</th>
+            <!-- <th>Created By</th> -->
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let skill of getPaginatedSkills()">
             <td>{{ skill.skillName }}</td>
-            <td>{{ skill.createdBy }}</td>
+            <!-- <td>{{ skill.createdBy }}</td> -->
             <td class="action-buttons">
               <button type="button" (click)="onDeleteSkill(skill)"><mat-icon>delete</mat-icon></button>
             </td>
