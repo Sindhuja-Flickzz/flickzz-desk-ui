@@ -17,6 +17,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   resetPasswordForm: FormGroup;
   formError: any = {};
   submitError = '';
+  submitSuccess = '';
 
   registerLoginRequest: RegisterLoginRequest = {
     email: '',
@@ -63,6 +64,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     });
 
     this.resetPasswordForm = this.fb.group({
+      username: ['', Validators.required],
       newPassword: ['', [Validators.required, Validators.minLength(8)]],
       confirmNewPassword: ['', Validators.required]
     }, { validators: this.passwordMatchValidator });
@@ -150,7 +152,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       this.formError.confirmNewPassword = 'Passwords do not match';
     }
 
-    if (this.registerLoginRequest.password === this.resetPasswordRequest.newPassword) {
+    if (this.registerLoginRequest.password && this.registerLoginRequest.password === this.resetPasswordRequest.newPassword) {
       this.formError.newPassword = 'New password must be different from current password';
     }
 
@@ -162,29 +164,44 @@ export class LoginComponent implements OnInit, OnDestroy {
       ...this.registerLoginRequest,
       email: this.resetPasswordRequest.username,
       password: this.resetPasswordRequest.newPassword,
-      oldPassword: this.registerLoginRequest.password
+      oldPassword: this.registerLoginRequest.password || undefined
     };
 
     this.authService.resetPassword(this.registerLoginRequest)
       .subscribe({
         next: (response) => {
-          this.commonResponse = {
-            ...this.commonResponse,
-            ...response,
-            attributes: {
-              ...this.commonResponse.attributes,
-              ...response.attributes
-            }
-          };
-          this.isResetPasswordMode = false;
-          this.isMfaSetupMode = true;
-          this.submitError = '';
+          this.submitSuccess = response.description || 'Password reset successful. Redirecting to login page...';  
+          setTimeout(() => {
+            this.isLoginMode = true;
+            this.isResetPasswordMode = false;
+            this.submitSuccess = '';
+            this.resetPasswordForm.reset();
+          }, 1500);
         },
         error: (err) => {
           console.error('Reset password error', err);
           this.submitError = err.error?.description || 'Failed to reset password.';
         }
       });
+  }
+
+  showForgotPassword(): void {
+    this.formError = {};
+    this.submitError = '';
+    this.isLoginMode = false;
+    this.isResetPasswordMode = true;
+    this.isMfaSetupMode = false;
+    this.resetPasswordRequest.username = this.registerLoginRequest.email || '';
+    this.resetPasswordForm.reset({ username: this.resetPasswordRequest.username, newPassword: '', confirmNewPassword: '' });
+  }
+
+  backToLogin(): void {
+    this.formError = {};
+    this.submitError = '';
+    this.isLoginMode = true;
+    this.isResetPasswordMode = false;
+    this.isMfaSetupMode = false;
+    this.resetPasswordForm.reset();
   }
 
   onOtpInput(event: Event): void {

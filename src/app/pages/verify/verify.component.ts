@@ -24,6 +24,7 @@ export class VerifyComponent implements OnInit {
   text = 'FlickzzDesk';
   letters = this.text.split('');
   showSuccessPage = false;
+  confettiPieces: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -49,6 +50,12 @@ export class VerifyComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Generate confetti pieces
+    this.confettiPieces = Array.from({ length: 30 }).map(() => ({
+      color: this.randomColor(),
+      left: Math.random() * 100,
+      delay: Math.random() * 5
+    }));
         // this.showSuccessPage = true;
     this.route.queryParamMap.subscribe(params => {
       this.username = params.get('username') || '';
@@ -63,9 +70,10 @@ export class VerifyComponent implements OnInit {
     });
   }
 
-  // get passwordControl() {
-  //   return this.verifyForm.get('password');
-  // }
+  randomColor(): string {
+    const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1', '#5f27cd'];
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
 
   get newPasswordControl() {
     return this.verifyForm.get('newPassword');

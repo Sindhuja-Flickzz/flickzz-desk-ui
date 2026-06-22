@@ -78,7 +78,7 @@
       </div>
     </form>
   </div>
-  <div class="loading-container" *ngIf="showSuccessPage">
+  <!-- <div class="loading-container" *ngIf="showSuccessPage">
     <div class="brand">
       <span *ngFor="let letter of letters; let i = index"
             [style.animationDelay]="i * 0.08 + 's'">
@@ -87,5 +87,24 @@
     </div>
 
     <p class="subtitle">Setting things up for you...</p>
-  </div>
+  </div> -->
+
+  <div class="success-screen" *ngIf="showSuccessPage">
+    <div class="success-card"> 
+      <div class="logo-wrapper">
+        <img src="assets/logo_trans.png" alt="Logo" class="logo" />
+      </div>
+      <div class="text-content">
+        <h2>Setting things up for you...</h2>
+      </div>
+    </div>
+    <div class="confetti">
+      <div class="confetti-piece" *ngFor="let confetti of confettiPieces" [ngStyle]="{
+        'background-color': confetti.color,
+        'left.%': confetti.left,
+        'animation-delay': confetti.delay + 's'
+      }">
+    </div>
+</div>
+
 </div>
