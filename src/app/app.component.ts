@@ -209,18 +209,20 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.setActive(node.id);
 
-    if (node.children && node.children.length) {
-      this.toggleExpansion(node);
-      return;
-    }
+    const hasChildren = !!node.children?.length;
+    const hasRoute = !!node.route;
 
-    if (node.route) {
+    if (hasRoute) {
       if (node.route === '/calendar/create-calendar') {
         const type = node.name?.toLowerCase().includes('requestor') ? 'requestor' : 'support';
         this.router.navigate([node.route], { queryParams: { type } });
       } else {
         this.router.navigate([node.route]);
       }
+    }
+
+    if (hasChildren) {
+      this.toggleExpansion(node);
     }
   }
 

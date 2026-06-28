@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
-import { CountryMaster, CompanyMaster, CompanyRequest, EnquiryRegistration, StateMaster, CompanyRole } from '../models/company-master';
+import { CountryMaster, CompanyMaster, CompanyRequest, EnquiryRegistration, StateMaster, CompanyRole, CompanyBpRequest } from '../models/company-master';
 import { CityMaster } from '../models/city-master';
 
 @Injectable({
@@ -62,5 +62,13 @@ export class CompanyService {
 
   getCompanyById(companyId: number): Observable<CompanyMaster> {
     return this.http.get<CompanyMaster>(`${this.baseUrl}/company/${companyId}`);
+  }
+
+  getCompanyByUid(uid: string): Observable<CompanyMaster> {
+    return this.http.get<CompanyMaster>(`${this.baseUrl}/company/uid/${uid}`);
+  }
+
+  assignBusinessPartner(request: CompanyBpRequest): Observable<any> {
+    return this.http.post(`${this.baseUrl}/company/bp/create`, request);
   }
 }

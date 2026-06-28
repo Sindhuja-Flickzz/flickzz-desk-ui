@@ -44,8 +44,10 @@ export class AgentComponent implements OnInit {
   agents: AgentMaster[] = [];
   filteredAgents: AgentMaster[] = [];
   agentSkillNames: { [key: number]: string[] } = {};
+  agentSkillDetails: { [key: number]: any[] } = {};
   searchValue = '';
   userOrgId: string = '';
+  hoveredSkillAgentId: number | null = null;
 
   loading = false;
   formError: any = {};
@@ -273,6 +275,7 @@ export class AgentComponent implements OnInit {
         this.filterBySearch();
         this.currentPage = 0;
         this.agentSkillNames = {};
+        this.agentSkillDetails = {};
 
         const skillObservables = this.agents.map(agent =>
           this.agentService.getAgentSkills(agent.agentId)
@@ -291,11 +294,21 @@ export class AgentComponent implements OnInit {
                   return skillName ? `${skillName} (${years}y ${months}m)` : null;
                 }).filter(Boolean) as string[];
                 this.agentSkillNames[agentId] = formatted;
+                
+                // Store full skill details for hover display
+                this.agentSkillDetails[agentId] = (mappings || []).map((map: any) => ({
+                  skillName: map.skill?.skillName || '',
+                  experienceYears: map.experienceYears ?? map.skill?.experienceYears ?? 0,
+                  experienceMonths: map.experienceMonths ?? map.skill?.experienceMonths ?? 0
+                })).filter((skill: any) => skill.skillName);
               });
             },
             error: () => {
               // ignore; fill individually in fallback
-              this.agents.forEach(agent => (this.agentSkillNames[agent.agentId] = []));
+              this.agents.forEach(agent => {
+                this.agentSkillNames[agent.agentId] = [];
+                this.agentSkillDetails[agent.agentId] = [];
+              });
             }
           });
         }

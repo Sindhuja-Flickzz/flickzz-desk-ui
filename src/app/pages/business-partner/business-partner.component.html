@@ -1,0 +1,14 @@
+<div class="business-partner-container">
+  <header class="business-partner-header">
+    <h1>Business Partner</h1>
+    <p>Choose an option to assign or manage business partners.</p>
+  </header>
+
+  <div class="tile-grid">
+    <div class="tile" *ngFor="let tile of tiles">
+      <button class="tile-button" (click)="navigate(tile)">
+        <span class="tile-title">{{ tile.title }}</span>
+      </button>
+    </div>
+  </div>
+</div>

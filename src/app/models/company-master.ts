@@ -12,7 +12,8 @@ export interface CountryMaster {
 
 export interface CompanyMaster {
   companyId: number;
-  companyName: string;
+  companyName: string;  
+  phoneCode: string;
   registeredNumber: string;
   uid: string;
   country: CountryMaster;
@@ -102,4 +103,16 @@ export interface CompanyRole {
   isBoth: boolean;  
   createdBy: string;
   updatedBy: string;
+}
+
+export interface CompanyBpRequest {
+  companyId: number;
+  bpUid: string;
+  createdBy: number;
+  isCreatedByAdmin: boolean;
+  callHorizonDays: number;
+  validFrom: string;
+  validTo: string;
+  refNumber: string;
+  refDate: string;
 }
