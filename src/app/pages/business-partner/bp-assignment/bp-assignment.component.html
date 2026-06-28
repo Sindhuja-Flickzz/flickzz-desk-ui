@@ -127,11 +127,11 @@
         </thead>
         <tbody>
           <tr *ngFor="let item of bpList">
-            <td>{{ item.mappedCompany?.uid || '-' }}</td>
-            <td>{{ item.mappedCompany?.companyName || item.company?.companyName || '-' }}</td>
-            <td>{{ formatDate(item.validFrom || item.validFromDate || item.validFromDateString) }}</td>
-            <td>{{ formatDate(item.validTo || item.validTill || item.validityEnd) }}</td>
-            <td>
+            <td *ngIf="item.company?.companyId != item.mappedCompany?.companyId">{{ item.mappedCompany?.companyId != orgId ? (item.mappedCompany?.uid || '-') : (item.company?.uid || '-') }}</td>
+            <td *ngIf="item.company?.companyId != item.mappedCompany?.companyId">{{ item.mappedCompany?.companyId != orgId ? (item.mappedCompany?.companyName || '-') : (item.company?.companyName || '-') }}</td>
+            <td *ngIf="item.company?.companyId != item.mappedCompany?.companyId">{{ formatDate(item.validFrom || item.validFromDate || item.validFromDateString) }}</td>
+            <td *ngIf="item.company?.companyId != item.mappedCompany?.companyId">{{ formatDate(item.validTo || item.validTill || item.validityEnd) }}</td>
+            <td *ngIf="item.company?.companyId != item.mappedCompany?.companyId">
               <span class="status-pill" [ngClass]="getStatus(item)"></span>
             </td>
           </tr>
