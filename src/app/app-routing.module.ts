@@ -9,6 +9,7 @@ import { ProjectBuilderComponent } from './pages/project-builder/project-builder
 // import { ProjectTimelineGanttComponent } from './pages/project-builder/project-timeline-gantt/project-timeline-gantt.component';
 import {SkillComponent} from "./pages/skill/skill.component";
 import {CompanyComponent} from "./pages/company/company.component";
+import { BpAssignmentComponent } from './pages/business-partner/bp-assignment/bp-assignment.component';
 import {AgentComponent} from "./pages/agent/agent.component";
 import {PriorityComponent} from "./pages/priority/priority.component";
 import {ImpactComponent} from "./pages/impact/impact.component";
@@ -23,6 +24,8 @@ import { ProfileComponent } from './pages/profile/profile.component';
 import { ProjectStatusComponent } from './pages/project-status/project-status.component';
 import { ProjectStatusEpicDetailComponent } from './pages/project-status/project-status-epic-detail/project-status-epic-detail.component';
 import { ProjectStatusItemDetailComponent } from './pages/project-status/project-status-item-detail/project-status-item-detail.component';
+import { BusinessPartnerComponent } from './pages/business-partner/business-partner.component';
+import { ManageBpComponent } from './pages/business-partner/manage-bp/manage-bp.component';
 import { authGuard } from './service/auth/auth.guard';
 
 const routes: Routes = [
@@ -121,6 +124,11 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'business-partner',
+    component: BusinessPartnerComponent,
+    canActivate: [authGuard]
+  },
+  {
     path: 'priority',
     component: PriorityComponent,
     canActivate: [authGuard]
@@ -156,6 +164,16 @@ const routes: Routes = [
     component: CompanyComponent,
     canActivate: [authGuard],
     data: { type: 'service-provider' }
+  },
+  {
+    path: 'company/bp-assignment',
+    component: BpAssignmentComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'company/manage-bp',
+    component: ManageBpComponent,
+    canActivate: [authGuard]
   },
   {
     path: 'agent',

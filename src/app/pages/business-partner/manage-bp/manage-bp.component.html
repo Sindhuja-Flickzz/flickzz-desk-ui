@@ -1,0 +1,27 @@
+<div class="manage-bp-page">
+  <div class="page-header">
+    <h2>Manage Business Partner</h2>
+    <button type="button" class="reset-btn" (click)="backToHome()"><mat-icon>arrow_back</mat-icon> Back</button>
+  </div>
+
+  <div class="config-list">
+    <div *ngFor="let config of configurations" class="config-card">
+      <button type="button" class="config-btn" (click)="selectConfig(config)">
+        <span>{{ config.name }}</span>
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="selectedConfig" class="config-details">
+    <h3>{{ selectedConfig.name }}</h3>
+    <div class="field">
+      <label>Business Requirement</label>
+      <textarea readonly>{{ selectedConfig.businessRequirement }}</textarea>
+    </div>
+    <div class="field">
+      <label>SLA</label>
+      <input type="text" [value]="selectedConfig.sla" readonly />
+    </div>
+  </div>
+</div>

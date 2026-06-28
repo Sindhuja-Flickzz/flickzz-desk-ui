@@ -80,6 +80,14 @@ export const MENU_INFO: MenuItem[] = [
                                 "isActive": true,
                                 "enableForRoles": ['abc'],
                                 "childSubMenus": []
+                            },
+                            {
+                                "subMenuId": 20101010103,
+                                "subMenuName": "BP Assignment",
+                                "route": "/company/bp-assignment",
+                                "isActive": true,
+                                "enableForRoles": ['abc'],
+                                "childSubMenus": []
                             }
                             ]
                         },
@@ -225,7 +233,24 @@ export const MENU_INFO: MenuItem[] = [
                 "isActive": true,
                 "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
                 "route": "/settings",
-                "childSubMenus": []
+                "childSubMenus": [
+                    {
+                        "subMenuId": 30101,
+                        "subMenuName": "Org Settings",
+                        "isActive": true,
+                        "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+                        "route": "/settings",
+                        "childSubMenus": []
+                    },
+                    {
+                        "subMenuId": 30102,
+                        "subMenuName": "Business Partner",
+                        "isActive": true,
+                        "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+                        "route": "/business-partner",
+                        "childSubMenus": []
+                    }
+                ]
             },
             {
                 "subMenuId": 302,
@@ -276,9 +301,9 @@ export const MENU_INFO: MenuItem[] = [
 export const APP_CONSTANTS = {
   APP_NAME: 'FlickzzDesk',
 //   Local base url for backend API
-//   API_BASE_URL: 'http://localhost:5000/flickzz-desk'
+  API_BASE_URL: 'http://localhost:5000/flickzz-desk'
 //   Railway internal base url for backend API
-  API_BASE_URL: 'https://flickzz-desk-service-production.up.railway.app/flickzz-desk'
+//   API_BASE_URL: 'https://flickzz-desk-service-production.up.railway.app/flickzz-desk'
 };
 
 export const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

@@ -15,6 +15,8 @@ import { ConfirmationDialogComponent } from './shared/confirmation-dialog/confir
 import { PlantComponent } from './pages/plant/plant.component';
 import { SkillComponent } from './pages/skill/skill.component';
 import { CompanyComponent } from './pages/company/company.component';
+import { BpAssignmentComponent } from './pages/business-partner/bp-assignment/bp-assignment.component';
+import { ManageBpComponent } from './pages/business-partner/manage-bp/manage-bp.component';
 import { AgentComponent } from './pages/agent/agent.component';
 import { FieldLabelPipe } from './pipes/field-label.pipe';
 import { JoinPipe } from './pipes/field-label.pipe';
@@ -47,6 +49,7 @@ import { PriorityComponent } from './pages/priority/priority.component';
 import { ImpactComponent } from './pages/impact/impact.component';
 import { RitmComponent } from './pages/ritm/ritm.component';
 import { BusinessOfferingComponent } from './pages/business-offering/business-offering.component';
+import { BusinessPartnerComponent } from './pages/business-partner/business-partner.component';
 import { NumberRangeComponent } from './pages/number-range/number-range.component';
 import { VerifyComponent } from './pages/verify/verify.component';
 import { EnquiryRegistrationComponent } from './pages/enquiry-registration/enquiry-registration.component';
@@ -75,6 +78,8 @@ import { ProjectStatusItemDetailComponent } from './pages/project-status/project
     PlantComponent,
     SkillComponent,
     CompanyComponent,
+    BpAssignmentComponent,
+    ManageBpComponent,
     AgentComponent,
     FieldLabelPipe,
     JoinPipe,
@@ -82,6 +87,7 @@ import { ProjectStatusItemDetailComponent } from './pages/project-status/project
     ImpactComponent,
     RitmComponent,
     BusinessOfferingComponent,
+    BusinessPartnerComponent,
     NumberRangeComponent,
     VerifyComponent,
     EnquiryRegistrationComponent,
