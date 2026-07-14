@@ -1,73 +1,58 @@
 <div class="priority-page">
   <div class="tabs">
-    <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
-    <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
+    <button class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
     <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
   </div>
 
   <div *ngIf="activeTab === 'create'" class="create-panel">
     <h2>{{ pageTitle }}</h2>
+    <div class="context-banner">{{ contextLabel }}</div>
 
     <form [formGroup]="priorityForm" (ngSubmit)="onSave()">
-
       <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
       <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
 
-      <div class="field">
-        <label>Priority Name</label>
-        <input type="text" formControlName="priorityName" placeholder="Enter priority name" [readonly]="isEditMode"/>
-        <span *ngIf="formError.priorityName" class="error-text">{{ formError.priorityName | fieldLabel  }}</span>
+      <div class="form-row">
+        <div class="field">
+          <label>Level</label>
+          <input
+            type="number"
+            formControlName="level"
+            min="1"
+            step="1"
+            placeholder="Enter level"
+            inputmode="numeric"
+            (input)="onLevelInput($event)"
+          />
+          <span *ngIf="formError.level" class="error-text">{{ formError.level }}</span>
+        </div>
+
+        <div class="field">
+          <label>Code</label>
+          <input type="text" formControlName="code" placeholder="Enter code" />
+          <span *ngIf="formError.code" class="error-text">{{ formError.code }}</span>
+        </div>
+
+        <div class="field">
+          <label>Ticket Type</label>
+          <select formControlName="ticketType">
+            <option value="" disabled>Select ticket type</option>
+            <option *ngFor="let type of ticketTypes" [value]="type.ticketTypeId">{{ type.ticketTypeName }}</option>
+          </select>
+          <span *ngIf="formError.ticketType" class="error-text">{{ formError.ticketType }}</span>
+        </div>
       </div>
 
       <div class="field">
-        <label>Organization</label>
-        <select formControlName="orgId" [disabled]="isEditMode">
-          <option value="" disabled>Select organization</option>
-          <option *ngFor="let c of companies" [value]="c.companyId">{{ c.companyName }}</option>
-        </select>
-        <span *ngIf="formError.orgId" class="error-text">{{ formError.orgId | fieldLabel  }}</span>
-      </div>
-
-      <div class="field">
-        <label>Rank</label>
-        <input type="number" formControlName="rank" placeholder="Enter rank" min="1"/>
-        <span *ngIf="formError.rank" class="error-text">{{ formError.rank | fieldLabel  }}</span>
-      </div>
-
-      <div class="field">
-        <label>Color Code</label>
-        <!-- <input type="color" formControlName="colorCode" placeholder="Select or enter color code"/> -->
-        <input 
-            type="color" 
-            [value]="priorityForm.get('colorCode')?.value"
-            (input)="onColorPickerChange($event)" />
-
-        <!-- Manual Input -->
-        <input 
-            type="text" 
-            formControlName="colorCode" 
-            placeholder="#FF0000" 
-            maxlength="7" />
-        <span *ngIf="formError.colorCode" class="error-text">{{ formError.colorCode | fieldLabel  }}</span>
-      </div>
-
-      <div class="field">
-        <label>Response SLA (minutes)</label>
-        <input type="number" formControlName="responseSla" placeholder="Enter response SLA in minutes" min="1"/>
-        <span *ngIf="formError.responseSla" class="error-text">{{ formError.responseSla | fieldLabel  }}</span>
-      </div>
-
-      <div class="field">
-        <label>Resolution SLA (minutes)</label>
-        <input type="number" formControlName="resolutionSla" placeholder="Enter resolution SLA in minutes" min="1"/>
-        <span *ngIf="formError.resolutionSla" class="error-text">{{ formError.resolutionSla | fieldLabel  }}</span>
+        <label>Description</label>
+        <textarea formControlName="description" placeholder="Enter description"></textarea>
+        <span *ngIf="formError.description" class="error-text">{{ formError.description }}</span>
       </div>
 
       <div class="actions">
-        <button type="submit" *ngIf="!isSubmitting" class="save-btn">{{ isEditMode ? 'Update Priority' : 'Save Priority' }}</button>
-        <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>{{ isEditMode ? 'Updating Priority' : 'Saving Priority' }}</button>
-        <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
-        <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
+        <button type="submit" *ngIf="!isSubmitting" class="save-btn">Save Priority</button>
+        <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>Saving Priority</button>
+        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
       </div>
     </form>
   </div>
@@ -85,27 +70,18 @@
       <table>
         <thead>
           <tr>
-            <th>Priority Name</th>
-            <th>Organization</th>
-            <th>Rank</th>
-            <th>Color Code</th>
-            <th>Response SLA</th>
-            <th>Resolution SLA</th>
-            <th>Actions</th>
+            <th>Level</th>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Ticket Type</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let priority of getPaginatedPriorities()">
-            <td>{{ priority.priorityName }}</td>
-            <td>{{ priority.organization.companyName }}</td>
-            <td>{{ priority.rank }}</td>
-            <td><span [style.background-color]="priority.colorCode" class="color-box"></span> {{ priority.colorCode }}</td>
-            <td>{{ priority.responseSla }}</td>
-            <td>{{ priority.resolutionSla }}</td>
-            <td class="action-buttons">
-              <button type="button" (click)="onViewPriority(priority)"><mat-icon>edit</mat-icon></button>
-              <button type="button" (click)="onDeletePriority(priority)"><mat-icon>delete</mat-icon></button>
-            </td>
+            <td>{{ getPriorityField(priority, 'level') || priority.priorityName || '-' }}</td>
+            <td>{{ getPriorityField(priority, 'priorityName') }}</td>
+            <td>{{ getPriorityField(priority, 'description') }}</td>
+            <td>{{ getPriorityField(priority, 'ticketType') }}</td>
           </tr>
         </tbody>
       </table>

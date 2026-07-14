@@ -4,7 +4,31 @@
     <button type="button" class="reset-btn" (click)="backToHome()"><mat-icon>arrow_back</mat-icon> Back</button>
   </div>
 
-  <div class="config-list">
+  <div class="scope-selector">
+    <label class="radio-option">
+      <input type="radio" name="scope" value="internal" [checked]="selectionMode === 'internal'" (change)="onSelectionModeChange('internal')" />
+      <span>Internal</span>
+    </label>
+    <label class="radio-option">
+      <input type="radio" name="scope" value="bp" [checked]="selectionMode === 'bp'" (change)="onSelectionModeChange('bp')" />
+      <span>Select BP</span>
+    </label>
+  </div>
+
+  <div *ngIf="selectionMode === 'bp'" class="bp-dropdown-section">
+    <!-- <label class="field-label">Business Partner</label> -->
+    <select [value]="selectedBpId || ''" (change)="onBpChange($event)">
+      <option value="" disabled>Select a business partner</option>
+      <option *ngFor="let bp of bpOptions" [value]="getBpCompanyId(bp)">{{ getBpUid(bp) }}</option>
+    </select>
+    <div *ngIf="loadingBpList" class="helper-text">Loading business partners...</div>
+  </div>
+
+  <div class="scope-summary">
+    <strong>{{ getScopeLabel() }}</strong>
+  </div>
+
+  <div *ngIf="selectionMode === 'internal' || (selectionMode === 'bp' && selectedBpId)" class="config-list">
     <div *ngFor="let config of configurations" class="config-card">
       <button type="button" class="config-btn" (click)="selectConfig(config)">
         <span>{{ config.name }}</span>

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
-import { PriorityMaster, PriorityRequest } from '../models/priority-master';
+import { PriorityMaster, PriorityRequest, TicketTypeMaster } from '../models/priority-master';
 import { CompanyMaster } from '../models/company-master';
 
 @Injectable({
@@ -19,6 +19,10 @@ export class PriorityService {
 
   getAllPriorities(): Observable<PriorityMaster[]> {
     return this.http.get<PriorityMaster[]>(`${this.baseUrl}/priority/list`);
+  }
+
+  getTicketTypes(): Observable<TicketTypeMaster[]> {
+    return this.http.get<TicketTypeMaster[]>(`${this.baseUrl}/ticket/type/list`);
   }
 
   createPriority(request: PriorityRequest): Observable<any> {

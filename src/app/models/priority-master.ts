@@ -29,7 +29,9 @@ export interface PriorityRequest {
   priorityId?: number;
   priorityName: string;
   orgId: number;
-  rank: number;
+  level?: number;
+  description?: string;
+  ticketTypeId: number;
   colorCode: string;
   responseSla: number;
   resolutionSla: number;
@@ -37,4 +39,9 @@ export interface PriorityRequest {
   updatedBy: number;
   isCreatedByAdmin: boolean;
   isUpdatedByAdmin: boolean;
+}
+
+export interface TicketTypeMaster {
+  ticketTypeId?: number;
+  ticketTypeName: string;
 }
