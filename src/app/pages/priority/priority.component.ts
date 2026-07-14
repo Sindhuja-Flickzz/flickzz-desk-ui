@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { PageEvent } from '@angular/material/paginator';
 import { ActivatedRoute } from '@angular/router';
+import { Location } from '@angular/common';
 import { PriorityService } from '../../service/priority.service';
 import { CompanyMaster, PriorityMaster, PriorityRequest, TicketTypeMaster } from '../../models/priority-master';
 import { USER_ROLES } from 'src/app/data/app_constants';
@@ -42,16 +43,21 @@ export class PriorityComponent implements OnInit {
     private fb: FormBuilder,
     private priorityService: PriorityService,
     private dialog: MatDialog,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private location: Location
   ) {
     this.priorityForm = this.fb.group({
       priorityId: [null],
       level: [null, [Validators.required, Validators.min(1), Validators.pattern(/^[1-9]\d*$/)]],
       code: ['', Validators.required],
       description: ['', Validators.required],
-      ticketType: [null, Validators.required],
+      ticketType: [1, Validators.required],
       orgId: [null]
     });
+  }
+
+  backToPrevious(): void {
+    this.location.back();
   }
 
   ngOnInit(): void {
@@ -137,7 +143,7 @@ export class PriorityComponent implements OnInit {
       level: null,
       code: '',
       description: '',
-      ticketType: this.ticketTypes[0]?.ticketTypeId || null,
+      ticketType: 1,
       orgId: null
     });
     this.originalFormValue = null;

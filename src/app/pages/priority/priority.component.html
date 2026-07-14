@@ -1,21 +1,30 @@
 <div class="priority-page">
-  <div class="tabs">
-    <button class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
-    <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
-  </div>
-
-  <div *ngIf="activeTab === 'create'" class="create-panel">
-    <h2>{{ pageTitle }}</h2>
+  <div class="create-panel">
+    <div class="page-header">
+      <h2>{{ pageTitle }}</h2>
+      <button type="button" class="save-btn header-back" (click)="backToPrevious()"><mat-icon>arrow_back</mat-icon> Back</button>
+    </div>
     <div class="context-banner">{{ contextLabel }}</div>
 
-    <form [formGroup]="priorityForm" (ngSubmit)="onSave()">
+    <form [formGroup]="priorityForm" (ngSubmit)="onSave()" aria-label="Priority form">
       <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
       <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
 
       <div class="form-row">
         <div class="field">
-          <label>Level</label>
-          <input
+          <label for="ticketType">Ticket Type</label>
+          <select id="ticketType" formControlName="ticketType">
+            <option value="" disabled>Select ticket type</option>
+            <option [value]="1">Incident</option>
+            <option [value]="2">Service Request</option>
+            <option [value]="3">Change Request</option>
+          </select>
+          <span *ngIf="formError.ticketType" class="error-text">{{ formError.ticketType }}</span>
+        </div>
+
+        <div class="field">
+          <label for="level">Level</label>
+          <input id="level"
             type="number"
             formControlName="level"
             min="1"
@@ -26,75 +35,26 @@
           />
           <span *ngIf="formError.level" class="error-text">{{ formError.level }}</span>
         </div>
+      </div>
 
+      <div class="form-row">
         <div class="field">
-          <label>Code</label>
-          <input type="text" formControlName="code" placeholder="Enter code" />
+          <label for="code">Code</label>
+          <input id="code" type="text" formControlName="code" placeholder="Enter code" />
           <span *ngIf="formError.code" class="error-text">{{ formError.code }}</span>
         </div>
 
         <div class="field">
-          <label>Ticket Type</label>
-          <select formControlName="ticketType">
-            <option value="" disabled>Select ticket type</option>
-            <option *ngFor="let type of ticketTypes" [value]="type.ticketTypeId">{{ type.ticketTypeName }}</option>
-          </select>
-          <span *ngIf="formError.ticketType" class="error-text">{{ formError.ticketType }}</span>
+          <label for="description">Description</label>
+          <input id="description" formControlName="description" placeholder="Enter description"/>
+          <span *ngIf="formError.description" class="error-text">{{ formError.description }}</span>
         </div>
       </div>
 
-      <div class="field">
-        <label>Description</label>
-        <textarea formControlName="description" placeholder="Enter description"></textarea>
-        <span *ngIf="formError.description" class="error-text">{{ formError.description }}</span>
-      </div>
-
       <div class="actions">
-        <button type="submit" *ngIf="!isSubmitting" class="save-btn">Save Priority</button>
-        <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>Saving Priority</button>
+        <button type="submit" [disabled]="isSubmitting" class="save-btn">{{ isSubmitting ? 'Saving...' : 'Save' }}</button>
         <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
       </div>
     </form>
-  </div>
-
-  <div *ngIf="activeTab === 'list'" class="list-panel">
-    <h2>Priority List</h2>
-    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
-    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
-
-    <div class="search-container">
-      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by name or organization..." class="search-input">
-    </div>
-
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Level</th>
-            <th>Code</th>
-            <th>Description</th>
-            <th>Ticket Type</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let priority of getPaginatedPriorities()">
-            <td>{{ getPriorityField(priority, 'level') || priority.priorityName || '-' }}</td>
-            <td>{{ getPriorityField(priority, 'priorityName') }}</td>
-            <td>{{ getPriorityField(priority, 'description') }}</td>
-            <td>{{ getPriorityField(priority, 'ticketType') }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="pagination-controls">
-      <mat-paginator
-        [length]="totalRecords"
-        [pageSize]="pageSize"
-        [pageSizeOptions]="pageSizeOptions"
-        (page)="onPageChange($event)"
-        showFirstLastButtons>
-      </mat-paginator>
-    </div>
   </div>
 </div>

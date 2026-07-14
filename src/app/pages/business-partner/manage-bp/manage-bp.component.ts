@@ -8,6 +8,10 @@ interface ConfigItem {
   name: string;
   businessRequirement: string;
   sla: string;
+  count?: number;
+  countLabel?: string;
+  icon?: string;
+  colorClass?: string;
 }
 
 @Component({
@@ -20,41 +24,64 @@ export class ManageBpComponent implements OnInit {
     {
       key: 'priority',
       name: 'Priority',
-      businessRequirement: 'Define the priority configuration used for incoming tickets.',
-      sla: 'Configured per organization or selected business partner'
+      businessRequirement: 'Configure priority levels and response / resolution SLA for tickets.',
+      sla: 'Configured per organization or selected business partner',
+      count: 12,
+      countLabel: 'Priorities Configured',
+      icon: 'flag',
+      colorClass: 'icon-purple'
     },
     {
       key: 'sla-type',
       name: 'SLA Type',
-      businessRequirement: 'Manage the SLA policy that applies to the selected context.',
-      sla: 'Internal or BP-specific SLA handling'
+      businessRequirement: 'Create and manage SLA types and SLA policies for this partner.',
+      sla: 'Internal or BP-specific SLA handling',
+      count: 4,
+      countLabel: 'SLA Types Configured',
+      icon: 'schedule',
+      colorClass: 'icon-green'
     },
     {
       key: 'category',
       name: 'Category',
-      businessRequirement: 'Maintain the request categories for the selected configuration scope.',
-      sla: 'Grouped under the selected support context'
+      businessRequirement: 'Manage ticket categories and sub categories for this partner.',
+      sla: 'Grouped under the selected support context',
+      count: 25,
+      countLabel: 'Categories Configured',
+      icon: 'folder',
+      colorClass: 'icon-yellow'
     },
     {
       key: 'support-group',
       name: 'Support Group',
-      businessRequirement: 'Assign the support team that owns tickets for the selected scope.',
-      sla: 'Shared with internal or mapped business partner units'
+      businessRequirement: 'Create and manage support groups and group members.',
+      sla: 'Shared with internal or mapped business partner units',
+      count: 8,
+      countLabel: 'Support Groups Configured',
+      icon: 'groups',
+      colorClass: 'icon-purple'
     },
     {
       key: 'assignment',
       name: 'Assignment',
-      businessRequirement: 'Set the default assignment rules for tickets in this configuration scope.',
-      sla: 'Driven by the selected organization or partner'
+      businessRequirement: 'Configure assignment rules and auto assignment settings.',
+      sla: 'Driven by the selected organization or partner',
+      count: 5,
+      countLabel: 'Assignment Rules Configured',
+      icon: 'person',
+      colorClass: 'icon-teal'
     }
   ];
 
+  activeTab: 'create' | 'list' = 'create';
   selectedConfig: ConfigItem | null = null;
   selectionMode: 'internal' | 'bp' = 'internal';
   orgId = Number(localStorage.getItem('userOrgId') || 0);
   bpOptions: CompanyRole[] = [];
   selectedBpId: number | null = null;
   loadingBpList = false;
+  listData: any[] = [];
+  loadingList = false;
 
   constructor(
     private router: Router,
@@ -63,6 +90,14 @@ export class ManageBpComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadBusinessPartners();
+  }
+
+  selectTab(tab: 'create' | 'list'): void {
+    this.activeTab = tab;
+    this.selectedConfig = null;
+    if (tab === 'list') {
+      this.loadBpListForCurrentSelection();
+    }
   }
 
   loadBusinessPartners(): void {
@@ -97,11 +132,12 @@ export class ManageBpComponent implements OnInit {
     this.selectionMode = mode;
     this.selectedConfig = null;
 
-    if (mode === 'bp') {
-      this.selectedBpId = null;
-      if (!this.bpOptions.length) {
-        this.loadBusinessPartners();
-      }
+    if (mode === 'bp' && !this.bpOptions.length) {
+      this.loadBusinessPartners();
+    }
+
+    if (this.activeTab === 'list') {
+      this.loadBpListForCurrentSelection();
     }
   }
 
@@ -109,6 +145,41 @@ export class ManageBpComponent implements OnInit {
     const value = (event.target as HTMLSelectElement).value;
     this.selectedBpId = value ? Number(value) : null;
     this.selectedConfig = null;
+    if (this.activeTab === 'list') {
+      this.loadBpListForCurrentSelection();
+    }
+  }
+
+  loadBpListForCurrentSelection(): void {
+    if (this.selectionMode === 'bp' && !this.selectedBpId) {
+      this.listData = [];
+      this.loadingList = false;
+      return;
+    }
+
+    const selectedOrgId = this.selectionMode === 'bp' && this.selectedBpId ? this.selectedBpId : this.orgId;
+    this.loadBpList(selectedOrgId);
+  }
+
+  loadBpList(orgId: number): void {
+    if (!orgId) {
+      this.listData = [];
+      this.loadingList = false;
+      return;
+    }
+
+    this.loadingList = true;
+    this.listData = [];
+    this.companyService.getBpList(orgId).subscribe({
+      next: (response) => {
+        this.listData = (response as any).attributes || response || [];
+        this.loadingList = false;
+      },
+      error: () => {
+        this.listData = [];
+        this.loadingList = false;
+      }
+    });
   }
 
   navigateToPriority(): void {
@@ -136,6 +207,10 @@ export class ManageBpComponent implements OnInit {
     }
 
     return 'Configuration for your organization';
+  }
+
+  getOrgName(item: any): string {
+    return item?.orgName || item?.organization?.companyName || item?.companyName || '-';
   }
 
   backToHome(): void {
