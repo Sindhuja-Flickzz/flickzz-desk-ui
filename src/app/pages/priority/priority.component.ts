@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { PageEvent } from '@angular/material/paginator';
 import { ActivatedRoute } from '@angular/router';
 import { Location } from '@angular/common';
 import { PriorityService } from '../../service/priority.service';
-import { CompanyMaster, PriorityMaster, PriorityRequest, TicketTypeMaster } from '../../models/priority-master';
+import { PriorityMaster, TicketTypeMaster } from '../../models/priority-master';
 import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
@@ -17,10 +18,9 @@ export class PriorityComponent implements OnInit {
   priorityForm: FormGroup;
   activeTab: 'create' | 'list' = 'create';
   pageTitle = 'Create Priority';
+  editingPriorityId: number | null = null;
   isEditMode = false;
-  originalFormValue: any = null;
 
-  companies: CompanyMaster[] = [];
   priorities: PriorityMaster[] = [];
   filteredPriorities: PriorityMaster[] = [];
   searchValue = '';
@@ -33,6 +33,8 @@ export class PriorityComponent implements OnInit {
   ticketTypes: TicketTypeMaster[] = [];
   selectionMode: 'internal' | 'bp' = 'internal';
   selectedContextOrgId = Number(localStorage.getItem('userOrgId') || 0);
+  businessPartnerId: number | null = null;
+  businessPartnerName: string | null = null;
   contextLabel = 'Using your organization configuration';
   pageSize = 10;
   pageSizeOptions = [5, 10, 25, 50];
@@ -64,10 +66,14 @@ export class PriorityComponent implements OnInit {
     this.route.queryParamMap.subscribe((params) => {
       const mode = params.get('mode');
       const orgId = params.get('orgId');
+      const bpId = params.get('businessPartnerId');
+      const bpName = params.get('companyName');
       this.selectionMode = mode === 'bp' ? 'bp' : 'internal';
       this.selectedContextOrgId = orgId ? Number(orgId) : Number(localStorage.getItem('userOrgId') || 0);
+      this.businessPartnerId = bpId ? Number(bpId) : null;
+      this.businessPartnerName = bpName || null;
       this.contextLabel = this.selectionMode === 'bp'
-        ? `Using business partner configuration for org ${this.selectedContextOrgId}`
+        ? `Using business partner configuration for ${this.businessPartnerName || this.selectedContextOrgId}`
         : 'Using your organization configuration';
     });
 
@@ -76,14 +82,6 @@ export class PriorityComponent implements OnInit {
 
   loadAllData(): void {
     this.loadTicketTypes();
-    this.loading = true;
-    this.priorityService.getAllCompanies().subscribe({
-      next: (response) => { this.companies = (response as any).attributes || []; },
-      error: () => { this.companies = []; }
-    });
-
-    this.loadPriorityList();
-    this.loading = false;
   }
 
   loadTicketTypes(): void {
@@ -102,15 +100,18 @@ export class PriorityComponent implements OnInit {
   }
 
   loadPriorityList(): void {
-    this.priorityService.getAllPriorities().subscribe({
+    this.loading = true;
+    this.priorityService.getAllPriorities(this.businessPartnerId).subscribe({
       next: (result) => {
         this.priorities = (result as any).attributes || [];
         this.searchValue = '';
         this.filterBySearch();
         this.currentPage = 0;
+        this.loading = false;
       },
       error: (err) => {
         console.error('Failed to load priorities:', err);
+        this.loading = false;
       }
     });
   }
@@ -120,15 +121,36 @@ export class PriorityComponent implements OnInit {
     this.activeTab = 'list';
   }
 
+  startEdit(priority: PriorityMaster): void {
+    this.formError = {};
+    this.submitError = '';
+    this.submitSuccess = '';
+    this.isEditMode = true;
+    this.editingPriorityId = priority.priorityId;
+    this.pageTitle = 'Edit Priority';
+    this.activeTab = 'create';
+    this.priorityForm.patchValue({
+      priorityId: priority.priorityId,
+      level: priority.level,
+      code: priority.code ?? (priority as any).priorityName ?? '',
+      description: priority.description || '',
+      ticketType: priority.ticketType?.ticketTypeId ?? 1,
+      orgId: this.selectedContextOrgId
+    });
+  }
+
   selectTab(tab: 'create' | 'list'): void {
     this.formError = {};
     this.activeTab = tab;
     if (tab === 'create') {
-      this.resetForm();
+      if (!this.isEditMode) {
+        this.resetForm();
+      }
       this.pageTitle = this.isEditMode ? 'Edit Priority' : 'Create Priority';
     }
     if (tab === 'list') {
       this.isEditMode = false;
+      this.editingPriorityId = null;
       this.pageTitle = 'Create Priority';
       this.resetForm();
       this.loadPriorityList();
@@ -137,16 +159,16 @@ export class PriorityComponent implements OnInit {
 
   resetForm(): void {
     this.isEditMode = false;
+    this.editingPriorityId = null;
     this.pageTitle = 'Create Priority';
     this.priorityForm.reset({
       priorityId: null,
       level: null,
       code: '',
       description: '',
-      ticketType: 1,
+      ticketType: this.ticketTypes[0]?.ticketTypeId ?? 1,
       orgId: null
     });
-    this.originalFormValue = null;
     this.submitError = '';
     this.submitSuccess = '';
   }
@@ -173,6 +195,8 @@ export class PriorityComponent implements OnInit {
   onSave(): void {
     this.isSubmitting = true;
     this.formError = {};
+    this.submitError = '';
+    this.submitSuccess = '';
 
     Object.keys(this.priorityForm.controls).forEach((key) => {
       const field = this.priorityForm.get(key);
@@ -192,26 +216,28 @@ export class PriorityComponent implements OnInit {
       return;
     }
 
-    const payload: PriorityRequest = {
+    const payload: any = {
       priorityId: this.priorityForm.value.priorityId,
-      priorityName: this.priorityForm.value.code,
-      orgId: Number(this.selectedContextOrgId || this.priorityForm.value.orgId || localStorage.getItem('userOrgId') || 0),
+      businessPartnerId: this.businessPartnerId ?? this.selectedContextOrgId,
+      code: this.priorityForm.value.code,
       level: this.priorityForm.value.level,
       description: this.priorityForm.value.description,
       ticketTypeId: this.priorityForm.value.ticketType,
-      colorCode: '',
-      responseSla: 0,
-      resolutionSla: 0,
+      isActive: true,
       createdBy: Number(localStorage.getItem('userId') || 0),
       updatedBy: Number(localStorage.getItem('userId') || 0),
       isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
       isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
-    this.priorityService.createPriority(payload as any).subscribe({
+    const request$ = this.isEditMode && this.editingPriorityId
+      ? this.priorityService.updatePriority(payload as any, this.businessPartnerId)
+      : this.priorityService.createPriority(payload as any, this.businessPartnerId);
+
+    request$.subscribe({
       next: () => {
         this.isSubmitting = false;
-        this.submitSuccess = 'Priority created successfully.';
+        this.submitSuccess = this.isEditMode ? 'Priority updated successfully.' : 'Priority created successfully.';
         setTimeout(() => {
           this.loadPriorityList();
           this.resetForm();
@@ -220,8 +246,8 @@ export class PriorityComponent implements OnInit {
       },
       error: (err) => {
         this.isSubmitting = false;
-        console.error('Create priority error', err);
-        this.submitError = err.error?.message || 'Failed to create priority.';
+        console.error(this.isEditMode ? 'Update priority error' : 'Create priority error', err);
+        this.submitError = err.error?.description || (this.isEditMode ? 'Failed to update priority.' : 'Failed to create priority.');
       }
     });
   }
@@ -232,15 +258,56 @@ export class PriorityComponent implements OnInit {
     return this.filteredPriorities.slice(startIndex, endIndex);
   }
 
-  getPriorityField(priority: PriorityMaster, key: string): string {
-  const value = (priority as any)[key];
-
-  if (key === 'ticketType') {
-    return value?.ticketTypeName || '-';
+  getPriorityLevel(priority: PriorityMaster): number | string {
+    return priority.level ?? '-';
   }
 
-  return value ?? '-';
-}
+  getPriorityTicketType(priority: PriorityMaster): string {
+    return priority.ticketType?.ticketTypeName || '-';
+  }
+
+  getPriorityDescription(priority: PriorityMaster): string {
+    return priority.description || '-';
+  }
+
+  getPriorityOrganization(priority: PriorityMaster): string {
+    if (this.selectionMode === 'bp') {
+      return this.businessPartnerName || (priority as any).organization?.companyName || '-';
+    }
+
+    return localStorage.getItem('userOrgName') || (priority as any).organization?.companyName || '-';
+  }
+
+  deletePriority(priority: PriorityMaster): void {
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '420px',
+      disableClose: true,
+      data: {
+        title: 'Delete Priority',
+        message: `Are you sure you want to delete priority "${priority.code}"?`
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (!confirmed || !priority.priorityId) {
+        return;
+      }
+
+      this.loading = true;
+      this.priorityService.deletePriority(priority.priorityId).subscribe({
+        next: () => {
+          this.loading = false;
+          this.submitSuccess = 'Priority deleted successfully.';
+          this.loadPriorityList();
+        },
+        error: (err) => {
+          this.loading = false;
+          console.error('Delete priority error', err);
+          this.submitError = err.error?.message || err?.error?.description || 'Failed to delete priority.';
+        }
+      });
+    });
+  }
 
   filterBySearch(): void {
     const term = (this.searchValue || '').trim().toLowerCase();
@@ -248,8 +315,8 @@ export class PriorityComponent implements OnInit {
       this.filteredPriorities = this.priorities;
     } else {
       this.filteredPriorities = this.priorities.filter(priority =>
-        (priority.priorityName || '').toLowerCase().includes(term) ||
-        (priority.organization?.companyName || '').toLowerCase().includes(term)
+        (priority.code || '').toLowerCase().includes(term) ||
+        (priority.description || '').toLowerCase().includes(term)
       );
     }
     this.totalRecords = this.filteredPriorities.length;

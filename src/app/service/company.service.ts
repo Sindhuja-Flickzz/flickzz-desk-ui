@@ -44,6 +44,10 @@ export class CompanyService {
     return this.http.get<any[]>(`${this.baseUrl}/bp/list/${orgId}`);
   }
 
+  getBpConfiguration(businessPartnerId: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/bp/config/list/${businessPartnerId}`);
+  }
+
   // getEnquiryByUserEmail(userEmail: string): Observable<EnquiryRegistration> {
   //   return this.http.get<EnquiryRegistration>(`${this.baseUrl}/enquiry/${userEmail}`);
   // }

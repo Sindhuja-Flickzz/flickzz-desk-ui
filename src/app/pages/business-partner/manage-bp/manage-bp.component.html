@@ -4,15 +4,9 @@
     <button type="button" class="reset-btn" (click)="backToHome()"><mat-icon>arrow_back</mat-icon> Back</button>
   </div>
 
-  <div class="tabs">
-    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
-    <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
-  </div>
-
   <div class="form-section">
     <div class="form-row align-items-end">
       <div class="form-group">
-        <!-- <label>Scope</label> -->
         <div class="scope-selector">
           <label class="radio-option">
             <input type="radio" name="scope" value="internal" [checked]="selectionMode === 'internal'" (change)="onSelectionModeChange('internal')" />
@@ -29,7 +23,7 @@
         <label for="bpSelect">Business Partner</label>
         <select id="bpSelect" title="Select a business partner" [value]="selectedBpId || ''" (change)="onBpChange($event)">
           <option value="" disabled>Select a business partner</option>
-          <option *ngFor="let bp of bpOptions" [value]="getBpCompanyId(bp)">{{ getBpUid(bp) }}</option>
+          <option *ngFor="let bp of getSelectableBpOptions()" [value]="getBpCompanyId(bp)">{{ getBpUid(bp) }}</option>
         </select>
         <div *ngIf="loadingBpList" class="helper-text">Loading business partners...</div>
       </div>
@@ -40,13 +34,10 @@
     </div>
   </div>
 
-  <div *ngIf="activeTab === 'create'" class="create-panel">
-    <div *ngIf="selectionMode === 'internal' || (selectionMode === 'bp' && selectedBpId); else createDisabled">
+  <div class="create-panel">
+    <div *ngIf="selectionMode === 'internal' || (selectionMode === 'bp' && selectedBpId); else bpSelectionRequired">
       <div class="config-list">
-        <div *ngFor="let config of configurations" class="config-card"
-             (click)="selectConfig(config)"
-             role="button" tabindex="0"
-             (keydown.enter)="selectConfig(config)" (keydown.space)="selectConfig(config)">
+        <div *ngFor="let config of configurations" class="config-card" [class.selected]="selectedConfig?.key === config.key" (click)="onConfigCardClick(config)">
           <div class="card-content">
             <div class="card-left">
               <div class="icon" [ngClass]="config.colorClass">
@@ -63,61 +54,15 @@
                 <div class="count-number">{{ config.count }}</div>
                 <div class="count-label">{{ config.countLabel }}</div>
               </div>
-              <button type="button" class="manage-btn" (click)="selectConfig(config)">Manage <mat-icon>arrow_forward</mat-icon></button>
+              <span class="status-pill">{{ hasConfiguration(config.key) ? 'Configured' : 'Default' }}</span>
             </div>
           </div>
         </div>
       </div>
-
-      <div *ngIf="selectedConfig" class="config-details">
-        <h3>{{ selectedConfig.name }}</h3>
-        <div class="field">
-          <label for="businessRequirement">Business Requirement</label>
-          <textarea id="businessRequirement" readonly>{{ selectedConfig.businessRequirement }}</textarea>
-        </div>
-        <div class="field">
-          <label for="slaValue">SLA</label>
-          <input id="slaValue" type="text" [value]="selectedConfig.sla" readonly aria-label="SLA value" />
-        </div>
-      </div>
     </div>
 
-    <ng-template #createDisabled>
-      <div class="empty-state">Please select a business partner to manage its configuration.</div>
+    <ng-template #bpSelectionRequired>
+      <div class="empty-state" *ngIf="selectionMode === 'bp' && !selectedBpId">Please select a business partner to manage its configuration.</div>
     </ng-template>
-  </div>
-
-  <div *ngIf="activeTab === 'list'" class="list-panel">
-    <div *ngIf="selectionMode === 'bp' && !selectedBpId" class="empty-state">
-      Select a business partner to view the BP list.
-    </div>
-
-    <div *ngIf="selectionMode === 'internal' || (selectionMode === 'bp' && selectedBpId)">
-      <div class="list-header">
-        <span *ngIf="loadingList">Loading business partner list...</span>
-        <span *ngIf="!loadingList && !listData.length">No business partner data found.</span>
-      </div>
-
-      <div *ngIf="!loadingList && listData.length" class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>UID</th>
-              <th>Organization</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of listData">
-              <td>{{ getOrgName(item) }}</td>
-              <td>{{ item.uid || item.company?.uid || item.mappedCompany?.uid || '-' }}</td>
-              <td>{{ item.companyName || item.orgName || item.company?.companyName || item.mappedCompany?.companyName || '-' }}</td>
-              <td>{{ item.status || item.state || item.active ? (item.status || 'Active') : 'Unknown' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
   </div>
 </div>

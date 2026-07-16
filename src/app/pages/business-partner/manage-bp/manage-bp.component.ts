@@ -73,15 +73,13 @@ export class ManageBpComponent implements OnInit {
     }
   ];
 
-  activeTab: 'create' | 'list' = 'create';
   selectedConfig: ConfigItem | null = null;
   selectionMode: 'internal' | 'bp' = 'internal';
   orgId = Number(localStorage.getItem('userOrgId') || 0);
   bpOptions: CompanyRole[] = [];
   selectedBpId: number | null = null;
+  internalBpId: number | null = null;
   loadingBpList = false;
-  listData: any[] = [];
-  loadingList = false;
 
   constructor(
     private router: Router,
@@ -90,14 +88,6 @@ export class ManageBpComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadBusinessPartners();
-  }
-
-  selectTab(tab: 'create' | 'list'): void {
-    this.activeTab = tab;
-    this.selectedConfig = null;
-    if (tab === 'list') {
-      this.loadBpListForCurrentSelection();
-    }
   }
 
   loadBusinessPartners(): void {
@@ -109,12 +99,14 @@ export class ManageBpComponent implements OnInit {
     this.companyService.getServiceProviderList(this.orgId).subscribe({
       next: (response) => {
         this.bpOptions = (response as any).attributes || response || [];
+        this.internalBpId = this.getInternalBpId(this.bpOptions);
         this.selectedBpId = null;
         this.selectedConfig = null;
         this.loadingBpList = false;
       },
       error: () => {
         this.bpOptions = [];
+        this.internalBpId = null;
         this.loadingBpList = false;
       }
     });
@@ -122,10 +114,42 @@ export class ManageBpComponent implements OnInit {
 
   selectConfig(config: ConfigItem): void {
     this.selectedConfig = config;
+  }
 
-    if (config.key === 'priority') {
-      this.navigateToPriority();
+  onConfigCardClick(config: ConfigItem): void {
+    const route = this.getConfigRoute(config.key);
+    if (route) {
+      const queryParams = this.getConfigRouteQueryParams(config.key);
+      this.router.navigate([route], { queryParams });
+      return;
     }
+
+    this.selectedConfig = config;
+  }
+
+  getConfigRoute(key: string): string | null {
+    switch (key) {
+      case 'priority':
+        return '/priority';
+      case 'assignment':
+        return '/company/bp-assignment';
+      default:
+        return null;
+    }
+  }
+
+  getConfigRouteQueryParams(key: string): any {
+    if (key === 'priority') {
+      const businessPartnerId = this.getSelectedBusinessPartnerId();
+      return {
+        mode: this.selectionMode,
+        orgId: this.selectionMode === 'bp' ? this.selectedBpId : this.orgId,
+        businessPartnerId: businessPartnerId ?? undefined,
+        companyName: this.getSelectedBpCompanyName() ?? undefined
+      };
+    }
+
+    return {};
   }
 
   onSelectionModeChange(mode: 'internal' | 'bp'): void {
@@ -135,51 +159,20 @@ export class ManageBpComponent implements OnInit {
     if (mode === 'bp' && !this.bpOptions.length) {
       this.loadBusinessPartners();
     }
-
-    if (this.activeTab === 'list') {
-      this.loadBpListForCurrentSelection();
-    }
   }
 
   onBpChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
     this.selectedBpId = value ? Number(value) : null;
     this.selectedConfig = null;
-    if (this.activeTab === 'list') {
-      this.loadBpListForCurrentSelection();
-    }
   }
 
-  loadBpListForCurrentSelection(): void {
-    if (this.selectionMode === 'bp' && !this.selectedBpId) {
-      this.listData = [];
-      this.loadingList = false;
-      return;
-    }
-
-    const selectedOrgId = this.selectionMode === 'bp' && this.selectedBpId ? this.selectedBpId : this.orgId;
-    this.loadBpList(selectedOrgId);
+  getSelectableBpOptions(): CompanyRole[] {
+    return this.bpOptions.filter(bp => !this.isInternalBp(bp));
   }
 
-  loadBpList(orgId: number): void {
-    if (!orgId) {
-      this.listData = [];
-      this.loadingList = false;
-      return;
-    }
-
-    this.loadingList = true;
-    this.listData = [];
-    this.companyService.getBpList(orgId).subscribe({
-      next: (response) => {
-        this.listData = (response as any).attributes || response || [];
-        this.loadingList = false;
-      },
-      error: () => {
-        this.listData = [];
-        this.loadingList = false;
-      }
-    });
+  isInternalBp(bp: CompanyRole): boolean {
+    return bp.businessPartnerId != null && this.internalBpId != null && bp.businessPartnerId === this.internalBpId;
   }
 
   navigateToPriority(): void {
@@ -187,9 +180,46 @@ export class ManageBpComponent implements OnInit {
     this.router.navigate(['/priority'], {
       queryParams: {
         mode: this.selectionMode,
-        orgId: selectedOrgId
+        orgId: selectedOrgId,
+        businessPartnerId: this.getSelectedBusinessPartnerId() ?? undefined,
+        companyName: this.getSelectedBpCompanyName() ?? undefined
       }
     });
+  }
+
+  hasConfiguration(configKey: string): boolean {
+    return this.selectionMode === 'internal' && configKey === 'priority';
+  }
+
+  createConfiguration(configKey: string): void {
+    console.warn(`Create configuration action not implemented for ${configKey}`);
+  }
+
+  updateConfiguration(configKey: string): void {
+    console.warn(`Update configuration action not implemented for ${configKey}`);
+  }
+
+  getInternalBpId(bpOptions: CompanyRole[]): number | null {
+    const matchingRole = bpOptions.find((bp) => {
+      return bp.company?.companyId != null && bp.mappedCompany?.companyId != null
+        && bp.company.companyId === bp.mappedCompany.companyId;
+    });
+
+    return matchingRole?.businessPartnerId ?? null;
+  }
+
+  getSelectedBusinessPartnerId(): number | null {
+    if (this.selectionMode === 'bp') {
+      const selectedCompanyId = this.selectedBpId;
+      if (!selectedCompanyId) {
+        return null;
+      }
+
+      const matchingRole = this.bpOptions.find((bp) => this.getBpCompanyId(bp) === selectedCompanyId);
+      return matchingRole?.businessPartnerId ?? null;
+    }
+
+    return this.internalBpId ?? null;
   }
 
   getBpCompanyId(bp: CompanyRole): number | null {
@@ -200,10 +230,19 @@ export class ManageBpComponent implements OnInit {
     return bp.mappedCompany?.uid || bp.company?.uid || 'Unknown business partner';
   }
 
+  getSelectedBpCompanyName(): string | null {
+    if (!this.selectedBpId) {
+      return null;
+    }
+    
+    const selected = this.bpOptions.find((bp) => this.getBpCompanyId(bp) === this.selectedBpId);
+    return selected?.company?.companyId === Number(localStorage.getItem('userOrgId')) ? selected?.mappedCompany?.companyName : selected?.company?.companyName || null;
+  }
+
   getScopeLabel(): string {
     if (this.selectionMode === 'bp') {
       const selected = this.bpOptions.find((bp) => this.getBpCompanyId(bp) === this.selectedBpId);
-      return selected ? `Configuration for BP ${this.getBpUid(selected)}` : '';
+      return selected ? `Configuration for BP ${this.getSelectedBpCompanyName()}` : '';
     }
 
     return 'Configuration for your organization';

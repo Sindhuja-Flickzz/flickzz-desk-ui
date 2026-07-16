@@ -72,7 +72,7 @@
           <mat-label>Priority</mat-label>
           <mat-select formControlName="priority">
             <mat-option *ngFor="let priority of priorities" [value]="priority.priorityId">
-              {{ priority.priorityName }}
+              {{ priority.code }}
             </mat-option>
           </mat-select>
           <mat-error *ngIf="ritmForm.get('priority')?.hasError('required')">Priority is required</mat-error>

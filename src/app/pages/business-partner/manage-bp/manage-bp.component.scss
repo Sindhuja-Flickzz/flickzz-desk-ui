@@ -296,6 +296,28 @@ textarea {
   resize: vertical;
 }
 
+.detail-row {
+  margin-bottom: 12px;
+}
+
+.detail-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 6px;
+}
+
+.detail-value {
+  white-space: pre-wrap;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  color: #334155;
+}
+
 .table-wrapper {
   overflow-x: auto;
 }

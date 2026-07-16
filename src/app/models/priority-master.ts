@@ -15,12 +15,10 @@ export interface CompanyMaster {
 
 export interface PriorityMaster {
   priorityId: number;
-  priorityName: string;
-  organization: CompanyMaster;
-  rank: number;
-  colorCode: string;
-  responseSla: number;
-  resolutionSla: number;
+  code: string;
+  level: number;
+  description: string;
+  ticketType: TicketTypeMaster;
   createdBy: string;
   updatedBy: string;
 }

@@ -214,6 +214,7 @@ export class BpAssignmentComponent implements OnInit {
         setTimeout(() => {
           this.bpForm.reset();
           this.companyDetails = null;
+          this.selectTab('list');
           this.activeTab = 'list';
         }, 3000);
         

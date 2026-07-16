@@ -1,5 +1,10 @@
 <div class="priority-page">
-  <div class="create-panel">
+  <div class="tabs">
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
     <div class="page-header">
       <h2>{{ pageTitle }}</h2>
       <button type="button" class="save-btn header-back" (click)="backToPrevious()"><mat-icon>arrow_back</mat-icon> Back</button>
@@ -15,9 +20,7 @@
           <label for="ticketType">Ticket Type</label>
           <select id="ticketType" formControlName="ticketType">
             <option value="" disabled>Select ticket type</option>
-            <option [value]="1">Incident</option>
-            <option [value]="2">Service Request</option>
-            <option [value]="3">Change Request</option>
+            <option *ngFor="let type of ticketTypes" [value]="type.ticketTypeId">{{ type.ticketTypeName }}</option>
           </select>
           <span *ngIf="formError.ticketType" class="error-text">{{ formError.ticketType }}</span>
         </div>
@@ -52,9 +55,60 @@
       </div>
 
       <div class="actions">
-        <button type="submit" [disabled]="isSubmitting" class="save-btn">{{ isSubmitting ? 'Saving...' : 'Save' }}</button>
+        <button type="submit" [disabled]="isSubmitting" class="save-btn">{{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update' : 'Save') }}</button>
         <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel Edit</button>
       </div>
     </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <div class="page-header">
+      <h2>Priority List</h2>
+    </div>
+
+    <div class="search-container">
+      <input class="search-input" type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by priority or organization" />
+    </div>
+
+    <div *ngIf="loading" class="context-banner">Loading priorities...</div>
+
+    <div *ngIf="!loading && filteredPriorities.length === 0" class="context-banner">No priorities found.</div>
+
+    <div *ngIf="!loading && filteredPriorities.length > 0" class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Level</th>
+            <th>Ticket Type</th>
+            <th>Description</th>
+            <th>Organization</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let priority of getPaginatedPriorities()">
+            <td>{{ priority.code }}</td>
+            <td>{{ getPriorityLevel(priority) }}</td>
+            <td>{{ getPriorityTicketType(priority) }}</td>
+            <td>{{ getPriorityDescription(priority) }}</td>
+            <td>{{ getPriorityOrganization(priority) }}</td>
+            <td class="action-buttons">
+              <button type="button" title="Edit" (click)="startEdit(priority)"><mat-icon>edit</mat-icon></button>
+              <button type="button" title="Delete" (click)="deletePriority(priority)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <mat-paginator *ngIf="filteredPriorities.length > 0"
+      [length]="totalRecords"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      [pageIndex]="currentPage"
+      (page)="onPageChange($event)">
+    </mat-paginator>
   </div>
 </div>

@@ -2,8 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
-import { PriorityMaster, PriorityRequest, TicketTypeMaster } from '../models/priority-master';
-import { CompanyMaster } from '../models/company-master';
+import { PriorityMaster, TicketTypeMaster } from '../models/priority-master';
 
 @Injectable({
   providedIn: 'root'
@@ -13,24 +12,23 @@ export class PriorityService {
 
   constructor(private http: HttpClient) { }
 
-  getAllCompanies(): Observable<CompanyMaster[]> {
-    return this.http.get<CompanyMaster[]>(`${this.baseUrl}/company/list`);
-  }
-
-  getAllPriorities(): Observable<PriorityMaster[]> {
-    return this.http.get<PriorityMaster[]>(`${this.baseUrl}/priority/list`);
+  getAllPriorities(businessPartnerId?: number | null): Observable<PriorityMaster[]> {
+    const url = `${this.baseUrl}/bp/config/priority/${businessPartnerId}`;
+    return this.http.get<PriorityMaster[]>(url);
   }
 
   getTicketTypes(): Observable<TicketTypeMaster[]> {
     return this.http.get<TicketTypeMaster[]>(`${this.baseUrl}/ticket/type/list`);
   }
 
-  createPriority(request: PriorityRequest): Observable<any> {
-    return this.http.post(`${this.baseUrl}/priority/create`, request);
+  createPriority(request: any, businessPartnerId?: number | null): Observable<any> {
+    const url = `${this.baseUrl}/bp/priority/create`;
+    return this.http.post(url, request);
   }
 
-  updatePriority(request: PriorityRequest): Observable<any> {
-    return this.http.post(`${this.baseUrl}/priority/update`, request);
+  updatePriority(request: any, businessPartnerId?: number | null): Observable<any> {
+    const url = businessPartnerId ? `${this.baseUrl}/priority/update/${businessPartnerId}` : `${this.baseUrl}/priority/update`;
+    return this.http.post(url, request);
   }
 
   deletePriority(priorityId: number): Observable<any> {

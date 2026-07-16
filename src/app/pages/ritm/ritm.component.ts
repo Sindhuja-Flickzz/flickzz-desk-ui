@@ -221,7 +221,7 @@ export class RitmComponent implements OnInit {
   }
 
   private updateCustomerResolution(): void {
-    const slaHours = this.selectedPriority?.resolutionSla;
+    const slaHours = 0;
     const openedDateValue = this.ritmForm.get('openedDate')?.value || this.formatAsDatetimeLocal(new Date());
     if (slaHours !== undefined && slaHours !== null && !isNaN(slaHours as number)) {
       const baseDate = new Date(openedDateValue);
@@ -309,7 +309,7 @@ export class RitmComponent implements OnInit {
       workStart: rawValues.workStart ? this.formatAsDatetimeLocal(new Date(rawValues.workStart)) : null,
       workEnd: rawValues.workEnd ? this.formatAsDatetimeLocal(new Date(rawValues.workEnd)) : null,
       requestedForName: this.getRequestedForDisplayName(),
-      priorityName: this.selectedPriority?.priorityName || ''
+      priorityName: this.selectedPriority?.code || ''
     };
 
     this.ritmService.createRitm(payload).subscribe({
