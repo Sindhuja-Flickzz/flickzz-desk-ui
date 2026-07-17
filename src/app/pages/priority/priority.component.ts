@@ -53,7 +53,7 @@ export class PriorityComponent implements OnInit {
       level: [null, [Validators.required, Validators.min(1), Validators.pattern(/^[1-9]\d*$/)]],
       code: ['', Validators.required],
       description: ['', Validators.required],
-      ticketType: [1, Validators.required],
+      ticketType: [null, Validators.required],
       orgId: [null]
     });
   }
@@ -88,9 +88,6 @@ export class PriorityComponent implements OnInit {
     this.priorityService.getTicketTypes().subscribe({
       next: (response) => {
         this.ticketTypes = (response as any).attributes || response || [];
-        if (this.ticketTypes.length && !this.priorityForm.get('ticketType')?.value) {
-          this.priorityForm.patchValue({ ticketType: this.ticketTypes[0].ticketTypeId });
-        }
       },
       error: (err) => {
         console.error('Failed to load ticket types:', err);
@@ -134,9 +131,11 @@ export class PriorityComponent implements OnInit {
       level: priority.level,
       code: priority.code ?? (priority as any).priorityName ?? '',
       description: priority.description || '',
-      ticketType: priority.ticketType?.ticketTypeId ?? 1,
+      ticketType: priority.ticketType?.ticketTypeId ?? null,
       orgId: this.selectedContextOrgId
     });
+    this.priorityForm.get('ticketType')?.disable();
+    this.priorityForm.get('level')?.disable();
   }
 
   selectTab(tab: 'create' | 'list'): void {
@@ -166,9 +165,11 @@ export class PriorityComponent implements OnInit {
       level: null,
       code: '',
       description: '',
-      ticketType: this.ticketTypes[0]?.ticketTypeId ?? 1,
+      ticketType: null,
       orgId: null
     });
+    this.priorityForm.get('ticketType')?.enable();
+    this.priorityForm.get('level')?.enable();
     this.submitError = '';
     this.submitSuccess = '';
   }
@@ -216,13 +217,15 @@ export class PriorityComponent implements OnInit {
       return;
     }
 
+    const rawForm = this.priorityForm.getRawValue();
     const payload: any = {
-      priorityId: this.priorityForm.value.priorityId,
+      priorityId: rawForm.priorityId,
       businessPartnerId: this.businessPartnerId ?? this.selectedContextOrgId,
-      code: this.priorityForm.value.code,
-      level: this.priorityForm.value.level,
-      description: this.priorityForm.value.description,
-      ticketTypeId: this.priorityForm.value.ticketType,
+      bpConfigId: this.businessPartnerId ?? this.selectedContextOrgId,
+      code: rawForm.code,
+      level: rawForm.level,
+      description: rawForm.description,
+      ticketTypeId: rawForm.ticketType,
       isActive: true,
       createdBy: Number(localStorage.getItem('userId') || 0),
       updatedBy: Number(localStorage.getItem('userId') || 0),

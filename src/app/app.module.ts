@@ -17,6 +17,7 @@ import { SkillComponent } from './pages/skill/skill.component';
 import { CompanyComponent } from './pages/company/company.component';
 import { BpAssignmentComponent } from './pages/business-partner/bp-assignment/bp-assignment.component';
 import { ManageBpComponent } from './pages/business-partner/manage-bp/manage-bp.component';
+import { SlaTypeComponent } from './pages/sla-type/sla-type.component';
 import { AgentComponent } from './pages/agent/agent.component';
 import { FieldLabelPipe } from './pipes/field-label.pipe';
 import { JoinPipe } from './pipes/field-label.pipe';
@@ -102,6 +103,7 @@ import { ProjectStatusItemDetailComponent } from './pages/project-status/project
     ProjectStatusCreateDialogComponent,
     ProjectStatusEpicDetailComponent,
     ProjectStatusItemDetailComponent
+    ,SlaTypeComponent
   ],
   imports: [
     BrowserModule,

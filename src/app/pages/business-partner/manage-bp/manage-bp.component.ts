@@ -133,13 +133,15 @@ export class ManageBpComponent implements OnInit {
         return '/priority';
       case 'assignment':
         return '/company/bp-assignment';
+      case 'sla-type':
+        return '/company/sla-type';
       default:
         return null;
     }
   }
 
   getConfigRouteQueryParams(key: string): any {
-    if (key === 'priority') {
+    // if (key === 'priority') {
       const businessPartnerId = this.getSelectedBusinessPartnerId();
       return {
         mode: this.selectionMode,
@@ -147,9 +149,8 @@ export class ManageBpComponent implements OnInit {
         businessPartnerId: businessPartnerId ?? undefined,
         companyName: this.getSelectedBpCompanyName() ?? undefined
       };
-    }
-
-    return {};
+    // }
+    // return {};
   }
 
   onSelectionModeChange(mode: 'internal' | 'bp'): void {

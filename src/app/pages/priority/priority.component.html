@@ -19,8 +19,8 @@
         <div class="field">
           <label for="ticketType">Ticket Type</label>
           <select id="ticketType" formControlName="ticketType">
-            <option value="" disabled>Select ticket type</option>
-            <option *ngFor="let type of ticketTypes" [value]="type.ticketTypeId">{{ type.ticketTypeName }}</option>
+            <option [ngValue]="null" disabled>Select ticket type</option>
+            <option *ngFor="let type of ticketTypes" [ngValue]="type.ticketTypeId">{{ type.ticketTypeName }}</option>
           </select>
           <span *ngIf="formError.ticketType" class="error-text">{{ formError.ticketType }}</span>
         </div>
@@ -34,6 +34,7 @@
             step="1"
             placeholder="Enter level"
             inputmode="numeric"
+            [readonly]="isEditMode"
             (input)="onLevelInput($event)"
           />
           <span *ngIf="formError.level" class="error-text">{{ formError.level }}</span>

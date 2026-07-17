@@ -27,15 +27,15 @@ export class PriorityService {
   }
 
   updatePriority(request: any, businessPartnerId?: number | null): Observable<any> {
-    const url = businessPartnerId ? `${this.baseUrl}/priority/update/${businessPartnerId}` : `${this.baseUrl}/priority/update`;
+    const url = `${this.baseUrl}/bp/priority/update`;
     return this.http.post(url, request);
   }
 
   deletePriority(priorityId: number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/priority/delete/${priorityId}`);
+    return this.http.delete(`${this.baseUrl}/bp/priority/delete/${priorityId}`);
   }
 
   getPriorityById(priorityId: number): Observable<PriorityMaster> {
-    return this.http.get<PriorityMaster>(`${this.baseUrl}/priority/${priorityId}`);
+    return this.http.get<PriorityMaster>(`${this.baseUrl}/bp/priority/${priorityId}`);
   }
 }
