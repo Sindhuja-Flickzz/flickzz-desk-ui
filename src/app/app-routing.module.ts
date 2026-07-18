@@ -27,6 +27,7 @@ import { ProjectStatusItemDetailComponent } from './pages/project-status/project
 import { BusinessPartnerComponent } from './pages/business-partner/business-partner.component';
 import { ManageBpComponent } from './pages/business-partner/manage-bp/manage-bp.component';
 import { SlaTypeComponent } from './pages/sla-type/sla-type.component';
+import { CategoryComponent } from './pages/category/category.component';
 import { authGuard } from './service/auth/auth.guard';
 
 const routes: Routes = [
@@ -179,6 +180,11 @@ const routes: Routes = [
   {
     path: 'company/sla-type',
     component: SlaTypeComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'company/category',
+    component: CategoryComponent,
     canActivate: [authGuard]
   },
   {

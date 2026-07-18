@@ -1,0 +1,124 @@
+<div class="category-page">
+  <div class="tabs">
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <div class="page-header">
+      <h2>{{ pageTitle }}</h2>
+      <button type="button" class="save-btn header-back" (click)="backToPrevious()"><mat-icon>arrow_back</mat-icon> Back</button>
+    </div>
+    <div class="context-banner">{{ contextLabel }}</div>
+
+    <form [formGroup]="categoryForm" (ngSubmit)="onSave()" aria-label="Category form">
+      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="categoryName">Category Name</label>
+          <input id="categoryName" type="text" formControlName="categoryName" placeholder="Enter category name" />
+          <span *ngIf="formError['categoryName']" class="error-text">{{ formError['categoryName'] }}</span>
+        </div>
+
+        <div class="field">
+          <label for="subCategoryInput">Sub Category</label>
+          <div class="sub-category-input-row">
+            <input id="subCategoryInput" type="text" [(ngModel)]="subCategoryInput" [ngModelOptions]="{ standalone: true }" placeholder="Add subcategory" />
+            <button type="button" class="add-btn" (click)="addSubCategory()">Add</button>
+          </div>
+          <span *ngIf="formError['subCategories']" class="error-text">{{ formError['subCategories'] }}</span>
+          <div class="chip-list" *ngIf="selectedSubCategories.length">
+            <span class="chip" *ngFor="let subCategory of selectedSubCategories; let i = index">
+              {{ subCategory }}
+              <button type="button" class="chip-remove" (click)="removeSubCategory(i)">×</button>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="selectionMode === 'bp'" class="bp-selector-block">
+        <label>Business Partner</label>
+        <div *ngIf="businessPartnerId; else selectBpBlock">Selected: {{ businessPartnerName }}</div>
+        <ng-template #selectBpBlock>
+          <select (change)="selectBp($event)">
+            <option value="" disabled>Select BP</option>
+            <option *ngFor="let bp of bpOptions" [value]="bp.businessPartnerId">{{ bp.mappedCompany?.uid || bp.company?.uid }}</option>
+          </select>
+        </ng-template>
+        <span *ngIf="formError['businessPartner']" class="error-text">{{ formError['businessPartner'] }}</span>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update' : 'Save') }}</button>
+        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel Edit</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <div class="page-header">
+      <h2>Category List</h2>
+    </div>
+
+    <div class="search-container">
+      <input class="search-input" type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by category or subcategory" />
+    </div>
+
+    <div *ngIf="loading" class="context-banner">Loading categories...</div>
+    <div *ngIf="!loading && filteredCategories.length === 0" class="context-banner">No categories found.</div>
+
+    <div *ngIf="!loading && filteredCategories.length > 0" class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Sub Categories</th>
+            <th>Organization</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let category of getPaginatedCategories()">
+            <td>{{ category.categoryName }}</td>
+            <td class="subcategory-cell">
+              <button type="button"
+                      class="subcategory-view-btn"
+                      title="View subcategories"
+                      (mouseenter)="hoveredSubCategoryCategoryId = category.categoryId ?? null"
+                      (mouseleave)="hoveredSubCategoryCategoryId = null"
+                      [disabled]="getCategorySubCategories(category).length === 0">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <div class="subcategory-tooltip" *ngIf="hoveredSubCategoryCategoryId === (category.categoryId ?? null) && getCategorySubCategories(category).length > 0">
+                <div class="subcategory-tooltip-content">
+                  <div class="tooltip-title">Sub Categories</div>
+                  <div class="subcategory-items">
+                    <div class="subcategory-item" *ngFor="let subCategory of getCategorySubCategories(category)">
+                      <span class="subcategory-name">{{ subCategory }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>{{ getCategoryOrganization() }}</td>
+            <td class="action-buttons">
+              <button type="button" title="Edit" (click)="startEdit(category)"><mat-icon>edit</mat-icon></button>
+              <button type="button" title="Delete" (click)="deleteCategory(category)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <mat-paginator *ngIf="filteredCategories.length > 0"
+      [length]="totalRecords"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      [pageIndex]="currentPage"
+      (page)="onPageChange($event)">
+    </mat-paginator>
+  </div>
+</div>

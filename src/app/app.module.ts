@@ -55,6 +55,7 @@ import { NumberRangeComponent } from './pages/number-range/number-range.componen
 import { VerifyComponent } from './pages/verify/verify.component';
 import { EnquiryRegistrationComponent } from './pages/enquiry-registration/enquiry-registration.component';
 import { SettingsComponent } from './pages/settings/settings.component';
+import { CategoryComponent } from './pages/category/category.component';
 import { ProfileIconComponent } from './shared/profile-icon/profile-icon.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
@@ -93,6 +94,7 @@ import { ProjectStatusItemDetailComponent } from './pages/project-status/project
     VerifyComponent,
     EnquiryRegistrationComponent,
     SettingsComponent,
+    CategoryComponent,
     DetailsTemplateComponent,
     DetailsTemplateOptionsDialogComponent,
     ProfileIconComponent,

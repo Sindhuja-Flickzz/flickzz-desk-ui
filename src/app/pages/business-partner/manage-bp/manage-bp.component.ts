@@ -135,6 +135,8 @@ export class ManageBpComponent implements OnInit {
         return '/company/bp-assignment';
       case 'sla-type':
         return '/company/sla-type';
+      case 'category':
+        return '/company/category';
       default:
         return null;
     }
