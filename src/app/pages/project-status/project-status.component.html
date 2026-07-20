@@ -36,7 +36,7 @@
     <div *ngFor="let status of progressStatuses" 
          class="status-column"
          [style.border-top-color]="getStatusColor(status.progressId)"
-         [class.minimized]="columnStates[status.progressId]?.isMinimized">
+         [class.minimized]="columnStates[status.progressId].isMinimized">
       
       <!-- Column Header -->
       <div class="column-header" [style.background-color]="getStatusColor(status.progressId) + '20'">
@@ -47,7 +47,7 @@
         
         <div class="header-actions">
           <!-- Add Button -->
-          <button class="icon-button add-button" *ngIf="!columnStates[status.progressId]?.isMinimized"
+          <button class="icon-button add-button" *ngIf="!columnStates[status.progressId].isMinimized"
                   (click)="openCreateStatusDialog()" 
                   title="Add new progress status"
                   matTooltip="Add new progress status">
@@ -57,15 +57,15 @@
           <!-- Minimize/Maximize Button -->
           <button class="icon-button minimize-button" 
                   (click)="toggleColumnMinimize(status.progressId)"
-                  [attr.aria-label]="columnStates[status.progressId]?.isMinimized ? 'Expand column' : 'Collapse column'"
+                  [attr.aria-label]="columnStates[status.progressId].isMinimized ? 'Expand column' : 'Collapse column'"
                   matTooltip="Toggle column">
-            <mat-icon>{{ columnStates[status.progressId]?.isMinimized ? 'chevron_right' : 'expand_less' }}</mat-icon>
+            <mat-icon>{{ columnStates[status.progressId].isMinimized ? 'chevron_right' : 'expand_less' }}</mat-icon>
           </button>
         </div>
       </div>
 
       <!-- Column Body -->
-      <div *ngIf="!columnStates[status.progressId]?.isMinimized" class="column-body">
+      <div *ngIf="!columnStates[status.progressId].isMinimized" class="column-body">
         <div cdkDropList
              [id]="getDropListId(status.progressId)"
              [cdkDropListData]="getItemsForStatus(status.progressId)"

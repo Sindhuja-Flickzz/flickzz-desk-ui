@@ -132,11 +132,13 @@ export class ManageBpComponent implements OnInit {
       case 'priority':
         return '/priority';
       case 'assignment':
-        return '/company/bp-assignment';
+        return '/company/assignment';
       case 'sla-type':
         return '/company/sla-type';
       case 'category':
         return '/company/category';
+      case 'support-group':
+        return '/company/support-group';
       default:
         return null;
     }

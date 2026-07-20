@@ -1,6 +1,6 @@
 <div class="sla-page">
   <div class="tabs">
-    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ editingSlaId ? 'Edit' : 'Create' }}</button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
   </div>
 
@@ -38,7 +38,7 @@
 
       <div class="form-row">
         <div class="field">
-          <label for="firstResponseValue">First Response</label>
+          <label for="firstResponseValue">First Response Time</label>
           <input id="firstResponseValue" type="number" formControlName="firstResponseValue" />
         </div>
         <div class="field">
@@ -108,7 +108,7 @@
           <tr>
             <th>Priority</th>
             <th>Ticket Type</th>
-            <th>First Response</th>
+            <th>First Response Time</th>
             <th>Resolution</th>
             <th>Update Freq</th>
             <th>Actions</th>

@@ -56,6 +56,8 @@ import { VerifyComponent } from './pages/verify/verify.component';
 import { EnquiryRegistrationComponent } from './pages/enquiry-registration/enquiry-registration.component';
 import { SettingsComponent } from './pages/settings/settings.component';
 import { CategoryComponent } from './pages/category/category.component';
+import { SupportGroupComponent } from './pages/support-group/support-group.component';
+import { SupportCategoryComponent } from './pages/support-category/support-category.component';
 import { ProfileIconComponent } from './shared/profile-icon/profile-icon.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
@@ -95,6 +97,8 @@ import { ProjectStatusItemDetailComponent } from './pages/project-status/project
     EnquiryRegistrationComponent,
     SettingsComponent,
     CategoryComponent,
+    SupportGroupComponent,
+    SupportCategoryComponent,
     DetailsTemplateComponent,
     DetailsTemplateOptionsDialogComponent,
     ProfileIconComponent,
