@@ -95,7 +95,7 @@ export interface CompanyRequest {
 }
 
 export interface CompanyRole {
-  roleId: number;
+  businessPartnerId: number;
   company: CompanyMaster;
   mappedCompany: CompanyMaster;
   isServiceProvider: boolean;

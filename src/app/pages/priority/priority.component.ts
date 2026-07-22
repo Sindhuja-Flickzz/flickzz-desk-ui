@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { PageEvent } from '@angular/material/paginator';
+import { ActivatedRoute } from '@angular/router';
+import { Location } from '@angular/common';
 import { PriorityService } from '../../service/priority.service';
-import { CompanyMaster, PriorityMaster, PriorityRequest } from '../../models/priority-master';
-import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
+import { PriorityMaster, TicketTypeMaster } from '../../models/priority-master';
 import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
@@ -16,10 +18,9 @@ export class PriorityComponent implements OnInit {
   priorityForm: FormGroup;
   activeTab: 'create' | 'list' = 'create';
   pageTitle = 'Create Priority';
+  editingPriorityId: number | null = null;
   isEditMode = false;
-  originalFormValue: any = null;
 
-  companies: CompanyMaster[] = [];
   priorities: PriorityMaster[] = [];
   filteredPriorities: PriorityMaster[] = [];
   searchValue = '';
@@ -29,9 +30,12 @@ export class PriorityComponent implements OnInit {
   submitError = '';
   isSubmitting = false;
 
-  alphanumericPattern = '^[a-zA-Z0-9 ]+$';
-
-  // Pagination
+  ticketTypes: TicketTypeMaster[] = [];
+  selectionMode: 'internal' | 'bp' = 'internal';
+  selectedContextOrgId = Number(localStorage.getItem('userOrgId') || 0);
+  businessPartnerId: number | null = null;
+  businessPartnerName: string | null = null;
+  contextLabel = 'Using your organization configuration';
   pageSize = 10;
   pageSizeOptions = [5, 10, 25, 50];
   totalRecords = 0;
@@ -40,251 +44,214 @@ export class PriorityComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private priorityService: PriorityService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private route: ActivatedRoute,
+    private location: Location
   ) {
     this.priorityForm = this.fb.group({
       priorityId: [null],
-      priorityName: ['', [Validators.required, Validators.pattern(this.alphanumericPattern)]],
-      orgId: [null, Validators.required],
-      rank: [null, [Validators.required, Validators.min(1)]],
-      colorCode: ['', Validators.required],
-      responseSla: [null, [Validators.required, Validators.min(1)]],
-      resolutionSla: [null, [Validators.required, Validators.min(1)]]
+      level: [null, [Validators.required, Validators.min(1), Validators.pattern(/^[1-9]\d*$/)]],
+      code: ['', Validators.required],
+      description: ['', Validators.required],
+      ticketType: [null, Validators.required],
+      orgId: [null]
     });
+  }
+
+  backToPrevious(): void {
+    this.location.back();
   }
 
   ngOnInit(): void {
-    this.loadAllData();
-
-    this.priorityForm.valueChanges.subscribe(() => {
-      if (!this.isEditMode) {
-        return;
-      }
-      this.submitError = '';
-      this.submitSuccess = '';
+    this.route.queryParamMap.subscribe((params) => {
+      const mode = params.get('mode');
+      const orgId = params.get('orgId');
+      const bpId = params.get('businessPartnerId');
+      const bpName = params.get('companyName');
+      this.selectionMode = mode === 'bp' ? 'bp' : 'internal';
+      this.selectedContextOrgId = orgId ? Number(orgId) : Number(localStorage.getItem('userOrgId') || 0);
+      this.businessPartnerId = bpId ? Number(bpId) : null;
+      this.businessPartnerName = bpName || null;
+      this.contextLabel = this.selectionMode === 'bp'
+        ? `Using business partner configuration for ${this.businessPartnerName || this.selectedContextOrgId}`
+        : 'Using your organization configuration';
     });
+
+    this.loadAllData();
   }
 
   loadAllData(): void {
-    this.loading = true;
-    this.priorityService.getAllCompanies().subscribe({
-      next: (response) => { this.companies = (response as any).attributes || []; },
-      error: () => { this.companies = []; }
-    });
+    this.loadTicketTypes();
+  }
 
-    this.priorityForm.patchValue({
-        orgId: ""
+  loadTicketTypes(): void {
+    this.priorityService.getTicketTypes().subscribe({
+      next: (response) => {
+        this.ticketTypes = (response as any).attributes || response || [];
+      },
+      error: (err) => {
+        console.error('Failed to load ticket types:', err);
+        this.ticketTypes = [];
+      }
     });
-    this.loadPriorityList();
-    this.loading = false;
   }
 
   loadPriorityList(): void {
-    this.priorityService.getAllPriorities().subscribe({
+    this.loading = true;
+    this.priorityService.getAllPriorities(this.businessPartnerId).subscribe({
       next: (result) => {
         this.priorities = (result as any).attributes || [];
         this.searchValue = '';
         this.filterBySearch();
-        this.currentPage = 0; // Reset to first page
+        this.currentPage = 0;
+        this.loading = false;
       },
       error: (err) => {
         console.error('Failed to load priorities:', err);
+        this.loading = false;
       }
     });
   }
 
   cancelEdit(): void {
     this.resetForm();
-    this.activeTab = 'list';  
-   }
+    this.activeTab = 'list';
+  }
+
+  startEdit(priority: PriorityMaster): void {
+    this.formError = {};
+    this.submitError = '';
+    this.submitSuccess = '';
+    this.isEditMode = true;
+    this.editingPriorityId = priority.priorityId;
+    this.pageTitle = 'Edit Priority';
+    this.activeTab = 'create';
+    this.priorityForm.patchValue({
+      priorityId: priority.priorityId,
+      level: priority.level,
+      code: priority.code ?? (priority as any).priorityName ?? '',
+      description: priority.description || '',
+      ticketType: priority.ticketType?.ticketTypeId ?? null,
+      orgId: this.selectedContextOrgId
+    });
+    this.priorityForm.get('ticketType')?.disable();
+    this.priorityForm.get('level')?.disable();
+  }
 
   selectTab(tab: 'create' | 'list'): void {
     this.formError = {};
     this.activeTab = tab;
     if (tab === 'create') {
-      this.resetForm();
+      if (!this.isEditMode) {
+        this.resetForm();
+      }
       this.pageTitle = this.isEditMode ? 'Edit Priority' : 'Create Priority';
-      this.priorityForm.get('orgId')?.enable();
     }
     if (tab === 'list') {
       this.isEditMode = false;
+      this.editingPriorityId = null;
       this.pageTitle = 'Create Priority';
       this.resetForm();
       this.loadPriorityList();
-      this.priorityForm.get('orgId')?.disable();
     }
-  }
-
-  onColorPickerChange(event: any) {
-    const color = event.target.value;
-    this.priorityForm.get('colorCode')?.setValue(color);
   }
 
   resetForm(): void {
     this.isEditMode = false;
+    this.editingPriorityId = null;
     this.pageTitle = 'Create Priority';
-    this.priorityForm.reset();
-    this.originalFormValue = null;
+    this.priorityForm.reset({
+      priorityId: null,
+      level: null,
+      code: '',
+      description: '',
+      ticketType: null,
+      orgId: null
+    });
+    this.priorityForm.get('ticketType')?.enable();
+    this.priorityForm.get('level')?.enable();
     this.submitError = '';
     this.submitSuccess = '';
-    this.priorityForm.patchValue({
-        orgId: ""
-    });
+  }
+
+  onLevelInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+
+    if (!value) {
+      this.priorityForm.get('level')?.setValue(null);
+      return;
+    }
+
+    const numericValue = Number(value);
+    if (!Number.isInteger(numericValue) || numericValue < 1) {
+      this.priorityForm.get('level')?.setValue(1);
+      input.value = '1';
+      return;
+    }
+
+    this.priorityForm.get('level')?.setValue(numericValue);
   }
 
   onSave(): void {
     this.isSubmitting = true;
     this.formError = {};
+    this.submitError = '';
+    this.submitSuccess = '';
 
-    Object.keys(this.priorityForm.controls).forEach(key => {
-        const field = this.priorityForm.get(key);
-        if (field?.hasError('required')) {
-          this.formError[key] = key === 'priorityName' ? 'Priority Name is required' : `${key} is required`;
-        }
-        if (key === 'priorityName' && field?.hasError('pattern')) {
-          this.formError[key] = 'Priority Name can contain only letters and numbers';
-        }
-        if ((key === 'rank' || key === 'responseSla' || key === 'resolutionSla') && field?.hasError('min')) {
-          this.formError[key] = `${key} must be at least 1`;
-        }
-        return;
+    Object.keys(this.priorityForm.controls).forEach((key) => {
+      const field = this.priorityForm.get(key);
+      if (field?.hasError('required')) {
+        this.formError[key] = `${key} is required`;
+      }
+      if (key === 'level' && field?.hasError('pattern')) {
+        this.formError[key] = 'Level must be a whole number greater than or equal to 1';
+      }
+      if (key === 'level' && field?.hasError('min')) {
+        this.formError[key] = 'Level must be greater than or equal to 1';
+      }
     });
 
-     if (Object.keys(this.formError).length === 0) {
-      console.log('No errors');
-    } else {
-      console.log('Errors:', this.formError);
+    if (Object.keys(this.formError).length > 0) {
       this.isSubmitting = false;
       return;
     }
 
-    const payload: PriorityRequest = {
-      priorityId: this.priorityForm.value.priorityId,
-      priorityName: this.priorityForm.value.priorityName,
-      orgId: Number(this.priorityForm.value.orgId),
-      rank: Number(this.priorityForm.value.rank),
-      colorCode: this.priorityForm.value.colorCode,
-      responseSla: Number(this.priorityForm.value.responseSla),
-      resolutionSla: Number(this.priorityForm.value.resolutionSla),
-      createdBy: Number(localStorage.getItem('userId')),
-      updatedBy: Number(localStorage.getItem('userId')),
+    const rawForm = this.priorityForm.getRawValue();
+    const payload: any = {
+      priorityId: rawForm.priorityId,
+      businessPartnerId: this.businessPartnerId ?? this.selectedContextOrgId,
+      bpConfigId: this.businessPartnerId ?? this.selectedContextOrgId,
+      code: rawForm.code,
+      level: rawForm.level,
+      description: rawForm.description,
+      ticketTypeId: rawForm.ticketType,
+      isActive: true,
+      createdBy: Number(localStorage.getItem('userId') || 0),
+      updatedBy: Number(localStorage.getItem('userId') || 0),
       isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
       isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
-    if (this.isEditMode) {
-      if (!this.isFormChanged()) {
-        this.submitError = 'No changes to update.';
+    const request$ = this.isEditMode && this.editingPriorityId
+      ? this.priorityService.updatePriority(payload as any, this.businessPartnerId)
+      : this.priorityService.createPriority(payload as any, this.businessPartnerId);
+
+    request$.subscribe({
+      next: () => {
         this.isSubmitting = false;
-        return;
-      }
-
-      this.priorityService.updatePriority(payload).subscribe({
-        next: () => {
-          this.isSubmitting = false;
-          this.submitSuccess = 'Priority updated successfully.';
-          setTimeout(() => {
-            this.priorityForm.markAsPristine();
-            this.originalFormValue = this.priorityForm.getRawValue();
-            this.loadPriorityList();
-            this.activeTab = 'list';
-            this.isEditMode = false;
-          }, 2000);
-        },
-        error: (err) => {
-          this.isSubmitting = false;
-          console.error('Update priority error', err);
-          this.submitError = err.error?.message || 'Failed to update priority.';
-        }
-      });
-    } else {
-      this.priorityService.createPriority(payload).subscribe({
-        next: () => {
-          this.isSubmitting = false;
-          this.submitSuccess = 'Priority created successfully.';
-          setTimeout(() => {
-            this.loadPriorityList();
-            this.resetForm();
-            this.activeTab = 'list';
-          }, 2000);
-        },
-        error: (err) => {
-          this.isSubmitting = false;
-          console.error('Create priority error', err);
-          this.submitError = err.error?.message || 'Failed to create priority.';
-        }
-      });
-    }
-  }
-
-  isFormChanged(): boolean {
-    if (!this.originalFormValue) {
-      return true;
-    }
-    const current = this.priorityForm.getRawValue();
-    return JSON.stringify(current) !== JSON.stringify(this.originalFormValue);
-  }
-
-  onViewPriority(priority: PriorityMaster): void {
-    this.priorityService.getPriorityById(priority.priorityId).subscribe({
-      next: (result) => {
-        const priorityData = (result as any).attributes || result;
-        this.formError = {};
-        this.activeTab = 'create';
-        this.isEditMode = true;
-        this.pageTitle = 'Edit Priority';
-        this.priorityForm.patchValue({
-          priorityId: priorityData.priorityId,
-          priorityName: priorityData.priorityName,
-          orgId: priorityData.organization?.companyId || null,
-          rank: priorityData.rank,
-          colorCode: priorityData.colorCode,
-          responseSla: priorityData.responseSla,
-          resolutionSla: priorityData.resolutionSla,
-          createdBy: priorityData.createdBy,
-          updatedBy: priorityData.updatedBy || priorityData.createdBy
-        });
-        this.originalFormValue = this.priorityForm.getRawValue();
+        this.submitSuccess = this.isEditMode ? 'Priority updated successfully.' : 'Priority created successfully.';
+        setTimeout(() => {
+          this.loadPriorityList();
+          this.resetForm();
+          this.activeTab = 'list';
+        }, 1000);
       },
       error: (err) => {
-        console.error('Failed to load priority details:', err);
-        this.submitError = 'Failed to load priority details.';
+        this.isSubmitting = false;
+        console.error(this.isEditMode ? 'Update priority error' : 'Create priority error', err);
+        this.submitError = err.error?.description || (this.isEditMode ? 'Failed to update priority.' : 'Failed to create priority.');
       }
-    });
-  }
-
-  onDeletePriority(priority: PriorityMaster): void {
-    const dialogData: ConfirmationDialogData = {
-      title: 'Delete Priority',
-      message: `Are you sure you want to delete priority "${priority.priorityName}"?`,
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-      showCancel: true,
-      type: 'delete'
-    };
-
-    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
-      width: '420px',
-      data: dialogData
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (!result) {
-        return;
-      }
-      this.priorityService.deletePriority(priority.priorityId).subscribe({
-        next: () => {
-          this.loadPriorityList();
-          this.submitSuccess = 'Priority deleted successfully.';
-          setTimeout(() => {  
-            this.submitSuccess = '';
-          }, 1500);
-        },
-        error: (err) => {
-          console.error('Delete priority error', err);
-          this.submitError = err.error?.message || 'Failed to delete priority.';
-        }
-      });
     });
   }
 
@@ -294,14 +261,65 @@ export class PriorityComponent implements OnInit {
     return this.filteredPriorities.slice(startIndex, endIndex);
   }
 
+  getPriorityLevel(priority: PriorityMaster): number | string {
+    return priority.level ?? '-';
+  }
+
+  getPriorityTicketType(priority: PriorityMaster): string {
+    return priority.ticketType?.ticketTypeName || '-';
+  }
+
+  getPriorityDescription(priority: PriorityMaster): string {
+    return priority.description || '-';
+  }
+
+  getPriorityOrganization(priority: PriorityMaster): string {
+    if (this.selectionMode === 'bp') {
+      return this.businessPartnerName || (priority as any).organization?.companyName || '-';
+    }
+
+    return localStorage.getItem('userOrgName') || (priority as any).organization?.companyName || '-';
+  }
+
+  deletePriority(priority: PriorityMaster): void {
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '420px',
+      disableClose: true,
+      data: {
+        title: 'Delete Priority',
+        message: `Are you sure you want to delete priority "${priority.code}"?`
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (!confirmed || !priority.priorityId) {
+        return;
+      }
+
+      this.loading = true;
+      this.priorityService.deletePriority(priority.priorityId).subscribe({
+        next: () => {
+          this.loading = false;
+          this.submitSuccess = 'Priority deleted successfully.';
+          this.loadPriorityList();
+        },
+        error: (err) => {
+          this.loading = false;
+          console.error('Delete priority error', err);
+          this.submitError = err.error?.message || err?.error?.description || 'Failed to delete priority.';
+        }
+      });
+    });
+  }
+
   filterBySearch(): void {
     const term = (this.searchValue || '').trim().toLowerCase();
     if (!term) {
       this.filteredPriorities = this.priorities;
     } else {
       this.filteredPriorities = this.priorities.filter(priority =>
-        priority.priorityName.toLowerCase().includes(term) ||
-        priority.organization?.companyName.toLowerCase().includes(term)
+        (priority.code || '').toLowerCase().includes(term) ||
+        (priority.description || '').toLowerCase().includes(term)
       );
     }
     this.totalRecords = this.filteredPriorities.length;

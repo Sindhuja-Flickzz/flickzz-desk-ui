@@ -40,6 +40,14 @@ export class CompanyService {
      return this.http.get<CompanyRole[]>(`${this.baseUrl}/company/provider/list/${orgId}`);
   }
 
+  getBpList(orgId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/bp/list/${orgId}`);
+  }
+
+  getBpConfiguration(businessPartnerId: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/bp/config/list/${businessPartnerId}`);
+  }
+
   // getEnquiryByUserEmail(userEmail: string): Observable<EnquiryRegistration> {
   //   return this.http.get<EnquiryRegistration>(`${this.baseUrl}/enquiry/${userEmail}`);
   // }
@@ -69,6 +77,6 @@ export class CompanyService {
   }
 
   assignBusinessPartner(request: CompanyBpRequest): Observable<any> {
-    return this.http.post(`${this.baseUrl}/company/bp/create`, request);
+    return this.http.post(`${this.baseUrl}/bp/create`, request);
   }
 }

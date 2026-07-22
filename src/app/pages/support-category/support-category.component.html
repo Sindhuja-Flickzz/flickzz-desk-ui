@@ -1,0 +1,63 @@
+<div class="support-category-page">
+  <div class="tabs">
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ isEditMode ? 'Edit' : 'Create' }}</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <div class="page-header">
+      <h2>{{ pageTitle }}</h2>
+      <button type="button" class="save-btn header-back" (click)="backToPrevious()"><mat-icon>arrow_back</mat-icon> Back</button>
+    </div>
+    <div class="context-banner">{{ contextLabel }}</div>
+
+    <form [formGroup]="assignmentForm" (ngSubmit)="onSave()">
+      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+      <div class="field">
+        <label>Support Group</label>
+        <input type="text" [(ngModel)]="supportGroupQuery" [ngModelOptions]="{standalone:true}" (input)="onSupportGroupSearch()" placeholder="Type to search support groups" />
+        <div class="suggestions" *ngIf="supportGroupOptions.length > 0">
+          <div class="suggestion" *ngFor="let opt of supportGroupOptions" (click)="selectSupportGroup(opt)">{{ opt.name }}</div>
+        </div>
+        <span *ngIf="formError['supportGroupId']" class="error-text">{{ formError['supportGroupId'] }}</span>
+      </div>
+
+      <div class="field">
+        <label>Sub Category</label>
+        <input type="text" [(ngModel)]="subCategoryQuery" [ngModelOptions]="{standalone:true}" (input)="onSubCategorySearch()" placeholder="Type to search sub categories" />
+        <div class="suggestions" *ngIf="subCategoryOptions.length > 0">
+          <div class="suggestion" *ngFor="let opt of subCategoryOptions" (click)="selectSubCategory(opt)">{{ opt.name }}</div>
+        </div>
+        <span *ngIf="formError['subCategoryId']" class="error-text">{{ formError['subCategoryId'] }}</span>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update' : 'Save') }}</button>
+        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <div class="page-header"><h2>Assignment List</h2></div>
+    <div class="search-container"><input class="search-input" type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by group or subcategory" /></div>
+    <div *ngIf="loading" class="context-banner">Loading assignments...</div>
+    <div *ngIf="!loading && filteredAssignments.length === 0" class="context-banner">No assignments found.</div>
+    <div *ngIf="!loading && filteredAssignments.length > 0" class="table-wrapper">
+      <table>
+        <thead><tr><th>Support Group</th><th>Sub Category</th><th>Organization</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let a of getPaginatedAssignments()">
+            <td>{{ a.supportGroup.groupName || '-' }}</td>
+            <td>{{ a.subCategory.subCategoryName || '-' }}</td>
+            <td>{{ getAssignmentOrganization() }}</td>
+            <td class="action-buttons"><button (click)="startEdit(a)"><mat-icon>edit</mat-icon></button><button (click)="deleteAssignment(a)"><mat-icon>delete</mat-icon></button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <mat-paginator *ngIf="filteredAssignments.length > 0" [length]="totalRecords" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" [pageIndex]="currentPage" (page)="onPageChange($event)"></mat-paginator>
+  </div>
+</div>

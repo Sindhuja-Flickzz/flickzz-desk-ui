@@ -1,0 +1,133 @@
+<div class="sla-page">
+  <div class="tabs">
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ editingSlaId ? 'Edit' : 'Create' }}</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <div class="page-header">
+      <h2>{{ pageTitle }}</h2>
+      <button type="button" class="save-btn header-back" (click)="backToPrevious()"><mat-icon>arrow_back</mat-icon> Back</button>
+    </div>
+    <div class="context-banner">{{ contextLabel }}</div>
+
+    <form [formGroup]="slaForm" (ngSubmit)="onSave()" aria-label="SLA Type form">
+      <div *ngIf="formSubmitError" class="error-text">✗ {{ formSubmitError }}</div>
+      <div *ngIf="!validateUpdateFrequency() && !formSubmitError" class="error-text">✗ Update Frequency must be less than or equal to Resolution Time</div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="priority">Priority</label>
+          <select id="priority" formControlName="priority" (change)="onPriorityChange()">
+            <option [ngValue]="null" disabled>Select priority</option>
+            <option *ngFor="let code of groupedPriorityCodes" [value]="code">{{ code }}</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="ticketType">Ticket Type</label>
+          <!-- single option: show readonly input with ticket type name -->
+          <input id="ticketType" type="text" [value]="selectedTicketTypeName" readonly *ngIf="ticketTypeOptions.length === 1" />
+          <!-- multiple or initial state: show select of ticket types -->
+          <select id="ticketType" formControlName="ticketType" *ngIf="ticketTypeOptions.length !== 1" (change)="onTicketTypeSelect()" [disabled]="ticketTypeOptions.length === 0">
+            <option [value]="null" disabled>Select ticket type</option>
+            <option *ngFor="let t of ticketTypeOptions" [value]="t.ticketTypeId">{{ t.ticketTypeName }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="firstResponseValue">First Response Time</label>
+          <input id="firstResponseValue" type="number" formControlName="firstResponseValue" />
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <select formControlName="firstResponseUnit">
+            <option *ngFor="let u of units" [value]="u.value">{{ u.label }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="resolutionValue">Resolution Time</label>
+          <input id="resolutionValue" type="number" formControlName="resolutionValue" />
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <select formControlName="resolutionUnit">
+            <option *ngFor="let u of units" [value]="u.value">{{ u.label }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="updateFrequencyValue">Update Frequency</label>
+          <input id="updateFrequencyValue" type="number" formControlName="updateFrequencyValue" />
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <select formControlName="updateFrequencyUnit">
+            <option *ngFor="let u of units" [value]="u.value">{{ u.label }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div *ngIf="selectionMode === 'bp'">
+        <label>Business Partner</label>
+        <div *ngIf="businessPartnerId; else selectBpBlock">Selected: {{ businessPartnerName }}</div>
+        <ng-template #selectBpBlock>
+          <select (change)="selectBp($event)">
+            <option value="" disabled>Select BP</option>
+            <option *ngFor="let bp of bpOptions" [value]="bp.businessPartnerId">{{ bp.mappedCompany?.uid || bp.company?.uid }}</option>
+          </select>
+        </ng-template>
+      </div>
+
+      <div class="actions">
+        <button type="submit" [disabled]="!isSlaFormValid()" class="save-btn">Save</button>
+        <button type="button" class="reset-btn" (click)="slaForm.reset()">Reset</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <div class="page-header">
+      <h2>SLA Type List</h2>
+    </div>
+
+    <div *ngIf="loading" class="context-banner">Loading SLA types...</div>
+
+    <div *ngIf="!loading && slaList.length === 0" class="context-banner">No SLA types found.</div>
+
+    <div *ngIf="!loading && slaList.length > 0" class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Priority</th>
+            <th>Ticket Type</th>
+            <th>First Response Time</th>
+            <th>Resolution</th>
+            <th>Update Freq</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of slaList">
+            <td>{{ s.priority.code }}</td>
+            <td>{{ s.priority.ticketType.ticketTypeName }}</td>
+            <td>{{ s.firstResponseTime }} {{ s.firstResponseTerm }}</td>
+            <td>{{ s.resolutionTime }} {{ s.resolutionTerm }}</td>
+            <td>{{ s.updateFrequency }} {{ s.updateFrequencyTerm }}</td>
+            <td class="action-buttons">
+              <button type="button" title="Edit" (click)="startEditSla(s)"><mat-icon>edit</mat-icon></button>
+              <button type="button" title="Delete" (click)="deleteSla(s)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

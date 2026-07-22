@@ -17,6 +17,7 @@ import { SkillComponent } from './pages/skill/skill.component';
 import { CompanyComponent } from './pages/company/company.component';
 import { BpAssignmentComponent } from './pages/business-partner/bp-assignment/bp-assignment.component';
 import { ManageBpComponent } from './pages/business-partner/manage-bp/manage-bp.component';
+import { SlaTypeComponent } from './pages/sla-type/sla-type.component';
 import { AgentComponent } from './pages/agent/agent.component';
 import { FieldLabelPipe } from './pipes/field-label.pipe';
 import { JoinPipe } from './pipes/field-label.pipe';
@@ -54,6 +55,9 @@ import { NumberRangeComponent } from './pages/number-range/number-range.componen
 import { VerifyComponent } from './pages/verify/verify.component';
 import { EnquiryRegistrationComponent } from './pages/enquiry-registration/enquiry-registration.component';
 import { SettingsComponent } from './pages/settings/settings.component';
+import { CategoryComponent } from './pages/category/category.component';
+import { SupportGroupComponent } from './pages/support-group/support-group.component';
+import { SupportCategoryComponent } from './pages/support-category/support-category.component';
 import { ProfileIconComponent } from './shared/profile-icon/profile-icon.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
@@ -92,6 +96,9 @@ import { ProjectStatusItemDetailComponent } from './pages/project-status/project
     VerifyComponent,
     EnquiryRegistrationComponent,
     SettingsComponent,
+    CategoryComponent,
+    SupportGroupComponent,
+    SupportCategoryComponent,
     DetailsTemplateComponent,
     DetailsTemplateOptionsDialogComponent,
     ProfileIconComponent,
@@ -102,6 +109,7 @@ import { ProjectStatusItemDetailComponent } from './pages/project-status/project
     ProjectStatusCreateDialogComponent,
     ProjectStatusEpicDetailComponent,
     ProjectStatusItemDetailComponent
+    ,SlaTypeComponent
   ],
   imports: [
     BrowserModule,

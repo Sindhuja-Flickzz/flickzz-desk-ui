@@ -26,6 +26,10 @@ import { ProjectStatusEpicDetailComponent } from './pages/project-status/project
 import { ProjectStatusItemDetailComponent } from './pages/project-status/project-status-item-detail/project-status-item-detail.component';
 import { BusinessPartnerComponent } from './pages/business-partner/business-partner.component';
 import { ManageBpComponent } from './pages/business-partner/manage-bp/manage-bp.component';
+import { SlaTypeComponent } from './pages/sla-type/sla-type.component';
+import { CategoryComponent } from './pages/category/category.component';
+import { SupportGroupComponent } from './pages/support-group/support-group.component';
+import { SupportCategoryComponent } from './pages/support-category/support-category.component';
 import { authGuard } from './service/auth/auth.guard';
 
 const routes: Routes = [
@@ -173,6 +177,26 @@ const routes: Routes = [
   {
     path: 'company/manage-bp',
     component: ManageBpComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'company/sla-type',
+    component: SlaTypeComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'company/category',
+    component: CategoryComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'company/assignment',
+    component: SupportCategoryComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'company/support-group',
+    component: SupportGroupComponent,
     canActivate: [authGuard]
   },
   {

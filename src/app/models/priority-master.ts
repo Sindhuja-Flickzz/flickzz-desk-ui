@@ -15,12 +15,10 @@ export interface CompanyMaster {
 
 export interface PriorityMaster {
   priorityId: number;
-  priorityName: string;
-  organization: CompanyMaster;
-  rank: number;
-  colorCode: string;
-  responseSla: number;
-  resolutionSla: number;
+  code: string;
+  level: number;
+  description: string;
+  ticketType: TicketTypeMaster;
   createdBy: string;
   updatedBy: string;
 }
@@ -29,7 +27,9 @@ export interface PriorityRequest {
   priorityId?: number;
   priorityName: string;
   orgId: number;
-  rank: number;
+  level?: number;
+  description?: string;
+  ticketTypeId: number;
   colorCode: string;
   responseSla: number;
   resolutionSla: number;
@@ -37,4 +37,9 @@ export interface PriorityRequest {
   updatedBy: number;
   isCreatedByAdmin: boolean;
   isUpdatedByAdmin: boolean;
+}
+
+export interface TicketTypeMaster {
+  ticketTypeId?: number;
+  ticketTypeName: string;
 }
