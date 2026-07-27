@@ -76,8 +76,42 @@
         <span *ngIf="companyForm.get('employeeSize')?.invalid && companyForm.get('employeeSize')?.touched" class="error-text">Employee Size is required and must be at least 1.</span>
       </div>
 
+      <div class="field">
+        <div class="label-with-info">
+          <label>Approver</label>
+          <button type="button" class="info-btn" aria-label="Approver info">
+            <span class="material-icons">info</span>
+            <div class="tooltip-message">
+              Drag and drop the approvers to define the ordering in the hierarchy.
+            </div>
+          </button>
+        </div>
+        <div class="info-box" *ngIf="approverInfoVisible">
+          Drag and drop the approvers to define the ordering in the hierarchy.
+        </div>
+        <input type="text" [(ngModel)]="approverSearchValue" [ngModelOptions]="{ standalone: true }" placeholder="Type agent name or email" (input)="onApproverSearch()" class="approver-input" />
+        <div class="suggestions" *ngIf="approverSuggestions.length > 0 && approverSearchValue.trim().length > 0">
+          <div class="suggestion-items">
+            <div class="suggestion" *ngFor="let agent of approverSuggestions" (click)="addApprover(agent)">
+              <div class="suggestion-content">
+                <span class="suggestion-name">{{ agent.agentName }}</span>
+                <span class="suggestion-email" *ngIf="agent.mailId">{{ agent.mailId }}</span>
+              </div>
+              <span class="suggestion-meta" *ngIf="agent.accessId">{{ agent.accessId }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="drag-list" cdkDropList (cdkDropListDropped)="dropApprover($event)" *ngIf="approverAgents.length">
+          <div class="drag-item" *ngFor="let agent of approverAgents; let i = index" cdkDrag>
+            <span class="drag-handle">☰</span>
+            <span>{{ agent.agentName }}</span>
+            <button type="button" class="chip-remove" (click)="removeApprover(agent.agentId)">×</button>
+          </div>
+        </div>
+      </div>
+
       <div class="actions">
-        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Updating...' : 'Update' }}</button>
+        <button type="submit" class="save-btn" [disabled]="isSubmitting || !canUpdateCompany">{{ isSubmitting ? 'Updating...' : 'Update' }}</button>
         <!-- <button type="button" class="reset-btn" (click)="resetForm()">Reset</button> -->
         <button type="button" class="reset-btn" (click)="cancelForm()">Back</button>        
         <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
