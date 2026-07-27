@@ -1,10 +1,19 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { CompanyService } from '../../service/company.service';
+import { AgentService } from '../../service/agent.service';
 import { CompanyRequest, CountryMaster, EnquiryRegistration, StateMaster } from '../../models/company-master';
 import { CityMaster } from '../../models/city-master';
 import { USER_ROLES } from 'src/app/data/app_constants';
+
+interface AgentSuggestion {
+  agentId: number;
+  agentName: string;
+  accessId?: string;
+  mailId?: string;
+}
 
 @Component({
   selector: 'app-company',
@@ -21,10 +30,17 @@ export class CompanyComponent implements OnInit {
   submitError = '';
   isSubmitting = false;
   originalFormValue: any = null;
+  canUpdateCompany = false;
+  approverSearchValue = '';
+  allApproverAgents: AgentSuggestion[] = [];
+  approverSuggestions: AgentSuggestion[] = [];
+  approverAgents: AgentSuggestion[] = [];
+  approverInfoVisible = false;
 
   constructor(
     private fb: FormBuilder,
     private companyService: CompanyService,
+    private agentService: AgentService,
     private router: Router
   ) {
     this.companyForm = this.fb.group({
@@ -73,6 +89,7 @@ export class CompanyComponent implements OnInit {
   loadInitialData(): void {
     this.loading = true;
     const userEmail = localStorage.getItem('userEmail') || '';
+    const orgId = Number(localStorage.getItem('userOrgId') || 0);
 
     if (!userEmail) {
       this.submitError = 'User identity not found in localStorage.';
@@ -88,6 +105,8 @@ export class CompanyComponent implements OnInit {
         this.countries = [];
       }
     });
+
+    this.loadAgentList(orgId);
 
     this.companyService.getCompanyInfoByUserEmail(userEmail).subscribe({
       next: (response) => {
@@ -123,12 +142,127 @@ export class CompanyComponent implements OnInit {
       mail: enquiry.company?.mail ?? '',
       employeeSize: enquiry.company?.employeeSize ?? enquiry.employeeSize ?? null
     });
+
+    // Populate approvers from response
+    this.populateApproversFromResponse(enquiry);
+  }
+
+  private populateApproversFromResponse(enquiry: EnquiryRegistration): void {
+    const approvers = (enquiry?.company as any)?.approvers || [];
+    
+    if (Array.isArray(approvers) && approvers.length > 0) {
+      // Sort by level to maintain hierarchy order
+      const sortedApprovers = approvers
+        .filter((app: any) => app?.agent?.agentId != null)
+        .sort((a: any, b: any) => (a?.level ?? 0) - (b?.level ?? 0))
+        .map((app: any) => ({
+          agentId: app.agent.agentId,
+          agentName: app.agent.agentName ?? '',
+          accessId: app.agent.accessId ?? '',
+          mailId: app.agent.mailId ?? ''
+        }));
+      
+      this.approverAgents = sortedApprovers;
+      this.approverSuggestions = this.getAvailableApprovers();
+    }
+  }
+
+  loadAgentList(orgId: number): void {
+    if (!orgId) {
+      this.canUpdateCompany = false;
+      this.allApproverAgents = [];
+      this.approverSuggestions = [];
+      this.submitError = 'Organization information is missing, so the company update is unavailable.';
+      return;
+    }
+
+    this.agentService.getAgentList(String(orgId)).subscribe({
+      next: (response) => {
+        const normalized = this.normalizeAgentResponse(response);
+        this.allApproverAgents = normalized;
+        this.approverSuggestions = this.getAvailableApprovers();
+        this.canUpdateCompany = normalized.length > 0;
+        if (!this.canUpdateCompany) {
+          this.submitError = 'At least one agent must be available for this organization before the company can be updated.';
+        }
+      },
+      error: () => {
+        this.canUpdateCompany = false;
+        this.allApproverAgents = [];
+        this.approverSuggestions = [];
+        this.submitError = 'Unable to load organization agents. Company update is currently unavailable.';
+      }
+    });
+  }
+
+  onApproverSearch(): void {
+    const value = (this.approverSearchValue || '').trim().toLowerCase();
+    
+    if (!value) {
+      this.approverSuggestions = this.getAvailableApprovers();
+      return;
+    }
+
+    const available = this.getAvailableApprovers();
+    this.approverSuggestions = available.filter((agent) => {
+      const haystack = `${agent.agentName} ${agent.accessId || ''} ${agent.mailId || ''}`.toLowerCase();
+      return haystack.includes(value);
+    });
+  }
+
+  addApprover(agent: AgentSuggestion): void {
+    const alreadySelected = this.approverAgents.some((item) => item.agentId === agent.agentId);
+    if (alreadySelected) {
+      this.approverSearchValue = '';
+      this.approverSuggestions = this.getAvailableApprovers();
+      return;
+    }
+
+    this.approverAgents = [...this.approverAgents, agent];
+    this.approverSearchValue = '';
+    this.approverSuggestions = this.getAvailableApprovers();
+  }
+
+  removeApprover(agentId: number): void {
+    this.approverAgents = this.approverAgents.filter((agent) => agent.agentId !== agentId);
+    this.approverSuggestions = this.getAvailableApprovers();
+  }
+
+  dropApprover(event: CdkDragDrop<AgentSuggestion[]>): void {
+    moveItemInArray(this.approverAgents, event.previousIndex, event.currentIndex);
+  }
+
+  toggleApproverInfo(): void {
+    this.approverInfoVisible = !this.approverInfoVisible;
+  }
+
+  private getAvailableApprovers(): AgentSuggestion[] {
+    const selectedIds = new Set(this.approverAgents.map((agent) => agent.agentId));
+    return this.allApproverAgents.filter((agent) => !selectedIds.has(agent.agentId));
+  }
+
+  private normalizeAgentResponse(response: any): AgentSuggestion[] {
+    const list = (response as any)?.attributes || response;
+    const items = Array.isArray(list) ? list : Array.isArray(list?.data) ? list.data : [];
+
+    return items.map((item: any) => ({
+      agentId: item?.agentId ?? item?.id ?? item?.agent?.agentId ?? null,
+      agentName: item?.agentName ?? item?.name ?? item?.agent?.agentName ?? item?.userName ?? '',
+      accessId: item?.accessId ?? item?.access_id ?? item?.agent?.accessId ?? '',
+      mailId: item?.mailId ?? item?.mail ?? item?.agent?.mailId ?? item?.email ?? ''
+    })).filter((item: AgentSuggestion) => item.agentId != null);
   }
 
   onSave(): void {
     this.isSubmitting = true;
     this.submitError = '';
     this.submitSuccess = '';
+
+    if (!this.canUpdateCompany) {
+      this.submitError = 'At least one agent must be available for this organization before the company can be updated.';
+      this.isSubmitting = false;
+      return;
+    }
 
     if (this.companyForm.invalid) {
       if (this.companyForm.get('mail')?.hasError('email')) {
@@ -158,7 +292,8 @@ export class CompanyComponent implements OnInit {
       createdBy: Number(localStorage.getItem('userId')),
       updatedBy: Number(localStorage.getItem('userId')),
       isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
-      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      approverIds: this.approverAgents.map((agent) => agent.agentId)
     };
 
     this.companyService.updateCompany(payload).subscribe({

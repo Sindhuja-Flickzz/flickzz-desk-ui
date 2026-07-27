@@ -92,6 +92,7 @@ export interface CompanyRequest {
   updatedBy: number;
   isCreatedByAdmin: boolean;
   isUpdatedByAdmin: boolean;
+  approverIds?: number[];
 }
 
 export interface CompanyRole {
