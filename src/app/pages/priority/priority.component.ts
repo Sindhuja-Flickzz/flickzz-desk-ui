@@ -220,8 +220,8 @@ export class PriorityComponent implements OnInit {
     const rawForm = this.priorityForm.getRawValue();
     const payload: any = {
       priorityId: rawForm.priorityId,
-      businessPartnerId: this.businessPartnerId ?? this.selectedContextOrgId,
-      bpConfigId: this.businessPartnerId ?? this.selectedContextOrgId,
+      businessPartnerId: this.businessPartnerId,
+      bpConfigId: this.businessPartnerId,
       code: rawForm.code,
       level: rawForm.level,
       description: rawForm.description,
@@ -236,7 +236,7 @@ export class PriorityComponent implements OnInit {
     const request$ = this.isEditMode && this.editingPriorityId
       ? this.priorityService.updatePriority(payload as any, this.businessPartnerId)
       : this.priorityService.createPriority(payload as any, this.businessPartnerId);
-
+    
     request$.subscribe({
       next: () => {
         this.isSubmitting = false;
@@ -249,7 +249,6 @@ export class PriorityComponent implements OnInit {
       },
       error: (err) => {
         this.isSubmitting = false;
-        console.error(this.isEditMode ? 'Update priority error' : 'Create priority error', err);
         this.submitError = err.error?.description || (this.isEditMode ? 'Failed to update priority.' : 'Failed to create priority.');
       }
     });

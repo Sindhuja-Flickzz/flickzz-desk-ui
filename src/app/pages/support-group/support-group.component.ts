@@ -4,6 +4,8 @@ import { ActivatedRoute } from '@angular/router';
 import { Location } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { PageEvent } from '@angular/material/paginator';
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { forkJoin } from 'rxjs';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { SupportGroupService } from '../../service/support-group.service';
 import { AgentService } from '../../service/agent.service';
@@ -45,9 +47,31 @@ export class SupportGroupComponent implements OnInit {
   totalRecords = 0;
   currentPage = 0;
 
+  hoveredGroupPopover: { groupId: number | null; section: 'internal' | 'bp' | 'agent' | null } = {
+    groupId: null,
+    section: null
+  };
+  openGroupPopover: { groupId: number | null; section: 'internal' | 'bp' | 'agent' | null } = {
+    groupId: null,
+    section: null
+  };
+
+  managerInternalSearchValue = '';
+  managerInternalSuggestions: AgentSuggestion[] = [];
+  managerInternalAgents: AgentSuggestion[] = [];
+
+  managerBpSearchValue = '';
+  managerBpSuggestions: AgentSuggestion[] = [];
+  managerBpAgents: AgentSuggestion[] = [];
+
   agentSearchValue = '';
   agentSuggestions: AgentSuggestion[] = [];
   selectedAgents: AgentSuggestion[] = [];
+
+  managerInfoVisible: Record<'managerInternal' | 'managerBp', boolean> = {
+    managerInternal: false,
+    managerBp: false
+  };
 
   constructor(
     private fb: FormBuilder,
@@ -112,9 +136,19 @@ export class SupportGroupComponent implements OnInit {
       supportGroupId: null,
       groupName: ''
     });
+    this.managerInternalSearchValue = '';
+    this.managerInternalSuggestions = [];
+    this.managerInternalAgents = [];
+    this.managerBpSearchValue = '';
+    this.managerBpSuggestions = [];
+    this.managerBpAgents = [];
     this.agentSearchValue = '';
     this.agentSuggestions = [];
     this.selectedAgents = [];
+    this.managerInfoVisible = {
+      managerInternal: false,
+      managerBp: false
+    };
     this.formError = {};
     this.submitError = '';
     this.submitSuccess = '';
@@ -125,6 +159,37 @@ export class SupportGroupComponent implements OnInit {
     this.activeTab = 'list';
   }
 
+  onManagerSearch(section: 'managerInternal' | 'managerBp'): void {
+    const searchValue = (section === 'managerInternal' ? this.managerInternalSearchValue : this.managerBpSearchValue || '').trim();
+    if (!searchValue) {
+      this.setSuggestions(section, []);
+      return;
+    }
+
+    const orgIds = this.getOrgIdsForSection(section);
+    if (!orgIds.length) {
+      this.setSuggestions(section, []);
+      return;
+    }
+
+    const requests = orgIds.map((orgId: number) => this.agentService.getAgentList(String(orgId)));
+    forkJoin(requests).subscribe({
+      next: (responses) => {
+        const normalized = responses.flatMap((response: any) => this.normalizeAgentResponse(response));
+        const deduped = normalized.filter((agent, index, arr) => arr.findIndex((item) => item.agentId === agent.agentId) === index);
+        const query = searchValue.toLowerCase();
+        const filtered = deduped.filter((agent) => {
+          const haystack = `${agent.agentName} ${agent.accessId || ''} ${agent.mailId || ''}`.toLowerCase();
+          return haystack.includes(query);
+        }).slice(0, 8);
+        this.setSuggestions(section, filtered);
+      },
+      error: () => {
+        this.setSuggestions(section, []);
+      }
+    });
+  }
+
   onAgentSearch(): void {
     const value = (this.agentSearchValue || '').trim();
     if (!value) {
@@ -132,24 +197,27 @@ export class SupportGroupComponent implements OnInit {
       return;
     }
 
-    const orgId = this.selectedContextOrgId || Number(localStorage.getItem('userOrgId') || 0);
-    if (!orgId) {
+    const orgIds = this.getOrgIdsForSection('agent');
+    if (!orgIds.length) {
       this.agentSuggestions = [];
       return;
     }
 
-    this.agentService.getAgentList(String(orgId)).subscribe({
-      next: (response) => {
-        const agents = (response as any)?.attributes || response || [];
-        const normalized = agents.map((agent: any) => ({
-          agentId: agent.agentId ?? agent.id,
-          agentName: agent.agentName || agent.name || '',
-          accessId: agent.accessId || '',
-          mailId: agent.mailId || agent.email || ''
-        })).filter((agent: AgentSuggestion) => agent.agentId && agent.agentName);
-
+    const requests = orgIds.map((orgId: number) => this.agentService.getAgentList(String(orgId)));
+    forkJoin(requests).subscribe({
+      next: (responses) => {
+        const normalized = responses.flatMap((response: any) => this.normalizeAgentResponse(response));
+        const deduped = normalized.filter((agent, index, arr) => arr.findIndex((item) => item.agentId === agent.agentId) === index);
+        const excludedAgentIds = new Set<number>([
+          ...this.managerInternalAgents,
+          ...this.managerBpAgents,
+          ...this.selectedAgents
+        ].map((agent) => agent.agentId).filter((id): id is number => id != null));
         const query = value.toLowerCase();
-        this.agentSuggestions = normalized.filter((agent: AgentSuggestion) => {
+        this.agentSuggestions = deduped.filter((agent) => {
+          if (agent.agentId != null && excludedAgentIds.has(agent.agentId)) {
+            return false;
+          }
           const haystack = `${agent.agentName} ${agent.accessId || ''} ${agent.mailId || ''}`.toLowerCase();
           return haystack.includes(query);
         }).slice(0, 8);
@@ -160,24 +228,52 @@ export class SupportGroupComponent implements OnInit {
     });
   }
 
-  addSelectedAgent(agent: AgentSuggestion): void {
-    const existsById = agent?.agentId != null && this.selectedAgents.some((item) => item.agentId === agent.agentId);
+  addSelectedAgent(section: 'managerInternal' | 'managerBp' | 'agent', agent: AgentSuggestion): void {
+    const target = this.getSectionAgents(section);
+    const existsById = agent?.agentId != null && target.some((item) => item.agentId === agent.agentId);
     const name = (agent.agentName || '').trim().toLowerCase();
-    const existsByName = name && this.selectedAgents.some((item) => (item.agentName || '').trim().toLowerCase() === name);
+    const existsByName = name && target.some((item) => (item.agentName || '').trim().toLowerCase() === name);
+    const existsInManagerSection = section === 'agent' && agent?.agentId != null && (
+      this.managerInternalAgents.some((item) => item.agentId === agent.agentId) ||
+      this.managerBpAgents.some((item) => item.agentId === agent.agentId)
+    );
+    const existsInManagerSectionByName = section === 'agent' && name && (
+      this.managerInternalAgents.some((item) => (item.agentName || '').trim().toLowerCase() === name) ||
+      this.managerBpAgents.some((item) => (item.agentName || '').trim().toLowerCase() === name)
+    );
 
-    if (existsById || existsByName) {
-      this.agentSearchValue = '';
-      this.agentSuggestions = [];
+    if (existsById || existsByName || existsInManagerSection || existsInManagerSectionByName) {
+      this.resetSectionSearch(section);
       return;
     }
 
-    this.selectedAgents.push(agent);
-    this.agentSearchValue = '';
-    this.agentSuggestions = [];
+    target.push(agent);
+    this.resetSectionSearch(section);
   }
 
-  removeSelectedAgent(agentId: number): void {
-    this.selectedAgents = this.selectedAgents.filter((agent) => agent.agentId !== agentId);
+  removeSelectedAgent(section: 'managerInternal' | 'managerBp' | 'agent', agentId: number): void {
+    const target = this.getSectionAgents(section);
+    if (section === 'agent') {
+      this.selectedAgents = target.filter((agent) => agent.agentId !== agentId);
+    } else if (section === 'managerInternal') {
+      this.managerInternalAgents = target.filter((agent) => agent.agentId !== agentId);
+    } else {
+      this.managerBpAgents = target.filter((agent) => agent.agentId !== agentId);
+    }
+  }
+
+  dropManagerAgents(event: CdkDragDrop<AgentSuggestion[]>, section: 'managerInternal' | 'managerBp'): void {
+    const target = this.getSectionAgents(section);
+    moveItemInArray(target, event.previousIndex, event.currentIndex);
+    if (section === 'managerInternal') {
+      this.managerInternalAgents = target;
+    } else {
+      this.managerBpAgents = target;
+    }
+  }
+
+  toggleInfo(section: 'managerInternal' | 'managerBp'): void {
+    this.managerInfoVisible[section] = !this.managerInfoVisible[section];
   }
 
   startEdit(group: any): void {
@@ -192,12 +288,17 @@ export class SupportGroupComponent implements OnInit {
       supportGroupId: group.supportGroupId ?? group.id ?? null,
       groupName: group.groupName || group.supportGroupName || ''
     });
-    const members = group.agents || group.agentDetails || group.members || [];
-    if (members.length > 0 && typeof members[0] === 'number') {
-      this.fetchAgentsByIds(members as number[]);
-    } else {
-      this.selectedAgents = this.normalizeAgents(members);
-    }
+
+    this.managerInternalAgents = this.normalizeAgents(this.extractGroupAgents(group, ['managerInternalAgents', 'managerInternal', 'managerInternalList', 'managerInternals']));
+    this.managerBpAgents = this.normalizeAgents(this.extractGroupAgents(group, ['managerBpAgents', 'managerBp', 'managerBP', 'managerBpList']));
+    this.selectedAgents = this.normalizeAgents(this.extractGroupAgents(group, ['agents', 'agentDetails', 'members', 'supportGroupMembers']));
+
+    this.managerInternalSearchValue = '';
+    this.managerInternalSuggestions = [];
+    this.managerBpSearchValue = '';
+    this.managerBpSuggestions = [];
+    this.agentSearchValue = '';
+    this.agentSuggestions = [];
   }
 
   fetchAgentsByIds(ids: number[]): void {
@@ -209,15 +310,8 @@ export class SupportGroupComponent implements OnInit {
 
     this.agentService.getAgentList(String(orgId)).subscribe({
       next: (response) => {
-        const agents = (response as any)?.attributes || response || [];
-        const normalized = agents.map((agent: any) => ({
-          agentId: agent.agentId ?? agent.id,
-          agentName: agent.agentName || agent.name || '',
-          accessId: agent.accessId || '',
-          mailId: agent.mailId || agent.email || ''
-        })).filter((a: AgentSuggestion) => a.agentId);
-
-        this.selectedAgents = ids.map((id) => normalized.find((a: AgentSuggestion) => a.agentId === id) || ({ agentId: id, agentName: '' } as AgentSuggestion));
+        const normalized = this.normalizeAgentResponse(response);
+        this.selectedAgents = ids.map((id) => normalized.find((agent: AgentSuggestion) => agent.agentId === id) || ({ agentId: id, agentName: '' } as AgentSuggestion));
       },
       error: () => {
         this.selectedAgents = ids.map((id) => ({ agentId: id, agentName: '' } as AgentSuggestion));
@@ -236,6 +330,14 @@ export class SupportGroupComponent implements OnInit {
       this.formError['groupName'] = 'Group name is required.';
     }
 
+    if (!this.managerInternalAgents.length) {
+      this.formError['managerInternalAgents'] = 'Please add at least one internal manager.';
+    }
+
+    if (this.selectionMode === 'bp' && !this.managerBpAgents.length) {
+      this.formError['managerBpAgents'] = 'Please add at least one business partner manager.';
+    }
+
     if (!this.selectedAgents.length) {
       this.formError['agents'] = 'Please add at least one agent.';
     }
@@ -244,12 +346,14 @@ export class SupportGroupComponent implements OnInit {
       this.isSubmitting = false;
       return;
     }
-
+    
     const payload: any = {
       supportGroupId: this.editingSupportGroupId,
       groupName,
+      managerInternalAgents: this.managerInternalAgents.map((agent) => agent.agentId),
+      managerBpAgents: this.selectionMode === 'bp' ? this.managerBpAgents.map((agent) => agent.agentId) : [],
       agents: this.selectedAgents.map((agent) => agent.agentId),
-      businessPartnerId: this.businessPartnerId ?? this.selectedContextOrgId,
+      businessPartnerId: this.businessPartnerId,
       createdBy: Number(localStorage.getItem('userId') || 0),
       updatedBy: Number(localStorage.getItem('userId') || 0),
       isActive: true,
@@ -357,12 +461,17 @@ export class SupportGroupComponent implements OnInit {
     } else {
       this.filteredSupportGroups = this.supportGroups.filter((group) => {
         const groupName = (group.groupName || group.supportGroupName || '').toLowerCase();
-        const agentNames = this.normalizeAgents(group.agents || group.agentDetails || group.members || []).map((agent) => agent.agentName).join(' ').toLowerCase();
+        const agentNames = this.getDisplayableAgentNames(group).toLowerCase();
         return groupName.includes(term) || agentNames.includes(term);
       });
     }
     this.totalRecords = this.filteredSupportGroups.length;
     this.currentPage = 0;
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageSize = event.pageSize;
+    this.currentPage = event.pageIndex;
   }
 
   getPaginatedSupportGroups(): any[] {
@@ -371,15 +480,83 @@ export class SupportGroupComponent implements OnInit {
     return this.filteredSupportGroups.slice(startIndex, endIndex);
   }
 
-  getSupportGroupAgents(group: any): string {
-    return this.normalizeAgents(group.agents || group.agentDetails || group.members || []).map((agent) => agent.agentName).join(', ') || '-';
+  getGroupId(group: any): number | null {
+    return group?.supportGroupId ?? group?.id ?? null;
   }
 
-  getSupportGroupOrganization(): string {
-    if (this.selectionMode === 'bp') {
-      return this.businessPartnerName || localStorage.getItem('userOrgName') || '-';
+  setHoveredGroupPopover(groupId: number | null, section: 'internal' | 'bp' | 'agent'): void {
+    this.hoveredGroupPopover = { groupId, section };
+  }
+
+  clearHoveredGroupPopover(): void {
+    this.hoveredGroupPopover = { groupId: null, section: null };
+  }
+
+  toggleGroupPopover(groupId: number | null, section: 'internal' | 'bp' | 'agent'): void {
+    if (this.openGroupPopover.groupId === groupId && this.openGroupPopover.section === section) {
+      this.openGroupPopover = { groupId: null, section: null };
+      return;
+    }
+    this.openGroupPopover = { groupId, section };
+  }
+
+  isGroupPopoverVisible(groupId: number | null, section: 'internal' | 'bp' | 'agent'): boolean {
+    return (
+      this.hoveredGroupPopover.groupId === groupId && this.hoveredGroupPopover.section === section
+    ) || (
+      this.openGroupPopover.groupId === groupId && this.openGroupPopover.section === section
+    );
+  }
+
+  getSupportGroupInternalManagers(group: any): string {
+    const managers = this.extractGroupAgents(group, ['managers']);
+    const internalManagers = Array.isArray(managers)
+      ? managers.filter((manager: any) => manager?.isInternal === true)
+      : [];
+    return this.normalizeAgents(internalManagers).map((agent) => agent.agentName).join(', ') || '-';
+  }
+
+  getSupportGroupBpManagers(group: any): string {
+    const managers = this.extractGroupAgents(group, ['managers']);
+    const bpManagers = Array.isArray(managers)
+      ? managers.filter((manager: any) => manager?.isBP === true)
+      : [];
+    return this.normalizeAgents(bpManagers).map((agent) => agent.agentName).join(', ') || '-';
+  }
+
+  getSupportGroupAgents(group: any): string {
+    return this.normalizeAgents(this.extractGroupAgents(group, ['members'])).map((agent) => agent.agentName).join(', ') || '-';
+  }
+
+  getSupportGroupInternalManagerNames(group: any): string[] {
+    const names = this.getSupportGroupInternalManagers(group);
+    return names === '-' ? [] : names.split(', ').filter((name) => name);
+  }
+
+  getSupportGroupBpManagerNames(group: any): string[] {
+    const names = this.getSupportGroupBpManagers(group);
+    return names === '-' ? [] : names.split(', ').filter((name) => name);
+  }
+
+  getSupportGroupAgentNames(group: any): string[] {
+    const names = this.getSupportGroupAgents(group);
+    return names === '-' ? [] : names.split(', ').filter((name) => name);
+  }
+
+  getSupportGroupOrganization(group?: any): string {
+    const businessPartnerName = group?.businessPartnerName || group?.companyName || this.businessPartnerName;
+    if (this.selectionMode === 'bp' || businessPartnerName) {
+      return businessPartnerName || localStorage.getItem('userOrgName') || '-';
     }
     return localStorage.getItem('userOrgName') || '-';
+  }
+
+  getDisplayableAgentNames(group: any): string {
+    return [
+      this.getSupportGroupInternalManagers(group),
+      this.getSupportGroupBpManagers(group),
+      this.getSupportGroupAgents(group)
+    ].join(' ');
   }
 
   normalizeAgents(source: any[]): AgentSuggestion[] {
@@ -399,8 +576,83 @@ export class SupportGroupComponent implements OnInit {
     }).filter((agent) => (agent.agentId != null) || (agent.agentName && agent.agentName.trim().length > 0));
   }
 
-  onPageChange(event: PageEvent): void {
-    this.currentPage = event.pageIndex;
-    this.pageSize = event.pageSize;
+  private getSectionAgents(section: 'managerInternal' | 'managerBp' | 'agent'): AgentSuggestion[] {
+    if (section === 'managerInternal') {
+      return this.managerInternalAgents;
+    }
+    if (section === 'managerBp') {
+      return this.managerBpAgents;
+    }
+    return this.selectedAgents;
   }
+
+  private setSuggestions(section: 'managerInternal' | 'managerBp', suggestions: AgentSuggestion[]): void {
+    if (section === 'managerInternal') {
+      this.managerInternalSuggestions = suggestions;
+      return;
+    }
+    this.managerBpSuggestions = suggestions;
+  }
+
+  private resetSectionSearch(section: 'managerInternal' | 'managerBp' | 'agent'): void {
+    if (section === 'managerInternal') {
+      this.managerInternalSearchValue = '';
+      this.managerInternalSuggestions = [];
+      return;
+    }
+    if (section === 'managerBp') {
+      this.managerBpSearchValue = '';
+      this.managerBpSuggestions = [];
+      return;
+    }
+    this.agentSearchValue = '';
+    this.agentSuggestions = [];
+  }
+
+  private getOrgIdsForSection(section: 'managerInternal' | 'managerBp' | 'agent'): number[] {
+    const fallbackOrgId = Number(localStorage.getItem('userOrgId') || 0);
+    const contextOrgId = this.selectedContextOrgId || fallbackOrgId;
+    const internalOrgId = fallbackOrgId;
+    const bpOrgId = contextOrgId || internalOrgId;
+
+    if (section === 'managerBp') {
+      return bpOrgId ? [bpOrgId] : [];
+    }
+    if (section === 'managerInternal') {
+      return internalOrgId ? [internalOrgId] : [];
+    }
+    return [internalOrgId, bpOrgId].filter((id, index, array) => id && array.indexOf(id) === index);
+  }
+
+  private normalizeAgentResponse(response: any): AgentSuggestion[] {
+    const agents = (response as any)?.attributes || response || [];
+    return agents.map((agent: any) => ({
+      agentId: agent.agentId ?? agent.id,
+      agentName: agent.agentName || agent.name || '',
+      accessId: agent.accessId || '',
+      mailId: agent.mailId || agent.email || ''
+    })).filter((agent: AgentSuggestion) => agent.agentId && agent.agentName);
+  }
+
+  private extractGroupAgents(group: any, keys: string[]): any[] {
+    if (!group) {
+      return [];
+    }
+
+    for (const key of keys) {
+      const value = (group as any)?.[key];
+      if (Array.isArray(value)) {
+        return value;
+      }
+      if (value && typeof value === 'object' && Array.isArray((value as any).attributes)) {
+        return (value as any).attributes;
+      }
+      if (value && typeof value === 'object' && Array.isArray((value as any).data)) {
+        return (value as any).data;
+      }
+    }
+
+    return [];
+  }
+
 }

@@ -35,7 +35,13 @@ export class SlaTypeComponent implements OnInit {
   bpOptions: any[] = [];
   loading = false;
   slaList: any[] = [];
+  filteredSlaList: any[] = [];
+  priorityFilterOptions: string[] = [];
+  ticketTypeFilterOptions: string[] = [];
+  priorityFilter: string | null = null;
+  ticketTypeFilter: string | null = null;
   editingSlaId: number | null = null;
+  private pendingEditTicketTypeId: number | null = null;
   formSubmitError = '';
   contextLabel = 'Using your organization configuration';
 
@@ -95,8 +101,19 @@ export class SlaTypeComponent implements OnInit {
 
   selectTab(tab: 'create' | 'list'): void {
     this.activeTab = tab;
-    this.slaForm.reset();
+    this.slaForm.reset({
+      priority: null,
+      ticketType: null,
+      firstResponseValue: null,
+      firstResponseUnit: 'hours',
+      resolutionValue: null,
+      resolutionUnit: 'hours',
+      updateFrequencyValue: null,
+      updateFrequencyUnit: 'hours'
+    });
     this.editingSlaId = null;
+    this.pendingEditTicketTypeId = null;
+    this.ticketTypeOptions = [];
     this.formSubmitError = '';
     this.selectedPriorityId = null;
     this.slaForm.get('ticketType')?.disable();
@@ -116,24 +133,29 @@ export class SlaTypeComponent implements OnInit {
         this.priorities = this.prioritiesRaw;
         const codes = Array.from(new Set(this.prioritiesRaw.map(p => p.code || (p as any).priorityName)));
         this.groupedPriorityCodes = codes;
+
+        if (this.editingSlaId != null && this.slaForm.get('priority')?.value) {
+          this.onPriorityChange(this.pendingEditTicketTypeId ?? this.slaForm.get('ticketType')?.value ?? null);
+        }
       },
       error: () => { this.prioritiesRaw = []; this.priorities = []; this.groupedPriorityCodes = []; }
     });
   }
 
-  onPriorityChange(): void {
-    // priority form control stores the priority code
+  onPriorityChange(selectedTicketTypeId?: number | null): void {
     const code = this.slaForm.get('priority')?.value;
+    const existingTicketTypeId = selectedTicketTypeId ?? this.slaForm.get('ticketType')?.value ?? null;
+
     if (!code) {
       this.ticketTypeOptions = [];
       this.slaForm.patchValue({ ticketType: null });
       this.slaForm.get('ticketType')?.disable();
       this.selectedPriorityId = null;
       this.ticketTypeId = null;
+      this.selectedTicketTypeName = null;
       return;
     }
 
-    // find all records matching the code
     const matches = this.prioritiesRaw.filter(p => (p.code || (p as any).priorityName) === code);
     if (matches.length === 0) {
       this.ticketTypeOptions = [];
@@ -145,9 +167,12 @@ export class SlaTypeComponent implements OnInit {
       return;
     }
 
-    if (matches.length === 1) {
-      // only one ticket type — auto-select and disable ticketType control
-      const rec = matches[0];
+    const matchingRecord = existingTicketTypeId != null
+      ? matches.find(m => (m.ticketType?.ticketTypeId ?? null) === existingTicketTypeId)
+      : undefined;
+
+    if (matches.length === 1 || matchingRecord?.ticketType) {
+      const rec = matches.length === 1 ? matches[0] : matchingRecord!;
       const name = rec.ticketType?.ticketTypeName ?? null;
       this.ticketTypeOptions = rec.ticketType ? [{ ticketTypeId: rec.ticketType.ticketTypeId ?? null, ticketTypeName: name || '', priorityId: rec.priorityId }] : [];
       this.ticketTypeId = rec.ticketType?.ticketTypeId ?? null;
@@ -155,15 +180,15 @@ export class SlaTypeComponent implements OnInit {
       this.selectedPriorityId = rec.priorityId ?? null;
       this.slaForm.patchValue({ ticketType: rec.ticketType?.ticketTypeId ?? null });
       this.slaForm.get('ticketType')?.disable();
-    } else {
-      // multiple ticket types — populate options, enable control, clear selectedPriorityId until user chooses
-      this.ticketTypeOptions = matches.map(m => ({ ticketTypeId: m.ticketType?.ticketTypeId ?? null, ticketTypeName: m.ticketType?.ticketTypeName ?? '', priorityId: m.priorityId }));
-      this.selectedTicketTypeName = null;
-      this.slaForm.patchValue({ ticketType: null });
-      this.slaForm.get('ticketType')?.enable();
-      this.ticketTypeId = null;
-      this.selectedPriorityId = null;
+      return;
     }
+
+    this.ticketTypeOptions = matches.map(m => ({ ticketTypeId: m.ticketType?.ticketTypeId ?? null, ticketTypeName: m.ticketType?.ticketTypeName ?? '', priorityId: m.priorityId }));
+    this.selectedTicketTypeName = null;
+    this.slaForm.patchValue({ ticketType: existingTicketTypeId });
+    this.slaForm.get('ticketType')?.enable();
+    this.ticketTypeId = existingTicketTypeId;
+    this.selectedPriorityId = null;
   }
 
   onTicketTypeSelect(): void {
@@ -196,6 +221,7 @@ export class SlaTypeComponent implements OnInit {
 
   startEditSla(sla: any): void {
     this.editingSlaId = sla.slaId ?? null;
+    this.pendingEditTicketTypeId = sla.priority?.ticketType?.ticketTypeId ?? null;
     this.activeTab = 'create';
     this.pageTitle = 'Edit SLA Type';
     const mapBackUnit = (term: string) => term === 'D' ? 'days' : 'hours';
@@ -210,7 +236,7 @@ export class SlaTypeComponent implements OnInit {
       updateFrequencyUnit: mapBackUnit(sla.updateFrequencyTerm)
     });
     // populate ticket type options for the selected priority and set selected values
-    this.onPriorityChange();
+    this.onPriorityChange(this.pendingEditTicketTypeId);
     this.selectedPriorityId = sla.priority?.priorityId ?? null;
     this.ticketTypeId = sla.priority?.ticketType?.ticketTypeId ?? null;
     this.selectedTicketTypeName = sla.priority?.ticketType?.ticketTypeName ?? null;
@@ -309,7 +335,7 @@ export class SlaTypeComponent implements OnInit {
       resolutionTerm: mapTerm(this.slaForm.value.resolutionUnit),
       updateFrequency: this.slaForm.value.updateFrequencyValue,
       updateFrequencyTerm: mapTerm(this.slaForm.value.updateFrequencyUnit),
-      businessPartnerId: this.businessPartnerId ?? Number(localStorage.getItem('userOrgId') || 0),
+      businessPartnerId: this.businessPartnerId,
       createdBy: Number(localStorage.getItem('userId') || 0)
     };
 
@@ -326,11 +352,35 @@ export class SlaTypeComponent implements OnInit {
     });
   }
 
+  applySlaListFilters(): void {
+    this.filteredSlaList = this.slaList.filter(sla => {
+      const priorityMatch = !this.priorityFilter || sla.priority?.code === this.priorityFilter;
+      const ticketTypeMatch = !this.ticketTypeFilter || sla.priority?.ticketType?.ticketTypeName === this.ticketTypeFilter;
+      return priorityMatch && ticketTypeMatch;
+    });
+  }
+
   loadSlaList(): void {
     this.loading = true;
     this.slaService.getAllSlaTypes(this.businessPartnerId).subscribe({
-      next: (res) => { this.slaList = (res as any).attributes || []; this.loading = false; },
-      error: () => { this.slaList = []; this.loading = false; }
+      next: (res) => {
+        this.slaList = (res as any).attributes || [];
+        this.priorityFilterOptions = Array.from(new Set(this.slaList.map(sla => sla.priority?.code).filter(Boolean))) as string[];
+        this.ticketTypeFilterOptions = Array.from(new Set(this.slaList.map(sla => sla.priority?.ticketType?.ticketTypeName).filter(Boolean))) as string[];
+        this.priorityFilter = null;
+        this.ticketTypeFilter = null;
+        this.applySlaListFilters();
+        this.loading = false;
+      },
+      error: () => {
+        this.slaList = [];
+        this.filteredSlaList = [];
+        this.priorityFilterOptions = [];
+        this.ticketTypeFilterOptions = [];
+        this.priorityFilter = null;
+        this.ticketTypeFilter = null;
+        this.loading = false;
+      }
     });
   }
 }

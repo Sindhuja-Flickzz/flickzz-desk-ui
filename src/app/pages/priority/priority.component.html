@@ -1,5 +1,6 @@
 <div class="priority-page">
   <div class="tabs">
+    <button type="button" class="save-btn header-back" (click)="backToPrevious()"><mat-icon>chevron_left</mat-icon></button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ isEditMode ? 'Edit' : 'Create' }}</button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
   </div>
@@ -7,7 +8,6 @@
   <div *ngIf="activeTab === 'create'" class="create-panel">
     <div class="page-header">
       <h2>{{ pageTitle }}</h2>
-      <button type="button" class="save-btn header-back" (click)="backToPrevious()"><mat-icon>arrow_back</mat-icon> Back</button>
     </div>
     <div class="context-banner">{{ contextLabel }}</div>
 

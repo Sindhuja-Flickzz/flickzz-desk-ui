@@ -1,5 +1,6 @@
 <div class="skill-page">
   <div class="tabs">
+    <button type="button" class="save-btn header-back" (click)="backToHome()"><mat-icon>chevron_left</mat-icon></button>
     <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
     <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
     <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
@@ -36,7 +37,7 @@
         <button type="submit" *ngIf="!isSubmitting" class="save-btn">{{ isEditMode ? 'Update Skill' : 'Save Skills' }}</button>
         <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>{{ isEditMode ? 'Updating Skill' : 'Saving Skills' }}</button>
         <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
-        <button type="button" class="reset-btn" (click)="backToHome()">Back</button>
+        <!-- <button type="button" class="reset-btn" (click)="backToHome()">Back</button> -->
       </div>
     </form>
   </div>
