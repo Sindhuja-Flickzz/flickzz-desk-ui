@@ -209,7 +209,7 @@ export class CategoryComponent implements OnInit {
       categoryId: this.editingCategoryId,
       categoryName,
       subCategories: this.selectedSubCategories,
-      businessPartnerId: this.businessPartnerId ?? this.selectedContextOrgId,
+      businessPartnerId: this.businessPartnerId,
       createdBy: Number(localStorage.getItem('userId') || 0),
       updatedBy: Number(localStorage.getItem('userId') || 0),
       isActive: true,

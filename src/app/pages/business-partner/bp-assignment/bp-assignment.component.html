@@ -1,5 +1,6 @@
 <div class="bp-assignment-page">
   <div class="tabs">
+    <button type="button" class="save-btn header-back" (click)="backToHome()"><mat-icon>chevron_left</mat-icon></button>
     <button class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
     <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
   </div>
@@ -100,7 +101,6 @@
 
       <div class="actions">
         <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Creating...' : 'Create' }}</button>
-        <button type="button" class="reset-btn" (click)="backToHome()">Back</button>
       </div>
     </form>
   </div>

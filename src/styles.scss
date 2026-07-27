@@ -24,8 +24,44 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+.mat-form-field,
+.mat-form-field-wrapper,
+.mat-form-field-infix,
+.mat-input-element,
+.mat-select-trigger,
+.mat-form-field-label,
+.mat-form-field-subscript-wrapper,
+.mat-form-field-flex {
+  font-family: 'Nunito', sans-serif !important;
+}
+
+.mat-tab-group,
+.mat-tab-header,
+.mat-tab-label,
+.mat-tab-label-content,
+.mat-tab-label-active,
+.mat-tab-body,
+.mat-tab-body-content,
+.mat-tab-nav-bar,
+.mat-tab-link,
+.mat-tab-list,
+.mat-typography h2,
+.tab-btn,
+.tabs,
+.tab-card,
+.tab-group,
+.tab-content,
+.tab-placeholder {
+  font-family: 'Nunito', sans-serif !important;
+}
+
 * {
   box-sizing: border-box;
+}
+
+.required {
+  color: #d32f2f;
+  margin-left: 4px;
 }
 
 a {

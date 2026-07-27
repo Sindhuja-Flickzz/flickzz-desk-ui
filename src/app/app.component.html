@@ -15,6 +15,9 @@
       <button class="mobile-hamburger" *ngIf="showSidebar && isPopupOpen" (click)="toggleMobileMenu()" aria-label="Toggle sidebar navigation">
         ☰
       </button>
+      <div class="topbar-logo">
+        <img src="assets/flickzz_desk_logo.png" alt="FlickzzDesk logo" />
+      </div>
       <div class="page-title">{{ getActivePageTitle() }}</div>
       <div class="topbar-actions">
         <!-- <button class="logout" *ngIf="isLoggedIn()" (click)="logout()">Logout</button> -->

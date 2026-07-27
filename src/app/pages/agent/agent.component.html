@@ -1,5 +1,6 @@
 <div class="agent-page" title="Agent management page">
   <div class="tabs">
+    <button type="button" class="save-btn header-back" (click)="backToHome()"><mat-icon>chevron_left</mat-icon></button>
     <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
     <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
     <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
@@ -160,7 +161,7 @@
         <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isEditMode ? (isSubmitting ? 'Updating Agent...' : 'Update Agent') : (isSubmitting ? 'Saving Agent...' : 'Save Agent') }}</button>
         <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
         <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
-        <button type="button" class="reset-btn" (click)="backToHome()">Back</button>
+        <!-- <button type="button" class="reset-btn" (click)="backToHome()">Back</button> -->
         <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
       </div>
     </form>

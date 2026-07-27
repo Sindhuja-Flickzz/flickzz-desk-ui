@@ -1,13 +1,15 @@
 <div class="support-group-page">
-  <div class="tabs">
-    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ isEditMode ? 'Edit' : 'Create' }}</button>
-    <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  <div class="tabs-header">
+    <div class="tabs">
+      <button type="button" class="save-btn header-back" (click)="backToPrevious()"><mat-icon>chevron_left</mat-icon></button>
+      <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ isEditMode ? 'Edit' : 'Create' }}</button>
+      <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+    </div>
   </div>
 
   <div *ngIf="activeTab === 'create'" class="create-panel">
     <div class="page-header">
       <h2>{{ pageTitle }}</h2>
-      <button type="button" class="save-btn header-back" (click)="backToPrevious()"><mat-icon>arrow_back</mat-icon> Back</button>
     </div>
     <div class="context-banner">{{ contextLabel }}</div>
 
@@ -18,19 +20,83 @@
       <div class="form-row">
         <div class="field">
           <label for="groupName">Group Name</label>
-          <input id="groupName" type="text" formControlName="groupName" placeholder="Enter group name" />
+          <input id="groupName" type="text" formControlName="groupName" placeholder="Enter group name" [readonly]="isEditMode" />
           <span *ngIf="formError['groupName']" class="error-text">{{ formError['groupName'] }}</span>
         </div>
       </div>
 
       <div class="field">
-        <label for="agentSearch">Agent</label>
+        <label>Manager Internal</label>
+        <div class="inline-field-header">
+          <span class="helper-text">Arrange manager in hierarchy</span>
+          <button type="button" class="info-btn" (click)="toggleInfo('managerInternal')" aria-label="Manager internal info">
+            <mat-icon>info</mat-icon>
+          </button>
+        </div>
+        <div class="info-box" *ngIf="managerInfoVisible.managerInternal">
+          Drag and drop the managers to define the ordering in the hierarchy.
+        </div>
+        <div class="agent-input-row">
+          <input type="text" [(ngModel)]="managerInternalSearchValue" [ngModelOptions]="{ standalone: true }" placeholder="Type agent name or email" (input)="onManagerSearch('managerInternal')" />
+        </div>
+        <div class="suggestions" *ngIf="managerInternalSuggestions.length > 0">
+          <div class="suggestion-items">
+            <div class="suggestion" *ngFor="let agent of managerInternalSuggestions" (click)="addSelectedAgent('managerInternal', agent)">
+              <span class="suggestion-name">{{ agent.agentName }}</span>
+              <span class="suggestion-meta" *ngIf="agent.accessId">{{ agent.accessId }}</span>
+            </div>
+          </div>
+        </div>
+        <span *ngIf="formError['managerInternalAgents']" class="error-text">{{ formError['managerInternalAgents'] }}</span>
+        <div class="drag-list" cdkDropList (cdkDropListDropped)="dropManagerAgents($event, 'managerInternal')" *ngIf="managerInternalAgents.length">
+          <div class="drag-item" *ngFor="let agent of managerInternalAgents; let i = index" cdkDrag>
+            <span class="drag-handle">☰</span>
+            <span>{{ agent.agentName }}</span>
+            <button type="button" class="chip-remove" (click)="removeSelectedAgent('managerInternal', agent.agentId)">×</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field" *ngIf="selectionMode === 'bp'">
+        <label>Manager BP</label>
+        <div class="inline-field-header">
+          <span class="helper-text">Arrange manager in hierarchy</span>
+          <button type="button" class="info-btn" (click)="toggleInfo('managerBp')" aria-label="Manager BP info">
+            <mat-icon>info</mat-icon>
+          </button>
+        </div>
+        <div class="info-box" *ngIf="managerInfoVisible.managerBp">
+          Drag and drop the managers to define the ordering in the hierarchy.
+        </div>
+        <div class="agent-input-row">
+          <input type="text" [(ngModel)]="managerBpSearchValue" [ngModelOptions]="{ standalone: true }" placeholder="Type agent name or email" (input)="onManagerSearch('managerBp')" />
+        </div>
+        <div class="suggestions" *ngIf="managerBpSuggestions.length > 0">
+          <div class="suggestion-items">
+            <div class="suggestion" *ngFor="let agent of managerBpSuggestions" (click)="addSelectedAgent('managerBp', agent)">
+              <span class="suggestion-name">{{ agent.agentName }}</span>
+              <span class="suggestion-meta" *ngIf="agent.accessId">{{ agent.accessId }}</span>
+            </div>
+          </div>
+        </div>
+        <span *ngIf="formError['managerBpAgents']" class="error-text">{{ formError['managerBpAgents'] }}</span>
+        <div class="drag-list" cdkDropList (cdkDropListDropped)="dropManagerAgents($event, 'managerBp')" *ngIf="managerBpAgents.length">
+          <div class="drag-item" *ngFor="let agent of managerBpAgents; let i = index" cdkDrag>
+            <span class="drag-handle">☰</span>
+            <span>{{ agent.agentName }}</span>
+            <button type="button" class="chip-remove" (click)="removeSelectedAgent('managerBp', agent.agentId)">×</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Agent</label>
         <div class="agent-input-row">
           <input id="agentSearch" type="text" [(ngModel)]="agentSearchValue" [ngModelOptions]="{ standalone: true }" placeholder="Type agent name or email" (input)="onAgentSearch()" />
         </div>
         <div class="suggestions" *ngIf="agentSuggestions.length > 0">
           <div class="suggestion-items">
-            <div class="suggestion" *ngFor="let agent of agentSuggestions" (click)="addSelectedAgent(agent)">
+            <div class="suggestion" *ngFor="let agent of agentSuggestions" (click)="addSelectedAgent('agent', agent)">
               <span class="suggestion-name">{{ agent.agentName }}</span>
               <span class="suggestion-meta" *ngIf="agent.accessId">{{ agent.accessId }}</span>
             </div>
@@ -40,7 +106,7 @@
         <div class="chip-list" *ngIf="selectedAgents.length">
           <span class="chip" *ngFor="let agent of selectedAgents">
             {{ agent.agentName }}
-            <button type="button" class="chip-remove" (click)="removeSelectedAgent(agent.agentId)">×</button>
+            <button type="button" class="chip-remove" (click)="removeSelectedAgent('agent', agent.agentId)">×</button>
           </span>
         </div>
       </div>
@@ -70,6 +136,8 @@
         <thead>
           <tr>
             <th>Group Name</th>
+            <th>Internal Managers</th>
+            <th *ngIf="selectionMode === 'bp'">BP Managers</th>
             <th>Agents</th>
             <th>Organization</th>
             <th>Actions</th>
@@ -78,8 +146,67 @@
         <tbody>
           <tr *ngFor="let group of getPaginatedSupportGroups()">
             <td>{{ group.groupName || group.supportGroupName || '-' }}</td>
-            <td>{{ getSupportGroupAgents(group) }}</td>
-            <td>{{ getSupportGroupOrganization() }}</td>
+            <td>
+              <div class="list-eye-cell internal"
+                   (mouseenter)="setHoveredGroupPopover(getGroupId(group), 'internal')"
+                   (mouseleave)="clearHoveredGroupPopover()">
+                <div class="eye-wrapper internal">
+                  <button type="button" class="eye-btn internal" aria-label="View internal managers"
+                          (click)="toggleGroupPopover(getGroupId(group), 'internal')">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <div class="hover-list" [class.visible]="isGroupPopoverVisible(getGroupId(group), 'internal')">
+                    <div *ngIf="getSupportGroupInternalManagerNames(group).length; else noInternalList">
+                      <div class="hover-list-item" *ngFor="let name of getSupportGroupInternalManagerNames(group)">{{ name }}</div>
+                    </div>
+                    <ng-template #noInternalList>
+                      <span class="hover-list-empty">No internal managers</span>
+                    </ng-template>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td *ngIf="selectionMode === 'bp'">
+              <div class="list-eye-cell bp"
+                   (mouseenter)="setHoveredGroupPopover(getGroupId(group), 'bp')"
+                   (mouseleave)="clearHoveredGroupPopover()">
+                <div class="eye-wrapper bp">
+                  <button type="button" class="eye-btn bp" aria-label="View BP managers"
+                          (click)="toggleGroupPopover(getGroupId(group), 'bp')">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <div class="hover-list" [class.visible]="isGroupPopoverVisible(getGroupId(group), 'bp')">
+                    <div *ngIf="getSupportGroupBpManagerNames(group).length; else noBpList">
+                      <div class="hover-list-item" *ngFor="let name of getSupportGroupBpManagerNames(group)">{{ name }}</div>
+                    </div>
+                    <ng-template #noBpList>
+                      <span class="hover-list-empty">No BP managers</span>
+                    </ng-template>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="list-eye-cell agent"
+                   (mouseenter)="setHoveredGroupPopover(getGroupId(group), 'agent')"
+                   (mouseleave)="clearHoveredGroupPopover()">
+                <div class="eye-wrapper agent">
+                  <button type="button" class="eye-btn agent" aria-label="View agents"
+                          (click)="toggleGroupPopover(getGroupId(group), 'agent')">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <div class="hover-list" [class.visible]="isGroupPopoverVisible(getGroupId(group), 'agent')">
+                    <div *ngIf="getSupportGroupAgentNames(group).length; else noAgentList">
+                      <div class="hover-list-item" *ngFor="let name of getSupportGroupAgentNames(group)">{{ name }}</div>
+                    </div>
+                    <ng-template #noAgentList>
+                      <span class="hover-list-empty">No agents</span>
+                    </ng-template>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>{{ getSupportGroupOrganization(group) }}</td>
             <td class="action-buttons">
               <button type="button" title="Edit" (click)="startEdit(group)"><mat-icon>edit</mat-icon></button>
               <button type="button" title="Delete" (click)="deleteSupportGroup(group)"><mat-icon>delete</mat-icon></button>

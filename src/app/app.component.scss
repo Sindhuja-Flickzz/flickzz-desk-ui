@@ -572,9 +572,27 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 20px;
+  position: relative;
+  padding: 4px 24px;
   background: #ffffff;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.topbar-logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.topbar-logo img {
+  height: 38px;
+  max-width: 220px;
+  object-fit: contain;
 }
 
 .page-title {

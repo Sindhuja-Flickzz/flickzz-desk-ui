@@ -187,7 +187,7 @@ export class SupportCategoryComponent implements OnInit {
       assignmentId: this.editingAssignmentId,
       supportGroupId: sg,
       subCategoryId: sc,
-      businessPartnerId: this.businessPartnerId ?? this.selectedContextOrgId,
+      businessPartnerId: this.businessPartnerId,
       createdBy: Number(localStorage.getItem('userId') || 0),
       updatedBy: Number(localStorage.getItem('userId') || 0),
       isActive: true,

@@ -1,5 +1,6 @@
 <div class="sla-page">
   <div class="tabs">
+    <button type="button" class="save-btn header-back" (click)="backToPrevious()"><mat-icon>chevron_left</mat-icon></button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ editingSlaId ? 'Edit' : 'Create' }}</button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
   </div>
@@ -7,7 +8,6 @@
   <div *ngIf="activeTab === 'create'" class="create-panel">
     <div class="page-header">
       <h2>{{ pageTitle }}</h2>
-      <button type="button" class="save-btn header-back" (click)="backToPrevious()"><mat-icon>arrow_back</mat-icon> Back</button>
     </div>
     <div class="context-banner">{{ contextLabel }}</div>
 
@@ -30,8 +30,8 @@
           <input id="ticketType" type="text" [value]="selectedTicketTypeName" readonly *ngIf="ticketTypeOptions.length === 1" />
           <!-- multiple or initial state: show select of ticket types -->
           <select id="ticketType" formControlName="ticketType" *ngIf="ticketTypeOptions.length !== 1" (change)="onTicketTypeSelect()" [disabled]="ticketTypeOptions.length === 0">
-            <option [value]="null" disabled>Select ticket type</option>
-            <option *ngFor="let t of ticketTypeOptions" [value]="t.ticketTypeId">{{ t.ticketTypeName }}</option>
+            <option [ngValue]="null" disabled>Select ticket type</option>
+            <option *ngFor="let t of ticketTypeOptions" [ngValue]="t.ticketTypeId">{{ t.ticketTypeName }}</option>
           </select>
         </div>
       </div>
@@ -102,7 +102,27 @@
 
     <div *ngIf="!loading && slaList.length === 0" class="context-banner">No SLA types found.</div>
 
-    <div *ngIf="!loading && slaList.length > 0" class="table-wrapper">
+    <div *ngIf="!loading && slaList.length > 0" class="filters-panel">
+      <div class="field">
+        <label for="priorityFilter">Priority</label>
+        <select id="priorityFilter" [(ngModel)]="priorityFilter" (change)="applySlaListFilters()">
+          <option [ngValue]="null">All priorities</option>
+          <option *ngFor="let priority of priorityFilterOptions" [ngValue]="priority">{{ priority }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="ticketTypeFilter">Ticket Type</label>
+        <select id="ticketTypeFilter" [(ngModel)]="ticketTypeFilter" (change)="applySlaListFilters()">
+          <option [ngValue]="null">All ticket types</option>
+          <option *ngFor="let ticketType of ticketTypeFilterOptions" [ngValue]="ticketType">{{ ticketType }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div *ngIf="!loading && filteredSlaList.length === 0" class="context-banner">No SLA types match the selected filters.</div>
+
+    <div *ngIf="!loading && filteredSlaList.length > 0" class="table-wrapper">
       <table>
         <thead>
           <tr>
@@ -115,7 +135,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let s of slaList">
+          <tr *ngFor="let s of filteredSlaList">
             <td>{{ s.priority.code }}</td>
             <td>{{ s.priority.ticketType.ticketTypeName }}</td>
             <td>{{ s.firstResponseTime }} {{ s.firstResponseTerm }}</td>

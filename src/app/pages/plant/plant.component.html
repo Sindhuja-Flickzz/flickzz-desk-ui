@@ -1,5 +1,6 @@
 <div class="plant-page">
   <div class="tabs">
+    <button type="button" class="save-btn header-back" (click)="backToHome()"><mat-icon>chevron_left</mat-icon></button>
     <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
     <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
     <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
@@ -15,13 +16,13 @@
       <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
       
       <div class="field">
-        <label>Plant Name</label>
+        <label>Plant Name <span class="required">*</span></label>
         <input type="text" formControlName="plantName" placeholder="Enter plant name" [readonly]="isEditMode"/>
         <span *ngIf="formError.plantName" class="error-text">{{ formError.plantName | fieldLabel  }}</span>
       </div>
 
       <div class="field">
-        <label for="countryId">Region</label>
+        <label for="countryId">Region <span class="required">*</span></label>
         <select id="countryId" formControlName="countryId" title="Region">
           <option value="" disabled>Select region</option>
           <option *ngFor="let c of countries" [value]="c.countryId">{{ c.countryName }}</option>
@@ -30,7 +31,7 @@
       </div>
 
       <div class="field">
-        <label for="calendarId">Calendar</label>
+        <label for="calendarId">Calendar <span class="required">*</span></label>
         <select id="calendarId" formControlName="calendarId" title="Calendar">
           <option value="" disabled>Select calendar</option>
           <option *ngFor="let cal of calendars" [value]="cal.calendarId">{{ cal.calendarCode }}</option>
@@ -38,12 +39,21 @@
         <span *ngIf="formError.calendarId" class="error-text">{{ formError.calendarId | fieldLabel  }}</span>
       </div>
       
+      <div class="field">
+        <label>Week Off</label>
+        <div class="days-row">
+          <div class="day-checkbox" *ngFor="let day of daysOfWeek; let i = index">
+            <input [id]="'weekOff-' + i" type="checkbox" [formControl]="getWeekOffControl(i)" />
+            <label [for]="'weekOff-' + i">{{ day }}</label>
+          </div>
+        </div>
+      </div>
+      
       <div class="actions">
         <button type="submit" *ngIf="!isSubmitting" class="save-btn">{{ isEditMode ? 'Update Plant' : 'Save Plant' }}</button>
         <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>{{ isEditMode ? 'Updating Plant' : 'Saving Plant' }}</button>
         <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
         <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
-        <button type="button" class="reset-btn" (click)="backToHome()">Back</button>
       </div>
     </form>
   </div>
@@ -63,8 +73,8 @@
           <tr>
             <th>Plant Name</th>
             <th>Region</th>
+            <th>Week Off</th>
             <th>Calendar</th>
-            <!-- <th>Created By</th> -->
             <th>Actions</th>
           </tr>
         </thead>
@@ -72,8 +82,27 @@
           <tr *ngFor="let plant of getPaginatedPlants()">
             <td>{{ plant.plantName }}</td>
             <td>{{ plant.region.countryName }}</td>
+            <td>
+              <div class="list-eye-cell weekoff"
+                   (mouseenter)="setHoveredWeekOff(plant.plantId)"
+                   (mouseleave)="clearHoveredWeekOff()">
+                <div class="eye-wrapper weekoff">
+                  <button *ngIf="(plant.weekOff?.length || plant.weekOff?.length)" type="button" class="eye-btn weekoff" aria-label="View week off"
+                      (click)="toggleWeekOffPopover(plant.plantId)">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <div class="hover-list" [class.visible]="isWeekOffPopoverVisible(plant.plantId)">
+                    <div *ngIf="(plant.weekOff?.length || plant.weekOff?.length); else noWeekOffList">
+                      <div class="hover-list-item" *ngFor="let d of (plant.weekOff || plant.weekOff)">{{ getWeekOffLabel(d) }}</div>
+                    </div>
+                    <ng-template #noWeekOffList>
+                      <span class="hover-list-empty">No week off defined</span>
+                    </ng-template>
+                  </div>
+                </div>
+              </div>
+            </td>
             <td>{{ plant.calendar.calendarCode }}</td>
-            <!-- <td>{{ plant.createdBy }}</td> -->
             <td class="action-buttons">
               <button type="button" (click)="onViewPlant(plant)"><mat-icon>edit</mat-icon></button>
               <button type="button" (click)="onDeletePlant(plant)"><mat-icon>delete</mat-icon></button>

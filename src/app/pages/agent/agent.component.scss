@@ -579,6 +579,19 @@
       }
     }
   }
+
+  .save-btn.header-back {
+    padding: 8px 5px;
+    border-radius: 8px 8px 0 0;
+    background: #f4f4f4;
+    color: #00246b;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    cursor: pointer;
+  }
   
   .empty-state {
     text-align: center;

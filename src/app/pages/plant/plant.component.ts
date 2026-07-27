@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, FormArray, FormControl } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { PageEvent } from '@angular/material/paginator';
@@ -7,7 +7,7 @@ import { PlantService } from '../../service/plant.service';
 import { CountryMasterVO, PlantMaster, PlantMasterRequest } from '../../models/plant-master';
 import { CalendarMasterVO } from '../../models/calendar-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
-import { USER_ROLES } from 'src/app/data/app_constants';
+import { USER_ROLES, DAYS_OF_WEEK } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-plant',
@@ -23,6 +23,7 @@ export class PlantComponent implements OnInit {
 
   countries: CountryMasterVO[] = [];
   calendars: CalendarMasterVO[] = [];
+  daysOfWeek = DAYS_OF_WEEK;
   plants: PlantMaster[] = [];
   filteredPlants: PlantMaster[] = [];
   searchValue = '';
@@ -42,6 +43,10 @@ export class PlantComponent implements OnInit {
   totalRecords = 0;
   currentPage = 0;
 
+  // WeekOff popover state
+  hoveredWeekOffPlantId: number | null = null;
+  openWeekOffPlantId: number | null = null;
+
   constructor(
     private fb: FormBuilder,
     private plantService: PlantService,
@@ -52,7 +57,8 @@ export class PlantComponent implements OnInit {
       plantId: [null],
       plantName: ['', Validators.required],
       countryId: [null, Validators.required],
-      calendarId: [null, Validators.required]
+      calendarId: [null, Validators.required],
+      weekOff: this.fb.array(this.createDaysCheckboxes())
     });
     this.userOrgId = localStorage.getItem('userOrgId') || '';
   }
@@ -140,6 +146,8 @@ export class PlantComponent implements OnInit {
         countryId: "",
         calendarId: ""
     });
+    // Reset weekOff checkboxes
+    this.weekOffArray.controls.forEach(ctrl => ctrl.setValue(false));
   }
 
   onSave(): void {
@@ -157,18 +165,21 @@ export class PlantComponent implements OnInit {
         return;
     });
 
-     if (Object.keys(this.formError).length === 0) {
+    if (Object.keys(this.formError).length === 0) {
       console.log('No errors');
     } else {
       console.log('Errors:', this.formError);
       return
     }
 
+    const selectedWeekOff = this.daysOfWeek.filter((_, index) => this.weekOffArray.at(index).value);
+
     const payload: PlantMasterRequest = {
       plantId: this.plantForm.value.plantId,
       plantName: this.plantForm.value.plantName,
       countryId: Number(this.plantForm.value.countryId),
       calendarId: Number(this.plantForm.value.calendarId),
+      weekOff: selectedWeekOff,
       companyId: Number(localStorage.getItem('userOrgId') || 0),
       createdBy: Number(localStorage.getItem('userId')),
       updatedBy: Number(localStorage.getItem('userId')),
@@ -242,7 +253,54 @@ export class PlantComponent implements OnInit {
       createdBy: plant.createdBy,
       updatedBy: plant.updatedBy || plant.createdBy
     });
+    // Prefill weekOff if available on the plant object (accept multiple property shapes)
+    const rawWeekOff = (plant as any).weekOff || (plant as any).weekoff || (plant as any).weekOffs || (plant as any).week_off || [];
+    if (Array.isArray(rawWeekOff) && rawWeekOff.length > 0) {
+      const names = rawWeekOff.map((item: any) => typeof item === 'string' ? item : (item?.weekOff || item?.weekoff || item?.name || ''));
+      this.daysOfWeek.forEach((day, idx) => {
+        const isOff = names.includes(day);
+        this.weekOffArray.at(idx).setValue(isOff);
+      });
+    } else {
+      this.weekOffArray.controls.forEach(ctrl => ctrl.setValue(false));
+    }
     this.originalFormValue = this.plantForm.getRawValue();
+  }
+
+  createDaysCheckboxes(): any[] {
+    return this.daysOfWeek.map(() => this.fb.control(false));
+  }
+
+  get weekOffArray(): FormArray {
+    return this.plantForm.get('weekOff') as FormArray;
+  }
+
+  getWeekOffControl(index: number): FormControl {
+    return this.weekOffArray.at(index) as FormControl;
+  }
+
+  getWeekOffLabel(item: any): string {
+    if (item == null) return '';
+    if (typeof item === 'string') return item;
+    if (typeof item.weekOff === 'string') return item.weekOff;
+    if (typeof item.weekoff === 'string') return item.weekoff;
+    if (typeof item.name === 'string') return item.name;
+
+    // Try to find a string property or nested weekOff
+    for (const key of Object.keys(item)) {
+      const val = item[key];
+      if (typeof val === 'string') return val;
+      if (val && typeof val === 'object') {
+        if (typeof val.weekOff === 'string') return val.weekOff;
+        if (typeof val.name === 'string') return val.name;
+      }
+    }
+
+    try {
+      return JSON.stringify(item);
+    } catch {
+      return String(item);
+    }
   }
 
   onDeletePlant(plant: PlantMaster): void {
@@ -278,6 +336,28 @@ export class PlantComponent implements OnInit {
         }
       });
     });
+  }
+
+  // WeekOff popover controls
+  setHoveredWeekOff(plantId: number | null): void {
+    this.hoveredWeekOffPlantId = plantId ?? null;
+  }
+
+  clearHoveredWeekOff(): void {
+    this.hoveredWeekOffPlantId = null;
+  }
+
+  toggleWeekOffPopover(plantId: number | null): void {
+    console.log('Toggling week off popover for plantId:', plantId);
+    if (this.openWeekOffPlantId === plantId) {
+      this.openWeekOffPlantId = null;
+      return;
+    }
+    this.openWeekOffPlantId = plantId;
+  }
+
+  isWeekOffPopoverVisible(plantId: number | null): boolean {
+    return this.openWeekOffPlantId === plantId || this.hoveredWeekOffPlantId === plantId;
   }
 
   getPaginatedPlants(): PlantMaster[] {
