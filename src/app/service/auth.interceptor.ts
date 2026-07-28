@@ -14,10 +14,11 @@ export class AuthInterceptor implements HttpInterceptor {
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Add auth headers to request
     const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userEmail') ?? '';
+    const userId = localStorage.getItem('userId') ?? '';
+    const userEmail = localStorage.getItem('userEmail') ?? '';
 
     if (token) {
-      request = this.addAuthHeaders(request, token, userId);
+      request = this.addAuthHeaders(request, token, userEmail, userId);
     }
 
     return next.handle(request).pipe(
@@ -31,13 +32,17 @@ export class AuthInterceptor implements HttpInterceptor {
     );
   }
 
-  private addAuthHeaders(request: HttpRequest<any>, token: string, userId?: string): HttpRequest<any> {
+  private addAuthHeaders(request: HttpRequest<any>, token: string, userEmail?: string, userId?: string): HttpRequest<any> {
     const headers: any = {
       Authorization: `Bearer ${token}`
     };
 
+    if (userEmail) {
+      headers['X-User-Email'] = userEmail;
+    }
+
     if (userId) {
-      headers['X-User-ID'] = userId;
+      headers['X-User-Id'] = userId;
     }
 
     return request.clone({
@@ -66,8 +71,9 @@ export class AuthInterceptor implements HttpInterceptor {
               this.refreshTokenSubject.next(newToken);
 
               // Retry the original request with new token
-              const userId = localStorage.getItem('userEmail') ?? '';
-              return next.handle(this.addAuthHeaders(request, newToken, userId));
+              const userEmail = localStorage.getItem('userEmail') ?? '';
+              const userId = localStorage.getItem('userId') ?? '';
+              return next.handle(this.addAuthHeaders(request, newToken, userEmail, userId));
             } else {
               // Refresh failed, logout
               this.logout();
@@ -91,8 +97,9 @@ export class AuthInterceptor implements HttpInterceptor {
         filter(token => token != null),
         take(1),
         switchMap(token => {
-          const userId = localStorage.getItem('userEmail') ?? '';
-          return next.handle(this.addAuthHeaders(request, token, userId));
+          const userEmail = localStorage.getItem('userEmail') ?? '';
+          const userId = localStorage.getItem('userId') ?? '';
+          return next.handle(this.addAuthHeaders(request, token, userEmail, userId));
         })
       );
     }

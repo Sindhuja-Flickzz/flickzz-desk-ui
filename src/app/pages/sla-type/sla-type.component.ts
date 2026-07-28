@@ -336,7 +336,8 @@ export class SlaTypeComponent implements OnInit {
       updateFrequency: this.slaForm.value.updateFrequencyValue,
       updateFrequencyTerm: mapTerm(this.slaForm.value.updateFrequencyUnit),
       businessPartnerId: this.businessPartnerId,
-      createdBy: Number(localStorage.getItem('userId') || 0)
+      createdBy: Number(localStorage.getItem('userId') || 0),
+      updatedBy: Number(localStorage.getItem('userId') || 0)
     };
 
     const request$ = this.editingSlaId
