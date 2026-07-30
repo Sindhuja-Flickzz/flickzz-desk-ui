@@ -3,11 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { Audit, AuditFilter, PageRequest } from './audit.model';
+import { APP_CONSTANTS } from '../../data/app_constants';
 
 @Injectable({ providedIn: 'root' })
 export class AuditService {
   private readonly http = inject(HttpClient);
-  private readonly endpoint = '/flickzz-desk/audit/list';
+  private readonly baseUrl = APP_CONSTANTS.API_BASE_URL;
+  private readonly endpoint = 'audit/list';
 
   private lastFilter: AuditFilter | null = null;
   private lastPageRequest: PageRequest | null = null;
@@ -19,7 +21,7 @@ export class AuditService {
 
     const params = this.buildParams(filter, pageRequest);
 
-    return this.http.get<Audit[]>(this.endpoint, { params }).pipe(
+    return this.http.get<Audit[]>(`${this.baseUrl}/${this.endpoint}`, { params }).pipe(
       map((response) => {
         this.lastPageData = Array.isArray((response as any)?.attributes) ? (response as any).attributes : [];
         return this.lastPageData;
