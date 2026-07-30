@@ -582,11 +582,11 @@ pre {
   color: #00246b;
 }
 
-@media (max-width: 1400px) {
-  .summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
+// @media (max-width: 1400px) {
+//   .summary-grid {
+//     grid-template-columns: repeat(2, minmax(0, 1fr));
+//   }
+// }
 
 @media (max-width: 1200px) {
   .audit-shell {
