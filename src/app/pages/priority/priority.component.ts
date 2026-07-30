@@ -6,8 +6,10 @@ import { PageEvent } from '@angular/material/paginator';
 import { ActivatedRoute } from '@angular/router';
 import { Location } from '@angular/common';
 import { PriorityService } from '../../service/priority.service';
+import { CompanyService } from '../../service/company.service';
 import { PriorityMaster, TicketTypeMaster } from '../../models/priority-master';
 import { USER_ROLES } from 'src/app/data/app_constants';
+import { CompanyRole } from 'src/app/models/company-master';
 
 @Component({
   selector: 'app-priority',
@@ -40,13 +42,16 @@ export class PriorityComponent implements OnInit {
   pageSizeOptions = [5, 10, 25, 50];
   totalRecords = 0;
   currentPage = 0;
+  orgId = Number(localStorage.getItem('userOrgId') || 0);
+  bpOptions: CompanyRole[] = [];
 
   constructor(
     private fb: FormBuilder,
     private priorityService: PriorityService,
     private dialog: MatDialog,
     private route: ActivatedRoute,
-    private location: Location
+    private location: Location,
+    private companyService: CompanyService
   ) {
     this.priorityForm = this.fb.group({
       priorityId: [null],
@@ -98,6 +103,22 @@ export class PriorityComponent implements OnInit {
 
   loadPriorityList(): void {
     this.loading = true;
+    if(this.businessPartnerId == null && this.orgId != null) {
+        this.companyService.getServiceProviderList(this.orgId).subscribe({
+        next: (response) => {
+          this.bpOptions = (response as any).attributes || response || [];
+          const matchingRole = this.bpOptions.find((bp) => {
+            return bp.company?.companyId != null && bp.mappedCompany?.companyId != null
+              && bp.company.companyId === bp.mappedCompany.companyId;
+          });
+
+          this.businessPartnerId = matchingRole?.businessPartnerId ?? null;
+        },
+        error: () => {
+          console.error('Failed to load business partners');
+        }
+      });
+    }
     this.priorityService.getAllPriorities(this.businessPartnerId).subscribe({
       next: (result) => {
         this.priorities = (result as any).attributes || [];
