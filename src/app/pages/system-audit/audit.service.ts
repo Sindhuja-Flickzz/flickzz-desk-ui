@@ -66,7 +66,7 @@ export class AuditService {
       ['search', filter.search],
       ['fromDate', filter.fromDate],
       ['toDate', filter.toDate],
-      ['orgId', filter.orgId]
+      ['orgId', localStorage.getItem('userOrgId') ? Number(localStorage.getItem('userOrgId')) : 0]
     ];
 
     entries.forEach(([key, value]) => {
