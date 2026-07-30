@@ -336,6 +336,7 @@ export class SlaTypeComponent implements OnInit {
       updateFrequency: this.slaForm.value.updateFrequencyValue,
       updateFrequencyTerm: mapTerm(this.slaForm.value.updateFrequencyUnit),
       businessPartnerId: this.businessPartnerId,
+      orgId: localStorage.getItem('userOrgId') ? Number(localStorage.getItem('userOrgId')) : null,
       createdBy: Number(localStorage.getItem('userId') || 0),
       updatedBy: Number(localStorage.getItem('userId') || 0)
     };

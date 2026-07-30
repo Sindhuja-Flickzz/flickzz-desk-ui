@@ -210,6 +210,7 @@ export class CategoryComponent implements OnInit {
       categoryName,
       subCategories: this.selectedSubCategories,
       businessPartnerId: this.businessPartnerId,
+      orgId: localStorage.getItem('userOrgId') ? Number(localStorage.getItem('userOrgId')) : null,
       createdBy: Number(localStorage.getItem('userId') || 0),
       updatedBy: Number(localStorage.getItem('userId') || 0),
       isActive: true,
