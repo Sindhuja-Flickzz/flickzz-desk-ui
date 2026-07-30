@@ -353,6 +353,7 @@ export class SupportGroupComponent implements OnInit {
       managerInternalAgents: this.managerInternalAgents.map((agent) => agent.agentId),
       managerBpAgents: this.selectionMode === 'bp' ? this.managerBpAgents.map((agent) => agent.agentId) : [],
       agents: this.selectedAgents.map((agent) => agent.agentId),
+      orgId: localStorage.getItem('userOrgId') ? Number(localStorage.getItem('userOrgId')) : null,
       businessPartnerId: this.businessPartnerId,
       createdBy: Number(localStorage.getItem('userId') || 0),
       updatedBy: Number(localStorage.getItem('userId') || 0),

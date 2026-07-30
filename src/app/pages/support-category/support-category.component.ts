@@ -189,6 +189,7 @@ export class SupportCategoryComponent implements OnInit {
       subCategoryId: sc,
       businessPartnerId: this.businessPartnerId,
       createdBy: Number(localStorage.getItem('userId') || 0),
+      orgId: localStorage.getItem('userOrgId') ? Number(localStorage.getItem('userOrgId')) : null,
       updatedBy: Number(localStorage.getItem('userId') || 0),
       isActive: true,
       isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
