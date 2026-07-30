@@ -1,0 +1,352 @@
+<mat-drawer-container class="drawer-container" autosize>
+  <mat-drawer-content>
+    <section class="audit-shell">
+      <header class="audit-header">
+        <div>
+          <h1>System Configuration Audit</h1>
+          <p>Track and review all configuration changes in the system.</p>
+        </div>
+        <div class="audit-actions">
+          <button mat-stroked-button color="primary" (click)="exportData()">
+            <mat-icon>download</mat-icon>
+            Export
+          </button>
+          <button mat-stroked-button (click)="refresh()">
+            <mat-icon>refresh</mat-icon>
+            Refresh
+          </button>
+          <!-- <button mat-flat-button color="primary">
+            <mat-icon>bookmark</mat-icon>
+            Save View
+          </button> -->
+        </div>
+      </header>
+
+  <div class="summary-column">
+    <div class="summary-grid">
+      <mat-card *ngFor="let card of summaryCards(); trackBy: trackBySummaryCard" class="summary-card">
+        <div class="summary-card__icon" [ngClass]="{
+          'summary-card__icon--timeline': card.icon === 'timeline',
+          'summary-card__icon--check': card.icon === 'check_circle',
+          'summary-card__icon--error': card.icon === 'error'
+        }">
+          <mat-icon>{{ card.icon }}</mat-icon>
+        </div>
+        <div>
+          <div class="summary-card__title">{{ card.title }}</div>
+          <div class="summary-card__value">{{ card.value }}</div>
+          <div class="summary-card__hint">{{ card.hint }}</div>
+        </div>
+      </mat-card>
+    </div>
+
+    <div class="shortcut-row">
+      <button mat-stroked-button class="shortcut-button" [class.active]="false" (click)="applyDateShortcut(1)">Last 24 Hours</button>
+      <button mat-stroked-button class="shortcut-button" (click)="applyDateShortcut(7)">Last 7 Days</button>
+      <button mat-stroked-button class="shortcut-button" (click)="applyDateShortcut(30)">Last 30 Days</button>
+      <button mat-stroked-button class="shortcut-button" (click)="applyDateShortcut(null)">This Month</button>
+      <button mat-stroked-button class="shortcut-button">Custom Range</button>
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    <mat-card class="chart-card">
+      <div class="card-header">
+        <h3>Audit Events Over Time</h3>
+        <span>Line chart</span>
+      </div>
+      <div class="chart-wrapper">
+        <canvas baseChart [type]="'line'" [data]="chartConfig()?.lineChartData" [options]="chartConfig()?.lineChartOptions"></canvas>
+      </div>
+    </mat-card>
+
+    <mat-card class="chart-card">
+      <div class="card-header">
+        <h3>Audit Events By Action</h3>
+        <span>Donut chart</span>
+      </div>
+      <div class="chart-wrapper">
+        <canvas baseChart [type]="'doughnut'" [data]="chartConfig()?.donutChartData" [options]="chartConfig()?.donutChartOptions"></canvas>
+      </div>
+    </mat-card>
+  </div>
+
+  <mat-card class="filters-card">
+    <!-- <div class="card-header">
+      <h3>Filters</h3>
+      <button mat-button color="primary">Advanced Filters</button> 
+    </div> -->
+
+    <form [formGroup]="filterForm" class="filter-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Date Range</mat-label>
+        <mat-date-range-input [rangePicker]="picker">
+          <input matStartDate formControlName="fromDate" placeholder="Start date">
+          <input matEndDate formControlName="toDate" placeholder="End date">
+        </mat-date-range-input>
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-date-range-picker #picker></mat-date-range-picker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Action</mat-label>
+        <mat-select formControlName="action">
+          <mat-option value="">All</mat-option>
+          <mat-option value="CREATE">Create</mat-option>
+          <mat-option value="UPDATE">Update</mat-option>
+          <mat-option value="DELETE">Delete</mat-option>
+          <mat-option value="RESTORE">Restore</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Area</mat-label>
+        <mat-select formControlName="area">
+          <mat-option value="">All</mat-option>
+          <mat-option *ngFor="let area of areas()" [value]="area">{{ area }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status">
+          <mat-option value="">All</mat-option>
+          <mat-option value="SUCCESS">Success</mat-option>
+          <mat-option value="FAILED">Failed</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Changed By</mat-label>
+        <input matInput formControlName="changedBy" placeholder="Filter by user id">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Search Description</mat-label>
+        <input matInput formControlName="search" placeholder="Search description">
+      </mat-form-field>
+
+      <div class="filter-actions">
+        <button mat-flat-button color="primary" (click)="applyFilters()"><mat-icon class="apply-icon">filter_alt</mat-icon>Filter</button>
+        <button mat-stroked-button (click)="clearFilters()"><mat-icon class="clear-icon">clear</mat-icon>Clear</button>
+      </div>
+    </form>
+  </mat-card>
+
+  <mat-card class="table-card">
+    <div class="card-header card-header--between">
+      <h3>Recent Audit Entries</h3>
+      <div class="table-meta">{{ totalElements() }} records</div>
+    </div>
+
+    <div *ngIf="loading()" class="state-state">
+      <mat-spinner diameter="32"></mat-spinner>
+      <span>Loading audit data...</span>
+    </div>
+
+    <div *ngIf="isEmpty()" class="state-state state-state--empty">
+      <mat-icon>search_off</mat-icon>
+      <span>No audit entries found for the current filters.</span>
+      <button mat-stroked-button color="primary" (click)="clearFilters()">Try again</button>
+    </div>
+
+    <div *ngIf="!loading() && !isEmpty()" class="table-shell">
+      <cdk-virtual-scroll-viewport itemSize="72" class="audit-viewport">
+        <table mat-table [dataSource]="pagedAudits()" class="audit-table">
+          <ng-container matColumnDef="time">
+            <th mat-header-cell *matHeaderCellDef>Time</th>
+            <td mat-cell *matCellDef="let row">{{ row.createdAt | date:'short' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="area">
+            <th mat-header-cell *matHeaderCellDef>Area</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="cell-with-icon">
+                <!-- <mat-icon>{{ row.area === 'Priority' ? 'priority_high' : 'settings' }}</mat-icon> -->
+                <span>{{ row.area }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef>Action</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-badge" [class]="actionColors[row.action] || 'primary'">{{ row.action }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="changedBy">
+            <th mat-header-cell *matHeaderCellDef>Changed By</th>
+            <td mat-cell *matCellDef="let row">{{ row.userName || row.changedBy }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <mat-chip class="status-chip" [ngClass]="{
+                'status-chip--success': row.status === 'SUCCESS',
+                'status-chip--failed': row.status === 'FAILED'
+              }">{{ row.status }}</mat-chip>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let row" class="description-cell">{{ row.errorMessage || 'NA' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="details">
+            <th mat-header-cell *matHeaderCellDef>Details</th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-icon-button color="primary" type="button" (click)="$event.stopPropagation(); selectAudit(row)">
+                <mat-icon>visibility</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="audit-row"></tr>
+        </table>
+      </cdk-virtual-scroll-viewport>
+    </div>
+
+    <mat-paginator [length]="totalElements()" [pageSize]="pageSize()" [pageIndex]="page()" [pageSizeOptions]="[10, 20, 50]" (page)="onPageChange($event)"></mat-paginator>
+  </mat-card>
+</section>
+  </mat-drawer-content>
+
+  <mat-drawer #drawer mode="over" position="end" [opened]="drawerOpen()" [style.width]="drawerWidth()" class="audit-drawer" (closedStart)="closeDrawer()">
+    <div *ngIf="selectedAuditDetails() as details" class="drawer-content">
+      <div class="drawer-header drawer-header--sticky">
+        <div>
+          <p class="drawer-eyebrow">Audit Details</p>
+          <div class="drawer-title-row">
+            <!-- <h3>{{ details.audit.auditId || 'Audit Record' }}</h3>
+            <button mat-icon-button matTooltip="Copy Audit ID" (click)="copyAuditId()" type="button">
+              <mat-icon>content_copy</mat-icon>
+            </button> -->
+          </div>
+        </div>
+        <div class="drawer-action-buttons">
+          <button mat-icon-button type="button" (click)="toggleDrawerExpand()" matTooltip="Toggle width">
+            <mat-icon>{{ drawerExpanded() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+          </button>
+          <button mat-icon-button type="button" (click)="closeDrawer()" matTooltip="Close">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="status-section">
+        <mat-chip class="status-chip" [ngClass]="{
+          'status-chip--success': details.audit.status === 'SUCCESS',
+          'status-chip--failed': details.audit.status === 'FAILED'
+        }">{{ details.audit.status }}</mat-chip>
+      </div>
+
+      <div class="drawer-body">
+        <mat-tab-group>
+          <mat-tab label="Overview">
+            <div class="detail-section overview-table">
+              <div class="overview-row">
+                <div class="overview-label">
+                  <mat-icon>schedule</mat-icon>
+                  <span>Time</span>
+                </div>
+                <div class="overview-value">{{ details.audit.createdAt | date:'medium' }}</div>
+              </div>
+              <div class="overview-row">
+                <div class="overview-label">
+                  <mat-icon>category</mat-icon>
+                  <span>Area</span>
+                </div>
+                <div class="overview-value">{{ details.audit.area || '—' }}</div>
+              </div>
+              <div class="overview-row">
+                <div class="overview-label">
+                  <mat-icon>edit</mat-icon>
+                  <span>Action</span>
+                </div>
+                <div class="overview-value">{{ details.audit.action || '—' }}</div>
+              </div>
+              <div class="overview-row">
+                <div class="overview-label">
+                  <mat-icon>person</mat-icon>
+                  <span>Changed By</span>
+                </div>
+                <div class="overview-value">{{ details.audit.userName || '—' }}</div>
+              </div>
+              <div class="overview-row">
+                <div class="overview-label">
+                  <mat-icon>check_circle</mat-icon>
+                  <span>Status</span>
+                </div>
+                <div class="overview-value">
+                  <mat-chip class="status-chip" [ngClass]="{
+                    'status-chip--success': details.audit.status === 'SUCCESS',
+                    'status-chip--failed': details.audit.status === 'FAILED'
+                  }" selected>{{ details.audit.status || '—' }}</mat-chip>
+                </div>
+              </div>
+              <div class="overview-row overview-row--full">
+                <div class="overview-label">
+                  <mat-icon>description</mat-icon>
+                  <span>Description</span>
+                </div>
+                <div class="overview-value description-text">{{ details.audit.description || '—' }}</div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <mat-tab label="Raw Data">
+            <div class="detail-section raw-data-panel">
+              <mat-accordion>
+                <mat-expansion-panel *ngIf="details.changedDiff !== null">
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>Change Diff (JSON)</mat-panel-title>
+                  </mat-expansion-panel-header>
+                  <pre class="json-display">{{ formatJson(details.changedDiff) }}</pre>
+                </mat-expansion-panel>
+                <mat-expansion-panel *ngIf="details.oldValue !== null">
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>Old Value JSON</mat-panel-title>
+                  </mat-expansion-panel-header>
+                  <pre class="json-display">{{ formatJson(details.oldValue) }}</pre>
+                </mat-expansion-panel>
+                <mat-expansion-panel *ngIf="details.newValue !== null">
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>New Value JSON</mat-panel-title>
+                  </mat-expansion-panel-header>
+                  <pre class="json-display">{{ formatJson(details.newValue) }}</pre>
+                </mat-expansion-panel>
+              </mat-accordion>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+
+        <div class="additional-info">
+          <h4>Additional Info</h4>
+          <div class="info-grid">
+            <div>
+              <strong>Created At</strong>
+              <span>{{ details.audit.createdAt ? (details.audit.createdAt | date:'medium') : '—' }}</span>
+            </div>
+            <div>
+              <strong>Error Message</strong>
+              <span>{{ details.audit.errorMessage || '—' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="details.audit.status === 'FAILED'" class="error-alert">
+          <mat-icon>error</mat-icon>
+          <span>{{ details.audit.errorMessage || 'An error occurred.' }}</span>
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <button mat-flat-button color="primary" class="download-button" (click)="downloadJson()">Download JSON</button>
+      </div>
+    </div>
+  </mat-drawer>
+</mat-drawer-container>
