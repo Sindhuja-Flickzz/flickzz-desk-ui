@@ -227,6 +227,7 @@ export class PriorityComponent implements OnInit {
       description: rawForm.description,
       ticketTypeId: rawForm.ticketType,
       isActive: true,
+      orgId: localStorage.getItem('userOrgId') ? Number(localStorage.getItem('userOrgId')) : null,
       createdBy: Number(localStorage.getItem('userId') || 0),
       updatedBy: Number(localStorage.getItem('userId') || 0),
       isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),

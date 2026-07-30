@@ -68,6 +68,7 @@ import { ProjectStatusComponent } from './pages/project-status/project-status.co
 import { ProjectStatusCreateDialogComponent } from './pages/project-status/project-status-create-dialog/project-status-create-dialog.component';
 import { ProjectStatusEpicDetailComponent } from './pages/project-status/project-status-epic-detail/project-status-epic-detail.component';
 import { ProjectStatusItemDetailComponent } from './pages/project-status/project-status-item-detail/project-status-item-detail.component';
+import { SystemAuditComponent } from './pages/system-audit/system-audit.component';
 
 @NgModule({
   declarations: [
@@ -139,7 +140,8 @@ import { ProjectStatusItemDetailComponent } from './pages/project-status/project
     MatProgressSpinnerModule,
     MatChipsModule,
     MatTooltipModule,
-    DragDropModule
+    DragDropModule,
+    SystemAuditComponent
   ],
   providers: [
     HttpClient,

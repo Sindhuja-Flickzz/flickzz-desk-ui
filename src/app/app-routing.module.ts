@@ -31,6 +31,7 @@ import { CategoryComponent } from './pages/category/category.component';
 import { SupportGroupComponent } from './pages/support-group/support-group.component';
 import { SupportCategoryComponent } from './pages/support-category/support-category.component';
 import { authGuard } from './service/auth/auth.guard';
+import { SystemAuditComponent } from './pages/system-audit/system-audit.component';
 
 const routes: Routes = [
   {
@@ -50,6 +51,11 @@ const routes: Routes = [
   {
     path: 'settings',
     component: SettingsComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'system-audit',
+    component: SystemAuditComponent,
     canActivate: [authGuard]
   },
   {

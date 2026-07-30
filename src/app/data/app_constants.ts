@@ -249,6 +249,14 @@ export const MENU_INFO: MenuItem[] = [
                         "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
                         "route": "/business-partner",
                         "childSubMenus": []
+                    },
+                    {
+                        "subMenuId": 30103,
+                        "subMenuName": "Environment",
+                        "isActive": true,
+                        "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
+                        "route": "/system-audit",
+                        "childSubMenus": []
                     }
                 ]
             },
@@ -301,9 +309,9 @@ export const MENU_INFO: MenuItem[] = [
 export const APP_CONSTANTS = {
   APP_NAME: 'FlickzzDesk',
 //   Local base url for backend API
-   API_BASE_URL: 'http://localhost:5000/flickzz-desk'
+//   API_BASE_URL: 'http://localhost:5000/flickzz-desk'
 //   Railway internal base url for backend API
-//   API_BASE_URL: 'https://flickzz-desk-service-production.up.railway.app/flickzz-desk'
+   API_BASE_URL: 'https://flickzz-desk-service-production.up.railway.app/flickzz-desk'
 };
 
 export const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
