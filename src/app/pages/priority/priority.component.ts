@@ -195,6 +195,11 @@ export class PriorityComponent implements OnInit {
     this.submitSuccess = '';
   }
 
+  clearSubmitMessages(): void {
+    this.submitError = '';
+    this.submitSuccess = '';
+  }
+
   onLevelInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = input.value;
@@ -327,7 +332,7 @@ export class PriorityComponent implements OnInit {
         error: (err) => {
           this.loading = false;
           console.error('Delete priority error', err);
-          this.submitError = err.error?.message || err?.error?.description || 'Failed to delete priority.';
+          this.submitError = err.error?.description || err?.error?.message || 'Failed to delete priority.';
         }
       });
     });
