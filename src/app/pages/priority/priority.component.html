@@ -4,6 +4,19 @@
     <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ isEditMode ? 'Edit' : 'Create' }}</button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
   </div>
+  
+  <div *ngIf="submitError" class="message-banner error-banner">
+    <span class="message-text">✗ {{ submitError }}</span>
+    <button type="button" class="message-close" aria-label="Close error" (click)="clearSubmitMessages()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div *ngIf="submitSuccess" class="message-banner success-banner">
+    <span class="message-text">✓ {{ submitSuccess }}</span>
+    <button type="button" class="message-close" aria-label="Close success" (click)="clearSubmitMessages()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
 
   <div *ngIf="activeTab === 'create'" class="create-panel">
     <div class="page-header">
@@ -12,8 +25,6 @@
     <div class="context-banner">{{ contextLabel }}</div>
 
     <form [formGroup]="priorityForm" (ngSubmit)="onSave()" aria-label="Priority form">
-      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
-      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
 
       <div class="form-row">
         <div class="field">

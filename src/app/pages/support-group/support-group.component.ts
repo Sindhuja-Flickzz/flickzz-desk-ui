@@ -289,8 +289,8 @@ export class SupportGroupComponent implements OnInit {
       groupName: group.groupName || group.supportGroupName || ''
     });
 
-    this.managerInternalAgents = this.normalizeAgents(this.extractGroupAgents(group, ['managerInternalAgents', 'managerInternal', 'managerInternalList', 'managerInternals']));
-    this.managerBpAgents = this.normalizeAgents(this.extractGroupAgents(group, ['managerBpAgents', 'managerBp', 'managerBP', 'managerBpList']));
+    this.managerInternalAgents = this.normalizeAgents(this.extractManagerAgents(group, 'internal'));
+    this.managerBpAgents = this.normalizeAgents(this.extractManagerAgents(group, 'bp'));
     this.selectedAgents = this.normalizeAgents(this.extractGroupAgents(group, ['agents', 'agentDetails', 'members', 'supportGroupMembers']));
 
     this.managerInternalSearchValue = '';
@@ -656,4 +656,32 @@ export class SupportGroupComponent implements OnInit {
     return [];
   }
 
+  private extractManagerAgents(group: any, type: 'internal' | 'bp'): any[] {
+    const explicitKeys = type === 'internal'
+      ? ['managerInternalAgents', 'managerInternal', 'managerInternalList', 'managerInternals']
+      : ['managerBpAgents', 'managerBp', 'managerBP', 'managerBpList'];
+
+    const explicitAgents = this.extractGroupAgents(group, explicitKeys);
+    if (explicitAgents.length) {
+      return explicitAgents;
+    }
+
+    const fallbackManagers = this.extractGroupAgents(group, ['managers']);
+    if (!fallbackManagers.length) {
+      return [];
+    }
+
+    return fallbackManagers.filter((manager: any) => {
+      if (type === 'internal') {
+        return manager?.isInternal === true || manager?.isInternal === 'true' || manager?.managerType === 'INTERNAL' || manager?.managerType === 'INTERNAL_MANAGER';
+      }
+
+      return manager?.isBP === true || manager?.isBP === 'true' || manager?.managerType === 'BP' || manager?.managerType === 'BUSINESS_PARTNER';
+    });
+  }
+
+  clearSubmitMessages(): void {
+    this.submitError = '';
+    this.submitSuccess = '';
+  }
 }
