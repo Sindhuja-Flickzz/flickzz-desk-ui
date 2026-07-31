@@ -183,7 +183,7 @@ export class CalendarTypeComponent implements OnInit {
       error: (err) => {
         this.isSubmitting = false;
         console.error('Create calendar type error', err);
-        this.submitError = err.error?.message || 'Failed to create calendar types.';
+        this.submitError = err.error?.description || err.error?.message || 'Failed to create calendar types.';
       }
     });
   }
@@ -217,7 +217,7 @@ export class CalendarTypeComponent implements OnInit {
         },
         error: (err) => {
           console.error('Delete calendar type error', err);
-          this.submitError = err.error?.message || 'Failed to delete calendar type.';
+          this.submitError = err.error?.description || err.error?.message || 'Failed to delete calendar type.';
         }
       });
     });

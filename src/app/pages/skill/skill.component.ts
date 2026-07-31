@@ -186,7 +186,7 @@ export class SkillComponent implements OnInit {
         error: (err) => {
           this.isSubmitting = false;
           console.error('Update skill error', err);
-          this.submitError = err.error?.message || 'Failed to update skill.';
+          this.submitError = err.error?.description || err.error?.message || 'Failed to update skill.';
         }
       });
     } else {
@@ -276,7 +276,7 @@ export class SkillComponent implements OnInit {
         },
         error: (err) => {
           console.error('Delete skill error', err);
-          this.submitError = err.error?.message || 'Failed to delete skill.';
+          this.submitError = err.error?.description || err.error?.message || 'Failed to delete skill.';
         }
       });
     });

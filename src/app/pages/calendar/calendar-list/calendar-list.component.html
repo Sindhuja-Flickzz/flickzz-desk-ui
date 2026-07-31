@@ -8,8 +8,8 @@
   </div>
 
   <!-- Error Message -->
-  <div *ngIf="error" class="alert alert-error">
-    {{ error }}
+  <div *ngIf="error" class="message-banner error-banner">
+    <span class="message-text">✗ {{ error }}</span>
   </div>
 
   <!-- Loading State -->
