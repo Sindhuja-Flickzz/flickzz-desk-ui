@@ -445,7 +445,7 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             this.isSubmitting = false;
-            this.submitError = error?.error?.message || 'Unable to update the template. Please try again.';
+            this.submitError = error?.error?.description || error?.error?.message || 'Unable to update the template. Please try again.';
           }
         })
       );
@@ -462,7 +462,7 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             this.isSubmitting = false;
-            this.submitError = error?.error?.message || 'Unable to create the template. Please try again.';
+            this.submitError = error?.error?.description || error?.error?.message || 'Unable to create the template. Please try again.';
           }
         })
       );
@@ -561,7 +561,7 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Failed to load template details', err);
-        this.submitError = 'Unable to load template details for editing.';
+        this.submitError = err.error?.description || err.error?.message || 'Unable to load template details for editing.';
       }
     });
   }
@@ -644,7 +644,7 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Delete failed', err);
-            this.submitError = err?.error?.message || 'Failed to delete template. Please try again.';
+            this.submitError = err?.error?.description || err?.error?.message || 'Failed to delete template. Please try again.';
           }
         })
       );

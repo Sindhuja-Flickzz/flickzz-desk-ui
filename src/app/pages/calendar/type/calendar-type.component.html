@@ -1,5 +1,6 @@
 <div class="calendar-type-page">
   <div class="tabs">
+    <button type="button" class="save-btn header-back" (click)="cancelForm()"><mat-icon>chevron_left</mat-icon></button>
     <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
     <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
     <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
@@ -40,7 +41,7 @@
         <button type="submit" *ngIf="!isSubmitting" class="save-btn" [disabled]="typeNameList.length === 0">Save</button>
         <button type="submit" *ngIf="isSubmitting" class="save-btn" disabled>Saving</button>
         <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
-        <button type="button" class="reset-btn" (click)="cancelForm()">Back</button>
+        <!-- <button type="button" class="reset-btn" (click)="cancelForm()">Back</button> -->
       </div>
     </form>
   </div>

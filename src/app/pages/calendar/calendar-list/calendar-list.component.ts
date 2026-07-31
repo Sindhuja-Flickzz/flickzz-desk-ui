@@ -118,9 +118,9 @@ export class CalendarListPageComponent implements OnInit {
             this.loadCalendars();
           },
           error: (err) => {
-            this.error = 'Failed to delete calendar. Please try again.';
-            console.error('Error deleting calendar:', err);
-            this.openInfoDialog(this.error, 'Error');
+            this.error = err.error?.description || err.error?.message || 'Failed to delete calendar. Please try again.';
+            // console.error('Error deleting calendar:', err);
+            // this.openInfoDialog(this.error, 'Error');
           }
         });
       }
