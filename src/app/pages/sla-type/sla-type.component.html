@@ -87,7 +87,7 @@
       </div>
 
       <div class="actions">
-        <button type="submit" [disabled]="!isSlaFormValid()" class="save-btn">Save</button>
+        <button type="button" [disabled]="!isSlaFormValid()" class="save-btn" (click)="openProceedDialog()">Proceed</button>
         <button type="button" class="reset-btn" (click)="slaForm.reset()">Reset</button>
       </div>
     </form>
@@ -120,7 +120,7 @@
       </div>
     </div>
 
-    <div *ngIf="!loading && filteredSlaList.length === 0" class="context-banner">No SLA types match the selected filters.</div>
+    <div *ngIf="!loading && slaList.length > 0 && filteredSlaList.length === 0" class="context-banner">No SLA types match the selected filters.</div>
 
     <div *ngIf="!loading && filteredSlaList.length > 0" class="table-wrapper">
       <table>

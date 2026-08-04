@@ -8,6 +8,10 @@ export interface ConfirmationDialogData {
   cancelText?: string;
   showCancel?: boolean;
   type?: 'info' | 'error' | 'delete';
+  includeRemarks?: boolean;
+  remarksLabel?: string;
+  remarksPlaceholder?: string;
+  remarksValue?: string;
 }
 
 @Component({
@@ -16,6 +20,8 @@ export interface ConfirmationDialogData {
   styleUrls: ['./confirmation-dialog.component.scss']
 })
 export class ConfirmationDialogComponent {
+  remarks = '';
+
   constructor(
     public dialogRef: MatDialogRef<ConfirmationDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: ConfirmationDialogData
@@ -25,15 +31,30 @@ export class ConfirmationDialogComponent {
       confirmText: 'Confirm',
       cancelText: 'Cancel',
       showCancel: true,
+      includeRemarks: false,
+      remarksLabel: 'Remarks',
+      remarksPlaceholder: 'Enter remarks',
+      remarksValue: '',
       ...data
     };
+    this.remarks = this.data.remarksValue || '';
   }
 
   onConfirm(): void {
+    if (this.data.includeRemarks) {
+      this.dialogRef.close({ confirmed: true, remarks: this.remarks.trim() });
+      return;
+    }
+
     this.dialogRef.close(true);
   }
 
   onCancel(): void {
+    if (this.data.includeRemarks) {
+      this.dialogRef.close({ confirmed: false, remarks: this.remarks.trim() });
+      return;
+    }
+
     this.dialogRef.close(false);
   }
 }

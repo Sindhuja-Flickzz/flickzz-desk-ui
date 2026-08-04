@@ -9,6 +9,7 @@ import { forkJoin } from 'rxjs';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { SupportGroupService } from '../../service/support-group.service';
 import { AgentService } from '../../service/agent.service';
+import { CompanyService } from '../../service/company.service';
 import { USER_ROLES } from '../../data/app_constants';
 
 interface AgentSuggestion {
@@ -29,6 +30,7 @@ export class SupportGroupComponent implements OnInit {
   supportGroupForm: FormGroup;
   supportGroups: any[] = [];
   filteredSupportGroups: any[] = [];
+  bpOptions: any[] = [];
   searchValue = '';
   loading = false;
   isSubmitting = false;
@@ -46,6 +48,7 @@ export class SupportGroupComponent implements OnInit {
   pageSizeOptions = [5, 10, 25, 50];
   totalRecords = 0;
   currentPage = 0;
+  orgId = Number(localStorage.getItem('userOrgId') || 0);
 
   hoveredGroupPopover: { groupId: number | null; section: 'internal' | 'bp' | 'agent' | null } = {
     groupId: null,
@@ -78,6 +81,7 @@ export class SupportGroupComponent implements OnInit {
     private supportGroupService: SupportGroupService,
     private agentService: AgentService,
     private dialog: MatDialog,
+    private companyService: CompanyService,
     private route: ActivatedRoute,
     private location: Location
   ) {
@@ -319,7 +323,58 @@ export class SupportGroupComponent implements OnInit {
     });
   }
 
-  onSave(): void {
+  openProceedDialog(): void {
+    this.isSubmitting = false;
+    this.formError = {};
+    this.submitError = '';
+    this.submitSuccess = '';
+
+    const groupName = (this.supportGroupForm.get('groupName')?.value || '').trim();
+    if (!groupName) {
+      this.formError['groupName'] = 'Group name is required.';
+    }
+
+    if (!this.managerInternalAgents.length) {
+      this.formError['managerInternalAgents'] = 'Please add at least one internal manager.';
+    }
+
+    if (this.selectionMode === 'bp' && !this.managerBpAgents.length) {
+      this.formError['managerBpAgents'] = 'Please add at least one business partner manager.';
+    }
+
+    if (!this.selectedAgents.length) {
+      this.formError['agents'] = 'Please add at least one agent.';
+    }
+
+    if (Object.keys(this.formError).length > 0) {
+      return;
+    }
+
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '480px',
+      disableClose: true,
+      data: {
+        title: this.isEditMode ? 'Confirm Update' : 'Confirm Save',
+        message: this.isEditMode
+          ? 'Please review the support group details and add remarks before updating.'
+          : 'Please review the support group details and add remarks before saving.',
+        confirmText: this.isEditMode ? 'Update' : 'Save',
+        cancelText: 'Cancel',
+        includeRemarks: true,
+        remarksLabel: 'Remarks',
+        remarksPlaceholder: 'Enter remarks for this action'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (!result?.confirmed) {
+        return;
+      }
+      this.onSave(result.remarks);
+    });
+  }
+
+  onSave(remarks?: string): void {
     this.isSubmitting = true;
     this.formError = {};
     this.submitError = '';
@@ -346,10 +401,11 @@ export class SupportGroupComponent implements OnInit {
       this.isSubmitting = false;
       return;
     }
-    
+
     const payload: any = {
       supportGroupId: this.editingSupportGroupId,
       groupName,
+      remarks: remarks || '',
       managerInternalAgents: this.managerInternalAgents.map((agent) => agent.agentId),
       managerBpAgents: this.selectionMode === 'bp' ? this.managerBpAgents.map((agent) => agent.agentId) : [],
       agents: this.selectedAgents.map((agent) => agent.agentId),
@@ -386,6 +442,22 @@ export class SupportGroupComponent implements OnInit {
 
   loadSupportGroups(): void {
     this.loading = true;
+    if(this.businessPartnerId == null && this.orgId != null) {
+        this.companyService.getServiceProviderList(this.orgId).subscribe({
+        next: (response) => {
+          this.bpOptions = (response as any).attributes || response || [];
+          const matchingRole = this.bpOptions.find((bp) => {
+            return bp.company?.companyId != null && bp.mappedCompany?.companyId != null
+              && bp.company.companyId === bp.mappedCompany.companyId;
+          });
+
+          this.businessPartnerId = matchingRole?.businessPartnerId ?? null;
+        },
+        error: () => {
+          console.error('Failed to load business partners');
+        }
+      });
+    }
     this.supportGroupService.getAllSupportGroups(this.businessPartnerId).subscribe({
       next: (result) => {
         this.supportGroups = this.normalizeSupportGroups(result);
@@ -425,12 +497,17 @@ export class SupportGroupComponent implements OnInit {
       disableClose: true,
       data: {
         title: 'Delete Support Group',
-        message: `Are you sure you want to delete support group "${group.groupName || group.supportGroupName}"?`
+        message: `Are you sure you want to delete support group "${group.groupName || group.supportGroupName}"?`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        includeRemarks: true,
+        remarksLabel: 'Remarks',
+        remarksPlaceholder: 'Enter remarks for deletion'
       }
     });
 
-    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
-      if (!confirmed) {
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (!result?.confirmed) {
         return;
       }
 
@@ -440,7 +517,7 @@ export class SupportGroupComponent implements OnInit {
       }
 
       this.loading = true;
-      this.supportGroupService.deleteSupportGroup(groupId).subscribe({
+      this.supportGroupService.deleteSupportGroup(groupId, result.remarks).subscribe({
         next: () => {
           this.loading = false;
           this.submitSuccess = 'Support group deleted successfully.';

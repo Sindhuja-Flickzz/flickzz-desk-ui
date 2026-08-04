@@ -42,6 +42,7 @@ export class CategoryComponent implements OnInit {
   pageSizeOptions = [5, 10, 25, 50];
   totalRecords = 0;
   currentPage = 0;
+  orgId = Number(localStorage.getItem('userOrgId') || 0);
 
   constructor(
     private fb: FormBuilder,
@@ -181,7 +182,54 @@ export class CategoryComponent implements OnInit {
     this.selectedSubCategories = this.extractSubCategoryNames(category);
   }
 
-  onSave(): void {
+  openProceedDialog(): void {
+    this.isSubmitting = false;
+    this.formError = {};
+    this.submitError = '';
+    this.submitSuccess = '';
+
+    const categoryName = (this.categoryForm.get('categoryName')?.value || '').trim();
+    if (!categoryName) {
+      this.formError['categoryName'] = 'Category name is required.';
+    }
+
+    if (this.selectedSubCategories.length === 0) {
+      this.formError['subCategories'] = 'Please add at least one subcategory.';
+    }
+
+    if (this.selectionMode === 'bp' && !this.businessPartnerId) {
+      this.formError['businessPartner'] = 'Please select a business partner.';
+    }
+
+    if (Object.keys(this.formError).length > 0) {
+      return;
+    }
+
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '480px',
+      disableClose: true,
+      data: {
+        title: this.isEditMode ? 'Confirm Update' : 'Confirm Save',
+        message: this.isEditMode
+          ? 'Please review the category details and add remarks before updating.'
+          : 'Please review the category details and add remarks before saving.',
+        confirmText: this.isEditMode ? 'Update' : 'Save',
+        cancelText: 'Cancel',
+        includeRemarks: true,
+        remarksLabel: 'Remarks',
+        remarksPlaceholder: 'Enter remarks for this action'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (!result?.confirmed) {
+        return;
+      }
+      this.onSave(result.remarks);
+    });
+  }
+
+  onSave(remarks?: string): void {
     this.isSubmitting = true;
     this.formError = {};
     this.submitError = '';
@@ -209,6 +257,7 @@ export class CategoryComponent implements OnInit {
       categoryId: this.editingCategoryId,
       categoryName,
       subCategories: this.selectedSubCategories,
+      remarks: remarks || '',
       businessPartnerId: this.businessPartnerId,
       orgId: localStorage.getItem('userOrgId') ? Number(localStorage.getItem('userOrgId')) : null,
       createdBy: Number(localStorage.getItem('userId') || 0),
@@ -242,6 +291,22 @@ export class CategoryComponent implements OnInit {
 
   loadCategories(): void {
     this.loading = true;
+    if(this.businessPartnerId == null && this.orgId != null) {
+        this.companyService.getServiceProviderList(this.orgId).subscribe({
+        next: (response) => {
+          this.bpOptions = (response as any).attributes || response || [];
+          const matchingRole = this.bpOptions.find((bp) => {
+            return bp.company?.companyId != null && bp.mappedCompany?.companyId != null
+              && bp.company.companyId === bp.mappedCompany.companyId;
+          });
+
+          this.businessPartnerId = matchingRole?.businessPartnerId ?? null;
+        },
+        error: () => {
+          console.error('Failed to load business partners');
+        }
+      });
+    }
     this.categoryService.getAllCategories(this.businessPartnerId).subscribe({
       next: (result) => {
         this.categories = this.normalizeCategories(result);
@@ -281,17 +346,22 @@ export class CategoryComponent implements OnInit {
       disableClose: true,
       data: {
         title: 'Delete Category',
-        message: `Are you sure you want to delete category "${category.categoryName}"?`
+        message: `Are you sure you want to delete category "${category.categoryName}"?`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        includeRemarks: true,
+        remarksLabel: 'Remarks',
+        remarksPlaceholder: 'Enter remarks for deletion'
       }
     });
 
-    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
-      if (!confirmed || !category.categoryId) {
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (!result?.confirmed || !category.categoryId) {
         return;
       }
 
       this.loading = true;
-      this.categoryService.deleteCategory(category.categoryId).subscribe({
+      this.categoryService.deleteCategory(category.categoryId, result.remarks).subscribe({
         next: () => {
           this.loading = false;
           this.submitSuccess = 'Category deleted successfully.';

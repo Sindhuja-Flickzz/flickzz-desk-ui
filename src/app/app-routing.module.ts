@@ -32,6 +32,7 @@ import { SupportGroupComponent } from './pages/support-group/support-group.compo
 import { SupportCategoryComponent } from './pages/support-category/support-category.component';
 import { authGuard } from './service/auth/auth.guard';
 import { SystemAuditComponent } from './pages/system-audit/system-audit.component';
+import { HomeComponent } from './pages/home/home.component';
 
 const routes: Routes = [
   {
@@ -46,6 +47,11 @@ const routes: Routes = [
   {
     path: 'welcome',
     component: WelcomeComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'home',
+    component: HomeComponent,
     canActivate: [authGuard]
   },
   {

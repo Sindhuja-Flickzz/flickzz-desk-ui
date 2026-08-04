@@ -25,7 +25,7 @@
     </div>
     <div class="context-banner">{{ contextLabel }}</div>
 
-    <form [formGroup]="supportGroupForm" (ngSubmit)="onSave()" aria-label="Support group form">
+    <form [formGroup]="supportGroupForm" (ngSubmit)="openProceedDialog()" aria-label="Support group form">
 
       <div class="form-row">
         <div class="field">
@@ -122,7 +122,7 @@
       </div>
 
       <div class="actions">
-        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update' : 'Save') }}</button>
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Processing...' : 'Proceed' }}</button>
         <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
         <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel Edit</button>
       </div>

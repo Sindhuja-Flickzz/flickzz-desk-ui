@@ -69,6 +69,7 @@ import { ProjectStatusCreateDialogComponent } from './pages/project-status/proje
 import { ProjectStatusEpicDetailComponent } from './pages/project-status/project-status-epic-detail/project-status-epic-detail.component';
 import { ProjectStatusItemDetailComponent } from './pages/project-status/project-status-item-detail/project-status-item-detail.component';
 import { SystemAuditComponent } from './pages/system-audit/system-audit.component';
+import { HomeComponent } from './pages/home/home.component';
 
 @NgModule({
   declarations: [
@@ -109,8 +110,9 @@ import { SystemAuditComponent } from './pages/system-audit/system-audit.componen
     ProjectStatusComponent,
     ProjectStatusCreateDialogComponent,
     ProjectStatusEpicDetailComponent,
-    ProjectStatusItemDetailComponent
-    ,SlaTypeComponent
+    ProjectStatusItemDetailComponent,
+    SlaTypeComponent,
+    HomeComponent
   ],
   imports: [
     BrowserModule,

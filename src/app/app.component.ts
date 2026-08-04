@@ -328,6 +328,10 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  goHome() {
+    this.router.navigate(['/home']);
+  }
+
   toggleExpansion(node: MenuNode) {
     if (this.expandedNodeIds.has(node.id)) {
       // collapse this node and descendants

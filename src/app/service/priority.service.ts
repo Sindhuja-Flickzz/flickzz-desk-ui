@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
 import { PriorityMaster, TicketTypeMaster } from '../models/priority-master';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Injectable({
   providedIn: 'root'
@@ -31,8 +32,14 @@ export class PriorityService {
     return this.http.post(url, request);
   }
 
-  deletePriority(priorityId: number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/bp/priority/delete/${priorityId}`);
+  deletePriority(priorityId: number, remarks?: string): Observable<any> {
+    const payload = {
+      priorityId,
+      remarks: remarks || '',
+      deletedBy: Number(localStorage.getItem('userId') || 0),
+      isDeletedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
+    };
+    return this.http.delete(`${this.baseUrl}/bp/priority/delete`, { body: payload });
   }
 
   getPriorityById(priorityId: number): Observable<PriorityMaster> {

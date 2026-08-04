@@ -1,0 +1,16 @@
+<div class="home-container">
+  <header class="home-header">
+    <h1>Home</h1>
+    <p>Choose a workspace to continue.</p>
+  </header>
+
+  <div class="tile-grid">
+    <div class="tile" *ngFor="let tile of tiles">
+      <button class="tile-button" type="button">
+        <mat-icon>{{ tile.icon }}</mat-icon>
+        <span class="tile-title">{{ tile.title }}</span>
+        <!-- <span class="tile-description">{{ tile.description }}</span> -->
+      </button>
+    </div>
+  </div>
+</div>

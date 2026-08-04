@@ -219,7 +219,52 @@ export class PriorityComponent implements OnInit {
     this.priorityForm.get('level')?.setValue(numericValue);
   }
 
-  onSave(): void {
+  openProceedDialog(): void {
+    this.formError = {};
+    this.submitError = '';
+    this.submitSuccess = '';
+
+    Object.keys(this.priorityForm.controls).forEach((key) => {
+      const field = this.priorityForm.get(key);
+      if (field?.hasError('required')) {
+        this.formError[key] = `${key} is required`;
+      }
+      if (key === 'level' && field?.hasError('pattern')) {
+        this.formError[key] = 'Level must be a whole number greater than or equal to 1';
+      }
+      if (key === 'level' && field?.hasError('min')) {
+        this.formError[key] = 'Level must be greater than or equal to 1';
+      }
+    });
+
+    if (Object.keys(this.formError).length > 0) {
+      return;
+    }
+
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '480px',
+      disableClose: true,
+      data: {
+        title: this.isEditMode ? 'Confirm Update' : 'Confirm Save',
+        message: this.isEditMode ? 'Please review the details and add remarks before updating this priority.' : 'Please review the details and add remarks before saving this priority.',
+        confirmText: this.isEditMode ? 'Update' : 'Save',
+        cancelText: 'Cancel',
+        includeRemarks: true,
+        remarksLabel: 'Remarks',
+        remarksPlaceholder: 'Enter remarks for this action'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (!result?.confirmed) {
+        return;
+      }
+
+      this.onSave(result.remarks);
+    });
+  }
+
+  onSave(remarks?: string): void {
     this.isSubmitting = true;
     this.formError = {};
     this.submitError = '';
@@ -252,6 +297,7 @@ export class PriorityComponent implements OnInit {
       level: rawForm.level,
       description: rawForm.description,
       ticketTypeId: rawForm.ticketType,
+      remarks: remarks || '',
       isActive: true,
       orgId: localStorage.getItem('userOrgId') ? Number(localStorage.getItem('userOrgId')) : null,
       createdBy: Number(localStorage.getItem('userId') || 0),
@@ -313,17 +359,22 @@ export class PriorityComponent implements OnInit {
       disableClose: true,
       data: {
         title: 'Delete Priority',
-        message: `Are you sure you want to delete priority "${priority.code}"?`
+        message: `Are you sure you want to delete priority "${priority.code}"?`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        includeRemarks: true,
+        remarksLabel: 'Remarks',
+        remarksPlaceholder: 'Enter remarks for deletion'
       }
     });
 
-    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
-      if (!confirmed || !priority.priorityId) {
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (!result?.confirmed || !priority.priorityId) {
         return;
       }
 
       this.loading = true;
-      this.priorityService.deletePriority(priority.priorityId).subscribe({
+      this.priorityService.deletePriority(priority.priorityId, result.remarks).subscribe({
         next: () => {
           this.loading = false;
           this.submitSuccess = 'Priority deleted successfully.';

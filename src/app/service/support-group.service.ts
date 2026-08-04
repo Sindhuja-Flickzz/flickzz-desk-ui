@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { APP_CONSTANTS } from '../data/app_constants';
+import { APP_CONSTANTS, USER_ROLES } from '../data/app_constants';
 
 @Injectable({
   providedIn: 'root'
@@ -24,7 +24,13 @@ export class SupportGroupService {
     return this.http.post(`${this.baseUrl}/bp/support-group/update`, request);
   }
 
-  deleteSupportGroup(supportGroupId: number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/bp/support-group/delete/${supportGroupId}`);
+  deleteSupportGroup(supportGroupId: number, remarks?: string): Observable<any> {
+    const payload = {
+      supportGroupId,
+      remarks: remarks || '',
+      deletedBy: Number(localStorage.getItem('userId') || 0),
+      isDeletedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
+    };
+    return this.http.delete(`${this.baseUrl}/bp/support-group/delete/${supportGroupId}`, { body: payload });
   }
 }
