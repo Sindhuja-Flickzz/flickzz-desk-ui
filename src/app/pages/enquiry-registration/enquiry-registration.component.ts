@@ -170,7 +170,7 @@ export class EnquiryRegistrationComponent implements OnInit {
       error: (err) => {
         this.loading = false;
         console.error('Enquiry registration error', err);
-        this.submitError = err.error?.description || 'Enquiry registration failed';
+        this.submitError = err.error?.description || 'Unable to register the enquiry. Please try again later.';
       }
     });
   }

@@ -53,6 +53,14 @@
     
     <div class="search-container">
       <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by type name or created by..." class="search-input">
+      <div class="active-filter">
+        <label for="typeActiveFilter">Show</label>
+        <select id="typeActiveFilter" [(ngModel)]="activeFilter" (ngModelChange)="onActiveFilterChange($event)">
+          <option value="all">All</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
     </div>
     
     <div class="table-wrapper">
@@ -60,6 +68,7 @@
         <thead>
           <tr>
             <th>Type Name</th>
+            <th>Status</th>
             <!-- <th>Created By</th> -->
             <th>Actions</th>
           </tr>
@@ -67,9 +76,14 @@
         <tbody>
           <tr *ngFor="let type of getPaginatedCalendarTypes()">
             <td>{{ type.typeName }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="{ 'active': isTypeActive(type), 'inactive': !isTypeActive(type) }">
+                {{ isTypeActive(type) ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
             <!-- <td>{{ type.createdBy }}</td> -->
             <td class="action-buttons">
-              <button type="button" (click)="onDeleteCalendarType(type)"><mat-icon>delete</mat-icon></button>
+              <button type="button" *ngIf="isTypeActive(type)" (click)="onDeleteCalendarType(type)"><mat-icon>delete</mat-icon></button>
             </td>
           </tr>
         </tbody>

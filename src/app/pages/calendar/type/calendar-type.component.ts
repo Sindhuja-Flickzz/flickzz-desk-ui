@@ -22,6 +22,7 @@ export class CalendarTypeComponent implements OnInit {
   calendarTypes: CalendarType[] = [];
   filteredCalendarTypes: CalendarType[] = [];
   searchValue = '';
+  activeFilter: 'all' | 'active' | 'inactive' = 'all';
   loading = false;
   formError: any = {};
   submitSuccess = '';
@@ -218,6 +219,9 @@ export class CalendarTypeComponent implements OnInit {
         error: (err) => {
           console.error('Delete calendar type error', err);
           this.submitError = err.error?.description || err.error?.message || 'Failed to delete calendar type.';
+          setTimeout(() => {
+            this.submitError = '';
+          }, 3000);
         }
       });
     });
@@ -235,12 +239,29 @@ export class CalendarTypeComponent implements OnInit {
       this.filteredCalendarTypes = this.calendarTypes;
     } else {
       this.filteredCalendarTypes = this.calendarTypes.filter(type =>
-        type.typeName.toLowerCase().includes(term) 
+        type.typeName.toLowerCase().includes(term)
         // || type.createdBy.toLowerCase().includes(term)
       );
     }
+    // Apply active/inactive filter
+    if (this.activeFilter !== 'all') {
+      this.filteredCalendarTypes = this.filteredCalendarTypes.filter(t => {
+        const isActive = this.isTypeActive(t);
+        return this.activeFilter === 'active' ? isActive : !isActive;
+      });
+    }
     this.totalRecords = this.filteredCalendarTypes.length;
     this.currentPage = 0;
+  }
+
+  onActiveFilterChange(value: 'all' | 'active' | 'inactive') {
+    this.activeFilter = value;
+    this.filterBySearch();
+  }
+
+  isTypeActive(type: CalendarType): boolean {
+    // Some API responses may include an isActive flag; default to true if absent
+    return (type as any).isActive !== false;
   }
 
   onPageChange(event: PageEvent): void {

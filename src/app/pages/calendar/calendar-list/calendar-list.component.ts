@@ -17,6 +17,7 @@ export class CalendarListPageComponent implements OnInit {
   filteredCalendars: CalendarMasterVO[] = [];
   searchTerm = '';
   selectedTypeFilter: 'all' | 'support' | 'requestor' = 'all';
+  activeFilter: 'all' | 'active' | 'inactive' = 'all';
   loading = false;
   error: string | null = null;
 
@@ -78,6 +79,11 @@ export class CalendarListPageComponent implements OnInit {
     this.applyFilters();
   }
 
+  onActiveFilterChange(value: 'all' | 'active' | 'inactive') {
+    this.activeFilter = value;
+    this.applyFilters();
+  }
+
   applyFilters(): void {
     const term = this.searchTerm.trim().toLowerCase();
 
@@ -88,11 +94,25 @@ export class CalendarListPageComponent implements OnInit {
         termMatch = (calendar.calendarCode || '').toLowerCase().includes(term)
           || typeText.includes(term);
       }
+      // determine calendar-level active state: consider a calendar active if any workday is active
+      const isActive = !!(calendar && calendar.isActive);
+
+      if (this.activeFilter === 'active' && !isActive) {
+        return false;
+      }
+      if (this.activeFilter === 'inactive' && isActive) {
+        return false;
+      }
+
       return termMatch;
     });
 
     this.totalRecords = this.filteredCalendars.length;
     this.currentPage = 0; // Reset to first page when filtering
+  }
+
+  isCalendarActive(calendar: CalendarMasterVO): boolean {
+    return !!(calendar && calendar.isActive);
   }
 
   onDeleteCalendar(calendar: CalendarMasterVO): void {
@@ -119,8 +139,9 @@ export class CalendarListPageComponent implements OnInit {
           },
           error: (err) => {
             this.error = err.error?.description || err.error?.message || 'Failed to delete calendar. Please try again.';
-            // console.error('Error deleting calendar:', err);
-            // this.openInfoDialog(this.error, 'Error');
+            setTimeout(() => {
+              this.error = null;
+            }, 3000);
           }
         });
       }
