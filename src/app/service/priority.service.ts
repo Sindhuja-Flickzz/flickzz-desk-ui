@@ -18,6 +18,11 @@ export class PriorityService {
     return this.http.get<PriorityMaster[]>(url);
   }
 
+  getAllActivePriorities(businessPartnerId?: number | null): Observable<PriorityMaster[]> {
+    const url = `${this.baseUrl}/bp/config/priority/active/${businessPartnerId}`;
+    return this.http.get<PriorityMaster[]>(url);
+  }
+
   getTicketTypes(): Observable<TicketTypeMaster[]> {
     return this.http.get<TicketTypeMaster[]>(`${this.baseUrl}/ticket/type/list`);
   }

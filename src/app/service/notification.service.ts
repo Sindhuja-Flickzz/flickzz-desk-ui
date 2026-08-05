@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, finalize, map } from 'rxjs/operators';
 import type { Client, IMessage } from '@stomp/stompjs';
 import { APP_CONSTANTS } from '../data/app_constants';
 import { NotificationPayload } from '../models/notification.model';
@@ -338,6 +338,8 @@ export class NotificationService {
       isRead: this.getRecordValue(record, ['isRead', 'read']) ?? false,
       readOn: this.getRecordValue(record, ['readOn', 'read_on']) ?? null,
       createdOn: this.getRecordValue(record, ['createdOn', 'created_on']) ?? new Date().toISOString(),
+      companyName: this.getRecordValue(record, ['triggeredUserOrg', 'companyName']),
+      initiatedBy: this.getRecordValue(record, ['triggeredByUser', 'initiatedBy']),
       payload: record
     } as NotificationPayload;
   }
@@ -363,19 +365,24 @@ export class NotificationService {
     this.storeNotifications(merged);
   }
 
-  private loadInitialNotifications(): void {
-    const url = `${this.getBaseUrl()}${this.notificationEndpoints[0]}${localStorage.getItem('userId') ? `/${localStorage.getItem('userId')}` : ''}`;
+  fetchNotifications(recipientId?: string): void {
+    const userId = recipientId ?? localStorage.getItem('userId') ?? '';
+    const url = `${this.getBaseUrl()}${this.notificationEndpoints[0]}${userId ? `/${userId}` : ''}`;
+    this.loadingSubject.next(true);
     this.http.get<unknown>(url).pipe(
       catchError((err: any) => {
-        console.warn('NotificationService: unable to load initial notifications', err);
+        console.warn('NotificationService: unable to fetch notifications', err);
         return of([] as NotificationPayload[]);
       }),
-      map((items: unknown) => this.normalizeNotificationList(items))
+      map((items: unknown) => this.normalizeNotificationList(items)),
+      finalize(() => this.loadingSubject.next(false))
     ).subscribe((items) => {
-      if (items.length) {
-        this.mergeNotifications(items);
-      }
+      this.storeNotifications(items);
     });
+  }
+
+  private loadInitialNotifications(): void {
+    this.fetchNotifications();
   }
 
   private normalizeNotificationList(payload: unknown): NotificationPayload[] {
@@ -383,7 +390,11 @@ export class NotificationService {
       return [];
     }
 
-    let data = (payload as any).attributes;
+    if (Array.isArray(payload)) {
+      return payload.map((item) => this.normalizePayload(item) ?? (item as NotificationPayload)).filter(Boolean as any);
+    }
+
+    let data = (payload as any).attributes ?? (payload as any).data ?? payload;
     if (typeof data === 'string') {
       try {
         data = JSON.parse(data);
@@ -393,15 +404,15 @@ export class NotificationService {
     }
 
     if (Array.isArray(data)) {
-      return data.map((item) => this.normalizePayload(item) ?? item as NotificationPayload).filter(Boolean as any);
+      return data.map((item) => this.normalizePayload(item) ?? (item as NotificationPayload)).filter(Boolean as any);
     }
-    
+
     const record = data as Record<string, any>;
     const arrayCandidates = ['attributes', 'data', 'notifications', 'items'];
     for (const key of arrayCandidates) {
       const candidate = record[key];
       if (Array.isArray(candidate)) {
-        return candidate.map((item) => this.normalizePayload(item) ?? item as NotificationPayload).filter(Boolean as any);
+        return candidate.map((item) => this.normalizePayload(item) ?? (item as NotificationPayload)).filter(Boolean as any);
       }
     }
 
@@ -409,6 +420,8 @@ export class NotificationService {
   }
 
   private storeNotifications(entries: NotificationPayload[]): void {
+    // entries = (entries as any).attributes;
+    console.log('NotificationService: storing notifications', entries);
     const sorted = [...entries]
       .filter(Boolean)
       .sort((left, right) => this.compareDates(left.createdOn, right.createdOn))

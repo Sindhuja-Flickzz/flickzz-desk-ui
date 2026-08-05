@@ -7,7 +7,10 @@ export interface NotificationPayload {
   action: string;
   referenceType?: string;
   referenceId?: string | number;
+  triggeredUserOrg?: string;
+  triggeredByUser?: string;
   recipientUserId?: string | number;
+  recipientUserName?: string;
   recipientOrgId?: string | number;
   isRead?: boolean;
   readOn?: string | null;
@@ -18,4 +21,8 @@ export interface NotificationPayload {
   actionUrl?: string;
   status?: string;
   payload?: any;
+  companyName?: string;
+  initiatedBy?: string;
+  configurationDetails?: any;
+  approvalWorkflow?: any;
 }

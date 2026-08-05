@@ -42,7 +42,6 @@ export class NotificationPopupComponent implements OnInit, OnDestroy {
   get accentClass(): string {
     const type = (this.notification?.action || '') as string;
     const key = String(type).trim().toLowerCase();
-    console.log('Notification type:', this.notification, 'key:', key);
     switch (key) {
       case 'create':
       case 'created':

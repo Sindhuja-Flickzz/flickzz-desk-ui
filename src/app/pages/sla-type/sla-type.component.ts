@@ -127,7 +127,7 @@ export class SlaTypeComponent implements OnInit {
   }
 
   loadPriorities(businessPartnerId: number | null): void {
-    this.priorityService.getAllPriorities(businessPartnerId).subscribe({
+    this.priorityService.getAllActivePriorities(businessPartnerId).subscribe({
       next: (res) => {
         this.prioritiesRaw = (res as any).attributes || [];
         // keep original list as priorities but also create grouped unique codes
@@ -397,7 +397,7 @@ export class SlaTypeComponent implements OnInit {
     const request$ = this.editingSlaId
       ? this.slaService.updateSlaType(payload)
       : this.slaService.createSlaType(payload);
-
+    console.log('request payload', request$);
     request$.subscribe({
       next: () => { this.loadSlaList(); this.activeTab = 'list'; },
       error: (err) => {

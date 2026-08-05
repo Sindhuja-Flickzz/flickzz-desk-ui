@@ -33,6 +33,7 @@ import { SupportCategoryComponent } from './pages/support-category/support-categ
 import { authGuard } from './service/auth/auth.guard';
 import { SystemAuditComponent } from './pages/system-audit/system-audit.component';
 import { HomeComponent } from './pages/home/home.component';
+import { NotificationCenterComponent } from './pages/notification-center/notification-center.component';
 
 const routes: Routes = [
   {
@@ -209,6 +210,11 @@ const routes: Routes = [
   {
     path: 'company/support-group',
     component: SupportGroupComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'notifications',
+    component: NotificationCenterComponent,
     canActivate: [authGuard]
   },
   {
