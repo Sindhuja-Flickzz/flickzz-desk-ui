@@ -4,6 +4,7 @@ export interface NotificationPayload {
   title?: string;
   message?: string;
   notificationType?: string;
+  action: string;
   referenceType?: string;
   referenceId?: string | number;
   recipientUserId?: string | number;

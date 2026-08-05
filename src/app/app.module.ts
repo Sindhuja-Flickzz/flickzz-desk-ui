@@ -78,6 +78,7 @@ import { SystemAuditComponent } from './pages/system-audit/system-audit.componen
 import { HomeComponent } from './pages/home/home.component';
 import { NotificationComponent } from './notification/notification.component';
 import { NotificationPopupComponent } from './shared/notification-popup/notification-popup.component';
+import { NotificationDropdownComponent } from './notification-dropdown/notification-dropdown.component';
 
 @NgModule({
   declarations: [
@@ -122,6 +123,7 @@ import { NotificationPopupComponent } from './shared/notification-popup/notifica
     SlaTypeComponent,
     HomeComponent,
     NotificationComponent,
+    NotificationDropdownComponent,
     NotificationPopupComponent
   ],
   imports: [
