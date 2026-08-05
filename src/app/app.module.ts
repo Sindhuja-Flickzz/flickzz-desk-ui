@@ -70,6 +70,7 @@ import { ProjectStatusEpicDetailComponent } from './pages/project-status/project
 import { ProjectStatusItemDetailComponent } from './pages/project-status/project-status-item-detail/project-status-item-detail.component';
 import { SystemAuditComponent } from './pages/system-audit/system-audit.component';
 import { HomeComponent } from './pages/home/home.component';
+import { NotificationComponent } from './notification/notification.component';
 
 @NgModule({
   declarations: [
@@ -112,7 +113,8 @@ import { HomeComponent } from './pages/home/home.component';
     ProjectStatusEpicDetailComponent,
     ProjectStatusItemDetailComponent,
     SlaTypeComponent,
-    HomeComponent
+    HomeComponent,
+    NotificationComponent
   ],
   imports: [
     BrowserModule,

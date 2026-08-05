@@ -339,7 +339,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   private populateFormFromUser(user: UserVO): void {
-    console.log('Populating form with user data:', user);
     this.profileForm.patchValue({
       agentId: user.agent?.agentId || '',
       agentName: user.agent?.agentName,

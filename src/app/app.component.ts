@@ -3,6 +3,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthenticationService } from './service/authentication.service';
 import { ThemeService } from './service/theme.service';
+import { NotificationService } from './notification/notification.service';
 import { MenuItem } from './models/menu';
 import { MENU_INFO, APP_CONSTANTS } from './data/app_constants';
 
@@ -60,7 +61,8 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private authService: AuthenticationService,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit() {
@@ -69,6 +71,8 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.showSidebar) {
       this.loadMenu();
     }
+
+    this.syncNotificationConnection(currentUrl);
 
     this.routerSub = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
@@ -83,6 +87,8 @@ export class AppComponent implements OnInit, OnDestroy {
           this.loadMenu();
         }
 
+        this.syncNotificationConnection(event.url);
+
         // Close mobile menu on route change
         this.isMobileMenuOpen = false;
         
@@ -95,6 +101,19 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.routerSub?.unsubscribe();
+    this.notificationService.disconnect();
+  }
+
+  private syncNotificationConnection(url: string): void {
+    const isAuthenticated = !!localStorage.getItem('token');
+    const isLoginRoute = url.startsWith('/login');
+
+    if (isAuthenticated && !isLoginRoute) {
+      console.log('AppComponent: User is authenticated and not on login route. Connecting to notification service.');
+      this.notificationService.connect();
+    } else {
+      this.notificationService.disconnect();
+    }
   }
 
   // Drag-to-resize methods
@@ -440,6 +459,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   logout() {
     const refreshToken = localStorage.getItem('refreshToken') ?? '';
+    this.notificationService.disconnect();
     this.authService.logout({ refreshToken }).subscribe({
       next: () => {
         localStorage.clear();

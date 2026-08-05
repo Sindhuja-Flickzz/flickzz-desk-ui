@@ -23,6 +23,7 @@
       </div>
       <div class="page-title">{{ getActivePageTitle() }}</div>
       <div class="topbar-actions">
+        <app-notification *ngIf="isLoggedIn()"></app-notification>
         <app-profile-icon *ngIf="isLoggedIn()"></app-profile-icon>
       </div>
     </header>
