@@ -1,16 +1,16 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subject, of, throwError } from 'rxjs';
+import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import type { Client, IMessage } from '@stomp/stompjs';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { APP_CONSTANTS } from '../data/app_constants';
-import { NotificationPayload } from './notification.model';
+import { NotificationPayload } from '../models/notification.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
+  private readonly MAX_NOTIFICATIONS = 200;
   private readonly wsBaseUrl = `${APP_CONSTANTS.API_BASE_URL.replace(/\/$/, '')}/ws`;
   private readonly notificationEndpoints = [
     '/notification/list',
@@ -22,10 +22,6 @@ export class NotificationService {
     '/notification/read',
     '/notifications/read',
     '/notification/mark-read'
-  ];
-  private readonly brokerDestinations = [
-    '/user/queue/notifications',
-    '/queue/notifications'
   ];
 
   private client: Client | null = null;
@@ -49,8 +45,7 @@ export class NotificationService {
   queuedNotifications$ = this.queueSubject.asObservable();
 
   constructor(
-    private http: HttpClient,
-    private snackBar: MatSnackBar
+    private http: HttpClient
   ) {
     this.setupAutoReconnectHooks();
   }
@@ -118,7 +113,7 @@ export class NotificationService {
     const normalizedId = String(notificationId);
     const current = this.getNotifications();
     const updated = current.map((entry) => {
-      const entryId = String(entry.notificationId ?? entry.id ?? '');
+      const entryId = String(entry.notificationId ?? entry.notificationId ?? '');
       if (entryId === normalizedId) {
         return {
           ...entry,
@@ -197,11 +192,6 @@ export class NotificationService {
       const socketFactory = await this.createSocketFactory();
 
       const connectHeaders = this.buildAuthHeaders();
-      console.debug('NotificationService: Connecting to websocket', {
-        wsBaseUrl: this.wsBaseUrl,
-        connectHeaders: Object.keys(connectHeaders),
-        brokerDestinations: this.brokerDestinations
-      });
 
       this.client = new StompClient({
         webSocketFactory: socketFactory,
@@ -219,6 +209,8 @@ export class NotificationService {
         this.loadingSubject.next(false);
         this.errorSubject.next(null);
         this.subscriptionActive = false;
+        // Load persisted notifications first, then subscribe for real-time updates
+        this.loadInitialNotifications();
         this.subscribeToBroker();
       };
 
@@ -264,14 +256,30 @@ export class NotificationService {
 
   private async createSocketFactory(): Promise<() => WebSocket> {
     try {
-      const sockjsModule = await import('sockjs-client');
-      const SockJS = (sockjsModule as { default?: new (url: string) => WebSocket }).default ??
-        (sockjsModule as unknown as new (url: string) => WebSocket);
-      return () => new SockJS(this.wsBaseUrl) as WebSocket;
+      const sockjsModule: any = await import('sockjs-client');
+      // normalize possible module shapes (ESM default, CJS export, named exports)
+      let SockJS: any = sockjsModule;
+      if (sockjsModule && typeof sockjsModule === 'object') {
+        SockJS = sockjsModule.default ?? sockjsModule.SockJS ?? sockjsModule;
+      }
+
+      // some bundlers wrap again; try to unwrap one more level
+      if (SockJS && typeof SockJS === 'object' && SockJS.default) {
+        SockJS = SockJS.default;
+      }
+
+      if (typeof SockJS === 'function') {
+        return () => new SockJS(this.wsBaseUrl) as WebSocket;
+      }
+
+      console.warn('NotificationService: loaded sockjs-client but could not find constructor, falling back to native WebSocket', sockjsModule);
+      // fall through to native websocket fallback below
     } catch {
       const rawWsUrl = `${this.wsBaseUrl.replace(/\/$/, '')}/websocket`;
       return () => new WebSocket(rawWsUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:'));
     }
+    const rawWsUrl = `${this.wsBaseUrl.replace(/\/$/, '')}/websocket`;
+    return () => new WebSocket(rawWsUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:'));
   }
 
   private subscribeToBroker(): void {
@@ -282,17 +290,8 @@ export class NotificationService {
     const destination = "/user/" + localStorage.getItem('userEmail') + "/queue/notifications";
     console.log('NotificationService: Subscribing to broker destination', destination);
     this.client.subscribe(destination, (message: IMessage) => {
-      console.log('NotificationService: Received message from broker', destination, message);
       this.handleIncomingNotification(message);
     });
-
-    // for (const destination of this.brokerDestinations) {
-    //   console.log('NotificationService: Subscribing to broker destination', destination);
-    //   this.client.subscribe(destination, (message: IMessage) => {
-    //     console.log('NotificationService: Received message from broker', destination, message);
-    //     this.handleIncomingNotification(message);
-    //   });
-    // }
 
     this.subscriptionActive = true;
   }
@@ -301,13 +300,10 @@ export class NotificationService {
     try {
       const rawBody = message.body ?? '';
       const payload = this.normalizePayload(rawBody);
-
       if (payload) {
         this.mergeNotifications([payload]);
         this.queueSubject.next(payload);
       }
-
-      this.showSnackbar(payload ?? { title: 'New notification', message: rawBody });
     } catch (error) {
       console.error('Error handling incoming notification:', error);
       this.errorSubject.next('Received an invalid notification payload');
@@ -352,8 +348,8 @@ export class NotificationService {
 
     newEntries.forEach((entry) => {
       const normalizedEntry = this.normalizePayload(entry) ?? entry;
-      const id = String(normalizedEntry.notificationId ?? normalizedEntry.id ?? '');
-      const index = merged.findIndex((item) => String(item.notificationId ?? item.id ?? '') === id);
+      const id = String(normalizedEntry.notificationId ?? normalizedEntry.notificationId ?? '');
+      const index = merged.findIndex((item) => String(item.notificationId ?? item.notificationId ?? '') === id);
 
       if (index >= 0) {
         merged[index] = { ...merged[index], ...normalizedEntry };
@@ -367,10 +363,56 @@ export class NotificationService {
     this.storeNotifications(merged);
   }
 
+  private loadInitialNotifications(): void {
+    const url = `${this.getBaseUrl()}${this.notificationEndpoints[0]}${localStorage.getItem('userId') ? `/${localStorage.getItem('userId')}` : ''}`;
+    this.http.get<unknown>(url).pipe(
+      catchError((err: any) => {
+        console.warn('NotificationService: unable to load initial notifications', err);
+        return of([] as NotificationPayload[]);
+      }),
+      map((items: unknown) => this.normalizeNotificationList(items))
+    ).subscribe((items) => {
+      if (items.length) {
+        this.mergeNotifications(items);
+      }
+    });
+  }
+
+  private normalizeNotificationList(payload: unknown): NotificationPayload[] {
+    if (!payload) {
+      return [];
+    }
+
+    let data = (payload as any).attributes;
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+      } catch {
+        return [];
+      }
+    }
+
+    if (Array.isArray(data)) {
+      return data.map((item) => this.normalizePayload(item) ?? item as NotificationPayload).filter(Boolean as any);
+    }
+    
+    const record = data as Record<string, any>;
+    const arrayCandidates = ['attributes', 'data', 'notifications', 'items'];
+    for (const key of arrayCandidates) {
+      const candidate = record[key];
+      if (Array.isArray(candidate)) {
+        return candidate.map((item) => this.normalizePayload(item) ?? item as NotificationPayload).filter(Boolean as any);
+      }
+    }
+
+    return [];
+  }
+
   private storeNotifications(entries: NotificationPayload[]): void {
     const sorted = [...entries]
       .filter(Boolean)
-      .sort((left, right) => this.compareDates(left.createdOn, right.createdOn));
+      .sort((left, right) => this.compareDates(left.createdOn, right.createdOn))
+      .slice(0, this.MAX_NOTIFICATIONS);
 
     this.notificationsSubject.next(sorted);
     this.unreadCountSubject.next(sorted.filter((entry) => !entry.isRead).length);
@@ -419,18 +461,6 @@ export class NotificationService {
     this.loadingSubject.next(false);
     this.errorSubject.next(message);
     this.reconnect();
-  }
-
-  private showSnackbar(notification: NotificationPayload): void {
-    if (!notification.title && !notification.message) {
-      return;
-    }
-
-    this.snackBar.open(notification.title || 'New notification', notification.message || '', {
-      duration: 4000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
   }
 
   private getBaseUrl(): string {

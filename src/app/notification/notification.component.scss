@@ -1,0 +1,135 @@
+.notification-button {
+  position: relative;
+}
+
+.notification-menu {
+  width: 380px;
+  max-height: 560px;
+  padding: 0;
+}
+
+.menu-card {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(12, 37, 80, 0.12);
+  overflow: hidden;
+}
+
+.menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+}
+
+.menu-header .title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #09244d;
+}
+
+.mark-all {
+  color: #0052ff;
+  text-transform: none;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.menu-body {
+  max-height: 420px;
+  overflow: auto;
+  padding: 8px 0 12px 0;
+}
+
+.notification-item {
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  align-items: flex-start;
+  border-radius: 10px;
+  margin: 6px 12px;
+}
+
+.notification-item.highlight {
+  background: rgba(43,148,255,0.08);
+  box-shadow: 0 6px 20px rgba(12,37,80,0.06);
+}
+
+.left-icon .icon-shell {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(43,148,255,0.12);
+  display: grid;
+  place-items: center;
+  color: #1f56ff;
+}
+
+.notification-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.notification-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.notification-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #09244d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unread-dot {
+  width: 10px;
+  height: 10px;
+  background: #0b63ff;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.notification-message {
+  font-size: 0.95rem;
+  color: #5c7087;
+  line-height: 1.4;
+  max-height: 2.8em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification-meta {
+  font-size: 0.85rem;
+  color: #8a98aa;
+}
+
+.open-btn .mat-icon {
+  font-size: 18px;
+}
+
+.view-all {
+  text-align: center;
+  padding: 12px 0 8px 0;
+}
+
+.view-all a {
+  color: #0052ff;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.empty, .loading {
+  padding: 16px;
+  color: #5c7087;
+}

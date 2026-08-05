@@ -3,7 +3,8 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthenticationService } from './service/authentication.service';
 import { ThemeService } from './service/theme.service';
-import { NotificationService } from './notification/notification.service';
+import { NotificationService } from './service/notification.service';
+import { NotificationOverlayService } from './service/notification-overlay.service';
 import { MenuItem } from './models/menu';
 import { MENU_INFO, APP_CONSTANTS } from './data/app_constants';
 
@@ -62,7 +63,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private router: Router,
     private authService: AuthenticationService,
     public themeService: ThemeService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private notificationOverlayService: NotificationOverlayService
   ) {}
 
   ngOnInit() {

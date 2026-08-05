@@ -1,0 +1,45 @@
+<button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Notifications" class="notification-button">
+  <mat-icon>notifications</mat-icon>
+  <span *ngIf="unreadCount > 0" matBadge="" [matBadgeHidden]="unreadCount===0" [matBadgeColor]="'warn'" [matBadgeSize]="'small'" [matBadgeOverlap]="false" [attr.matBadge]="unreadCount"></span>
+</button>
+
+<mat-menu #menu="matMenu" class="notification-menu" xPosition="before">
+  <div class="menu-card">
+    <div class="menu-header">
+      <div class="title">Notifications</div>
+      <button mat-button class="mark-all" (click)="markAll()" *ngIf="unreadCount>0">Mark all as read</button>
+    </div>
+
+    <div class="menu-body">
+      <div *ngIf="loading" class="loading">Loading...</div>
+      <div *ngIf="!loading && notifications.length === 0" class="empty">No notifications</div>
+
+      <mat-nav-list *ngIf="notifications.length>0">
+        <mat-list-item *ngFor="let n of notifications; let i = index; trackBy: trackById" (click)="openNotification(n)" class="notification-item" [class.unread]="!n.isRead" [class.highlight]="i===0 && !n.isRead">
+          <div class="left-icon">
+            <div class="icon-shell">
+              <mat-icon>notifications</mat-icon>
+            </div>
+          </div>
+
+          <div class="notification-content">
+            <div class="notification-top">
+              <div class="notification-title">{{ n.title }}</div>
+              <div class="unread-dot" *ngIf="!n.isRead"></div>
+            </div>
+            <div class="notification-message">{{ n.message }}</div>
+            <div class="notification-meta">{{ timeAgo(n.createdOn) }}</div>
+          </div>
+
+          <button mat-icon-button class="open-btn" aria-label="Open notification" *ngIf="n.actionUrl">
+            <mat-icon>open_in_new</mat-icon>
+          </button>
+        </mat-list-item>
+      </mat-nav-list>
+
+      <div class="view-all">
+        <a (click)="openAll()">View All Notifications</a>
+      </div>
+    </div>
+  </div>
+</mat-menu>

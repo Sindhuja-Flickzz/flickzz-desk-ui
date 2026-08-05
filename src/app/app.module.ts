@@ -38,9 +38,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatListModule } from '@angular/material/list';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { OverlayModule } from '@angular/cdk/overlay';
+import { PortalModule } from '@angular/cdk/portal';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatChipsModule } from '@angular/material/chips';
@@ -71,6 +77,7 @@ import { ProjectStatusItemDetailComponent } from './pages/project-status/project
 import { SystemAuditComponent } from './pages/system-audit/system-audit.component';
 import { HomeComponent } from './pages/home/home.component';
 import { NotificationComponent } from './notification/notification.component';
+import { NotificationPopupComponent } from './shared/notification-popup/notification-popup.component';
 
 @NgModule({
   declarations: [
@@ -114,7 +121,8 @@ import { NotificationComponent } from './notification/notification.component';
     ProjectStatusItemDetailComponent,
     SlaTypeComponent,
     HomeComponent,
-    NotificationComponent
+    NotificationComponent,
+    NotificationPopupComponent
   ],
   imports: [
     BrowserModule,
@@ -137,6 +145,8 @@ import { NotificationComponent } from './notification/notification.component';
     MatSelectModule,
     MatCheckboxModule,
     MatSnackBarModule,
+    OverlayModule,
+    PortalModule,
     MatDatepickerModule,
     MatNativeDateModule,
     MatSlideToggleModule,
@@ -144,8 +154,11 @@ import { NotificationComponent } from './notification/notification.component';
     MatProgressSpinnerModule,
     MatChipsModule,
     MatTooltipModule,
-    DragDropModule,
-    SystemAuditComponent
+    MatMenuModule,
+    MatBadgeModule,
+    MatListModule,
+    MatDividerModule,
+    DragDropModule
   ],
   providers: [
     HttpClient,
