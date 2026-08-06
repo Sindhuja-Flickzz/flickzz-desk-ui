@@ -369,7 +369,7 @@ export class RitmComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/welcome']);
+    this.router.navigate(['/home']);
   }
 
   get requestedForControl() {

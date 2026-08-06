@@ -17,29 +17,29 @@ import { ApprovalWorkflowComponent } from './approval-workflow.component';
         </div>
         <div class="detail-summary">
           <div class="detail-pills">
-            <span class="pill type-pill">{{notification?.notificationType}}</span>
-            <span class="pill status-pill">{{notification?.status}}</span>
+            <span class="pill type-pill">{{notification.notificationType}}</span>
+            <span class="pill status-pill">{{notification.status}}</span>
           </div>
-          <div class="detail-name">{{notification?.title}}</div>
+          <div class="detail-name">{{notification.title}}</div>
         </div>
       </div>
 
-      <div class="message">{{notification?.message}}</div>
+      <div class="message">{{notification.message}}</div>
 
       <div class="meta-grid">
-        <div class="meta-item"><span>Company / BP</span><strong>{{notification?.companyName}}</strong></div>
-        <div class="meta-item"><span>Initiated By</span><strong>{{notification?.initiatedBy}}</strong></div>
-        <div class="meta-item"><span>Created On</span><strong>{{notification?.createdOn | date:'medium'}}</strong></div>
-        <div class="meta-item"><span>Status</span><strong>{{notification?.status}}</strong></div>
+        <div class="meta-item"><span>Company / BP</span><strong>{{notification.companyName}}</strong></div>
+        <div class="meta-item"><span>Initiated By</span><strong>{{notification.initiatedBy}}</strong></div>
+        <div class="meta-item"><span>Created On</span><strong>{{notification.createdOn | date:'medium'}}</strong></div>
+        <div class="meta-item"><span>Status</span><strong>{{notification.status}}</strong></div>
       </div>
 
       <div class="config-section">
         <div class="section-title">Configuration Details</div>
         <div class="config-grid">
-          <div><span>Configuration Type</span><strong>{{notification?.notificationType}}</strong></div>
-          <div><span>Priority Name</span><strong>{{notification?.payload?.priorityName || '—'}}</strong></div>
-          <div class="wide"><span>Description</span><strong>{{notification?.message}}</strong></div>
-          <div class="wide"><span>Created By</span><strong>{{notification?.initiatedBy}}</strong></div>
+          <div><span>Configuration Type</span><strong>{{notification.notificationType}}</strong></div>
+          <div><span>Priority Name</span><strong>{{notification.payload.priorityName || '—'}}</strong></div>
+          <div class="wide"><span>Description</span><strong>{{notification.message}}</strong></div>
+          <div class="wide"><span>Created By</span><strong>{{notification.initiatedBy}}</strong></div>
         </div>
       </div>
 

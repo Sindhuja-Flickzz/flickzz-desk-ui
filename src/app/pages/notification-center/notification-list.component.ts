@@ -3,8 +3,6 @@ import { CommonModule } from '@angular/common';
 import { MatListModule } from '@angular/material/list';
 import { Observable } from 'rxjs';
 import { NotificationPayload } from '../../models/notification.model';
-import { NotificationCardComponent } from './notification-card.component';
-import { NotificationEmptyStateComponent } from './notification-empty-state.component';
 
 @Component({
   selector: 'app-notification-list',
@@ -12,7 +10,7 @@ import { NotificationEmptyStateComponent } from './notification-empty-state.comp
     <div class="nl-root">
       <ng-container *ngIf="notifications$ | async as items; else empty">
         <div class="nl-list">
-          <app-notification-card *ngFor="let n of items" [notification]="n" (select)="select.emit($event)"></app-notification-card>
+          <app-notification-card *ngFor="let n of items" [notification]="n" (select)="select.emit($event)" (clear)="clear.emit($event)"></app-notification-card>
         </div>
       </ng-container>
       <ng-template #empty>
@@ -26,4 +24,5 @@ import { NotificationEmptyStateComponent } from './notification-empty-state.comp
 export class NotificationListComponent {
   @Input() notifications$!: Observable<NotificationPayload[]>;
   @Output() select = new EventEmitter<NotificationPayload>();
+  @Output() clear = new EventEmitter<NotificationPayload>();
 }

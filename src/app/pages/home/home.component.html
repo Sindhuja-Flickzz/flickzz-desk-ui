@@ -6,10 +6,9 @@
 
   <div class="tile-grid">
     <div class="tile" *ngFor="let tile of tiles">
-      <button class="tile-button" type="button">
+      <button class="tile-button" type="button" (click)="open(tile)">
         <mat-icon>{{ tile.icon }}</mat-icon>
         <span class="tile-title">{{ tile.title }}</span>
-        <!-- <span class="tile-description">{{ tile.description }}</span> -->
       </button>
     </div>
   </div>

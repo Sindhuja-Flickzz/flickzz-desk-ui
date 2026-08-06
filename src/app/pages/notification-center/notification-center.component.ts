@@ -23,6 +23,7 @@ type NotificationCounts = Record<NotificationCountKey, number>;
       <app-notification-header
         (refresh)="refresh()"
         (markAllRead)="markAllRead()"
+        (clearAll)="clearAll()"
       ></app-notification-header>
 
       <div class="nc-controls">
@@ -47,6 +48,7 @@ type NotificationCounts = Record<NotificationCountKey, number>;
           <app-notification-list
             [notifications$]="filteredNotifications$"
             (select)="select($event)"
+            (clear)="clear($event)"
           ></app-notification-list>
           <!-- <app-notification-chart-dashboard [notifications$]="notifications$"></app-notification-chart-dashboard> -->
         </div>
@@ -157,6 +159,17 @@ export class NotificationCenterComponent implements OnInit {
 
   markAllRead() {
     this.svc.markAllAsRead();
+  }
+
+  clear(item: NotificationPayload) {
+    const id = item?.notificationId ?? '';
+    if (!id) { return; }
+    this.svc.clearNotification(id).subscribe();
+  }
+
+  clearAll() {
+    const userId = localStorage.getItem('userId') || '';
+    this.svc.clearAll(userId).subscribe();
   }
 
   onFilter(f: string) { this.filter$.next(f); }

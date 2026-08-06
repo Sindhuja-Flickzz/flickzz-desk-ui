@@ -217,6 +217,7 @@ const routes: Routes = [
     component: NotificationCenterComponent,
     canActivate: [authGuard]
   },
+  
   {
     path: 'agent',
     component: AgentComponent,

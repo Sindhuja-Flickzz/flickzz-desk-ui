@@ -679,7 +679,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/welcome']);
+    this.router.navigate(['/home']);
   }
 
   getFieldLabel(fieldName: string): string {

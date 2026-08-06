@@ -420,8 +420,6 @@ export class NotificationService {
   }
 
   private storeNotifications(entries: NotificationPayload[]): void {
-    // entries = (entries as any).attributes;
-    console.log('NotificationService: storing notifications', entries);
     const sorted = [...entries]
       .filter(Boolean)
       .sort((left, right) => this.compareDates(left.createdOn, right.createdOn))
@@ -482,5 +480,38 @@ export class NotificationService {
 
   private buildReadUrl(notificationId: string): string {
     return `${this.getBaseUrl()}${this.readEndpoints[0]}/${notificationId}`;
+  }
+
+  clearNotification(notificationId: string | number) {
+    const id = String(notificationId);
+    const url = `${this.getBaseUrl()}/notification/clear/${id}`;
+    return this.http.delete<any>(url).pipe(
+      catchError((err: HttpErrorResponse) => {
+        console.warn('NotificationService: unable to clear notification', err);
+        return of(null);
+      }),
+      map((res) => {
+        // On success (or null), remove locally
+        const updated = this.getNotifications().filter((n) => String(n.notificationId ?? '') !== id);
+        this.storeNotifications(updated);
+        return res;
+      })
+    );
+  }
+
+  clearAll(recipientId?: string | number) {
+    const id = recipientId ?? localStorage.getItem('userId') ?? '';
+    const url = `${this.getBaseUrl()}/notification/clear/all/${id}`;
+    return this.http.delete<any>(url).pipe(
+      catchError((err: HttpErrorResponse) => {
+        console.warn('NotificationService: unable to clear all notifications', err);
+        return of(null);
+      }),
+      map((res) => {
+        // On success, clear local list
+        this.storeNotifications([]);
+        return res;
+      })
+    );
   }
 }

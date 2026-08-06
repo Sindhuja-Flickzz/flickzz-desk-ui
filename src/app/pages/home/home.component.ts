@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-home',
@@ -11,11 +12,14 @@ export class HomeComponent {
       title: 'Approval',
       description: 'Review pending approvals and take action.',
       icon: 'fact_check'
-    },
-    {
-      title: 'Configuration Approval',
-      description: 'Manage configuration approval requests.',
-      icon: 'settings_applications'
     }
   ];
+
+  constructor(private router: Router) {}
+
+  open(tile: any) {
+    // No direct navigation for removed feature
+    // default: navigate to home feature (placeholder)
+    console.log('Open tile', tile.title);
+  }
 }

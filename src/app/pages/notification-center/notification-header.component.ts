@@ -16,6 +16,7 @@ import { MatButtonModule } from '@angular/material/button';
       </div>
       <div class="right">
         <button mat-button color="primary" class="mark-all" (click)="markAllRead.emit()">Mark All as Read</button>
+        <button mat-button color="warn" class="clear-all" (click)="clearAll.emit()">Clear All Read</button>
         <button mat-icon-button class="icon-btn" (click)="refresh.emit()"><mat-icon>refresh</mat-icon></button>
         <!-- <button mat-icon-button class="icon-btn"><mat-icon>settings</mat-icon></button> -->
       </div>
@@ -24,7 +25,7 @@ import { MatButtonModule } from '@angular/material/button';
   styles: [`
     .nc-header{display:flex;justify-content:space-between;align-items:center;background:#ffffff;border-radius:24px;padding:15px 10px;box-shadow:0 24px 60px rgba(15,23,42,0.08)}
     .left{display:flex;align-items:center;gap:16px}
-    .nc-icon{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;font-size:32px;color:#304ffe;background:#e8f0ff;border-radius:18px;padding:12px;line-height:1;font-family:'Material Icons';font-feature-settings:'liga';}
+    .nc-icon{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;font-size:32px;color:#00246B;background:#e8f0ff;border-radius:18px;padding:12px;line-height:1;font-family:'Material Icons';font-feature-settings:'liga';}
     .title{font-weight:700;font-size:22px;color:#101828}
     .subtitle{font-size:14px;color:#667085;margin-top:4px}
     .right{display:flex;gap:12px;align-items:center}
@@ -36,4 +37,5 @@ import { MatButtonModule } from '@angular/material/button';
 export class NotificationHeaderComponent {
   @Output() refresh = new EventEmitter<void>();
   @Output() markAllRead = new EventEmitter<void>();
+  @Output() clearAll = new EventEmitter<void>();
 }

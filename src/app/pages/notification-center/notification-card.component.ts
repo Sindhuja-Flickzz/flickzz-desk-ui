@@ -32,7 +32,10 @@ import { NotificationPayload } from '../../models/notification.model';
       </div>
       <div class="card-right">
         <div class="timestamp">{{notification?.createdOn | date:'shortTime'}}</div>
-        <button mat-stroked-button color="primary" class="view-btn" type="button">View</button>
+        <div class="right-actions">
+          <button mat-icon-button class="icon-clear" aria-label="Clear" (click)="onClear($event)"><mat-icon>delete</mat-icon></button>
+          <button mat-stroked-button color="primary" class="view-btn" type="button">View</button>
+        </div>
       </div>
     </mat-card>
   `,
@@ -66,10 +69,18 @@ import { NotificationPayload } from '../../models/notification.model';
 export class NotificationCardComponent {
   @Input() notification!: NotificationPayload | null;
   @Output() select = new EventEmitter<NotificationPayload>();
+  @Output() clear = new EventEmitter<NotificationPayload>();
 
   onSelect() {
     if (this.notification) {
       this.select.emit(this.notification);
+    }
+  }
+
+  onClear(event: Event) {
+    event.stopPropagation();
+    if (this.notification) {
+      this.clear.emit(this.notification);
     }
   }
 
