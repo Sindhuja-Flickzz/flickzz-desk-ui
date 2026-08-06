@@ -38,9 +38,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatListModule } from '@angular/material/list';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { OverlayModule } from '@angular/cdk/overlay';
+import { PortalModule } from '@angular/cdk/portal';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatChipsModule } from '@angular/material/chips';
@@ -58,6 +64,8 @@ import { SettingsComponent } from './pages/settings/settings.component';
 import { CategoryComponent } from './pages/category/category.component';
 import { SupportGroupComponent } from './pages/support-group/support-group.component';
 import { SupportCategoryComponent } from './pages/support-category/support-category.component';
+import { ConfigApprovalComponent } from './pages/config-approval/config-approval.component';
+import { ApprovalDialogComponent } from './pages/config-approval/approval-dialog/approval-dialog.component';
 import { ProfileIconComponent } from './shared/profile-icon/profile-icon.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
@@ -69,6 +77,11 @@ import { ProjectStatusCreateDialogComponent } from './pages/project-status/proje
 import { ProjectStatusEpicDetailComponent } from './pages/project-status/project-status-epic-detail/project-status-epic-detail.component';
 import { ProjectStatusItemDetailComponent } from './pages/project-status/project-status-item-detail/project-status-item-detail.component';
 import { SystemAuditComponent } from './pages/system-audit/system-audit.component';
+import { HomeComponent } from './pages/home/home.component';
+import { NotificationComponent } from './notification/notification.component';
+import { NotificationPopupComponent } from './shared/notification-popup/notification-popup.component';
+import { NotificationDropdownComponent } from './notification-dropdown/notification-dropdown.component';
+import { NotificationCenterComponent } from './pages/notification-center/notification-center.component';
 
 @NgModule({
   declarations: [
@@ -100,6 +113,8 @@ import { SystemAuditComponent } from './pages/system-audit/system-audit.componen
     CategoryComponent,
     SupportGroupComponent,
     SupportCategoryComponent,
+    ConfigApprovalComponent,
+    ApprovalDialogComponent,
     DetailsTemplateComponent,
     DetailsTemplateOptionsDialogComponent,
     ProfileIconComponent,
@@ -109,8 +124,12 @@ import { SystemAuditComponent } from './pages/system-audit/system-audit.componen
     ProjectStatusComponent,
     ProjectStatusCreateDialogComponent,
     ProjectStatusEpicDetailComponent,
-    ProjectStatusItemDetailComponent
-    ,SlaTypeComponent
+    ProjectStatusItemDetailComponent,
+    SlaTypeComponent,
+    HomeComponent,
+    NotificationComponent,
+    NotificationDropdownComponent,
+    NotificationPopupComponent
   ],
   imports: [
     BrowserModule,
@@ -120,6 +139,7 @@ import { SystemAuditComponent } from './pages/system-audit/system-audit.componen
     FormsModule,
     ReactiveFormsModule,
     CommonModule,
+    NotificationCenterComponent,
     // Angular Material modules
     MatDialogModule,
     MatIconModule,
@@ -133,6 +153,8 @@ import { SystemAuditComponent } from './pages/system-audit/system-audit.componen
     MatSelectModule,
     MatCheckboxModule,
     MatSnackBarModule,
+    OverlayModule,
+    PortalModule,
     MatDatepickerModule,
     MatNativeDateModule,
     MatSlideToggleModule,
@@ -140,8 +162,11 @@ import { SystemAuditComponent } from './pages/system-audit/system-audit.componen
     MatProgressSpinnerModule,
     MatChipsModule,
     MatTooltipModule,
-    DragDropModule,
-    SystemAuditComponent
+    MatMenuModule,
+    MatBadgeModule,
+    MatListModule,
+    MatDividerModule,
+    DragDropModule
   ],
   providers: [
     HttpClient,

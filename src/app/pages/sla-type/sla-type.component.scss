@@ -181,7 +181,7 @@
 
   .filters-panel {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px;
     margin-bottom: 14px;
   }
@@ -227,6 +227,32 @@
         border-radius: 3px;
         margin-right: 5px;
         border: 1px solid #ccc;
+      }
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+
+      .status-pill.live {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .status-pill.under-approval {
+        background: #fff3e0;
+        color: #ef6c00;
+      }
+
+      .status-pill.inactive {
+        background: #fdecea;
+        color: #c62828;
       }
     }
   }

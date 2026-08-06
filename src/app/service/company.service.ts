@@ -48,16 +48,8 @@ export class CompanyService {
     return this.http.get<any>(`${this.baseUrl}/bp/config/list/${businessPartnerId}`);
   }
 
-  // getEnquiryByUserEmail(userEmail: string): Observable<EnquiryRegistration> {
-  //   return this.http.get<EnquiryRegistration>(`${this.baseUrl}/enquiry/${userEmail}`);
-  // }
-
   getCompanyInfoByUserEmail(userEmail: string): Observable<EnquiryRegistration> {
     return this.http.get<EnquiryRegistration>(`${this.baseUrl}/enquiry/company/${userEmail}`);
-  }
-
-  createCompany(request: CompanyRequest): Observable<any> {
-    return this.http.post(`${this.baseUrl}/company/create`, request);
   }
 
   updateCompany(request: CompanyRequest): Observable<any> {

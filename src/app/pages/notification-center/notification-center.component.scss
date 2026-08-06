@@ -1,0 +1,148 @@
+.nc-root {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: calc(100vh - 48px);
+//   background: #eef2ff;
+  border-radius: 36px;
+}
+
+.nc-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 14px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+}
+
+.nc-controls app-notification-filter-bar {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.nc-controls app-notification-search {
+  flex: 0 0 min(100%, 360px);
+  width: 100%;
+  min-width: 0;
+}
+
+.nc-grid {
+  display: grid;
+  grid-template-columns: 1.9fr 1.1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.nc-grid:not(.nc-has-selected) {
+  grid-template-columns: 1fr;
+}
+
+.nc-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 15px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+}
+
+.nc-list-column {
+  min-width: 0;
+}
+
+.nc-details-column {
+  position: sticky;
+  top: 20px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.section-sort {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.sort-field {
+  min-width: 160px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 14px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  color: #0f172a;
+  appearance: none;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.section-note {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.64);
+}
+
+@media (max-width: 1140px) {
+  .nc-grid {
+    grid-template-columns: 1fr;
+  }
+  .nc-details-column {
+    position: static;
+  }
+}
+
+@media (max-width: 860px) {
+  .nc-root {
+    padding: 20px;
+  }
+
+  .nc-controls {
+    padding: 12px;
+  }
+
+  .nc-controls app-notification-filter-bar,
+  .nc-controls app-notification-search {
+    flex: 1 1 100%;
+  }
+
+  .section-header {
+    gap: 10px;
+  }
+
+  .sort-field {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .nc-root {
+    padding: 16px;
+  }
+
+  .nc-column {
+    padding: 18px;
+  }
+
+  .section-title {
+    width: 100%;
+  }
+
+  .section-note {
+    white-space: nowrap;
+  }
+}

@@ -311,7 +311,7 @@
 }
 
 .mat-icon {
-  font-size: 18px;
+  font-size: 25px;
   color: inherit;
 }
 
@@ -657,6 +657,10 @@
   padding: 10px;
   overflow: auto;
   color: #00246B;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Updated sidebar style */
@@ -807,7 +811,8 @@
 }
 
 .popup-hamburger,
-.mobile-hamburger {
+.mobile-hamburger,
+.topbar-icon {
   border: none;
   background: #00246B;
   color: white;
@@ -817,6 +822,9 @@
   height: 40px;
   margin-right: 8px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .popup-hamburger {
@@ -828,6 +836,16 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+.topbar-icon {
+  background: transparent;
+  color: #00246B;
+  font-size: 40px;
+  left: 5%;
+  position: absolute;
+  width: 40px;
+  height: 40px;
 }
 
 .popup-overlay {

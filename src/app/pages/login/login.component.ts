@@ -244,7 +244,7 @@ export class LoginComponent implements OnInit, OnDestroy {
           localStorage.setItem('userRole', response.attributes.userRole as string);
           localStorage.setItem('userOrgId', response.attributes.userOrgId.toString());
           localStorage.setItem('userOrgName', response.attributes.userOrgName as string);
-          this.router.navigate(['welcome']);
+          this.router.navigate(['home']);
         },
         error: (err) => {
           this.isVerifying = false;

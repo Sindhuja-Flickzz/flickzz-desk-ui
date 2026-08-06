@@ -10,6 +10,7 @@ export interface CalendarMasterVO {
   holidays: CalendarHolidayVO[];
   workFrom: string; // Time format HH:MM
   workTo: string; // Time format HH:MM
+  isActive: boolean; // Calendar-level active state
   timezone: string;
 }
 

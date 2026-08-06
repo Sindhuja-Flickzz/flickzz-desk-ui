@@ -112,9 +112,9 @@
     </div>
 
     <div *ngIf="loadingList" class="loading-text">Loading assignments...</div>
-    <div *ngIf="!loadingList && !bpList.length" class="empty-state">No assignments found.</div>
+    <div *ngIf="!loadingList && (!bpList || bpList.length <= 1)" class="empty-state">No assignments found.</div>
 
-    <div *ngIf="!loadingList && bpList.length" class="table-wrapper">
+    <div *ngIf="!loadingList && bpList.length > 1" class="table-wrapper">
       <table>
         <thead>
           <tr>

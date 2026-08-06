@@ -11,7 +11,7 @@
     </div>
     <div class="context-banner">{{ contextLabel }}</div>
 
-    <form [formGroup]="assignmentForm" (ngSubmit)="onSave()">
+    <form [formGroup]="assignmentForm" (ngSubmit)="openProceedDialog()">
       <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
       <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
 
@@ -34,7 +34,7 @@
       </div>
 
       <div class="actions">
-        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update' : 'Save') }}</button>
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Processing...' : 'Proceed' }}</button>
         <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
       </div>
     </form>

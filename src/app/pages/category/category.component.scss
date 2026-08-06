@@ -217,6 +217,33 @@
     }
   }
 
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .status-pill.live {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .status-pill.under-approval {
+    background: #fff3e0;
+    color: #ef6c00;
+  }
+
+  .status-pill.inactive {
+    background: #fdecea;
+    color: #c62828;
+  }
+
   .table-wrapper {
     overflow-x: auto;
 

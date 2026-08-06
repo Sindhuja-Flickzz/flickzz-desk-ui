@@ -5,6 +5,14 @@
 
   <div class="search-container">
     <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearchTermChange($event)" placeholder="Search by Calendar Code/ Type..." class="search-input">
+    <div class="active-filter">
+      <label for="activeFilter">Show</label>
+      <select id="activeFilter" [(ngModel)]="activeFilter" (ngModelChange)="onActiveFilterChange($event)">
+        <option value="all">All</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </div>
   </div>
 
   <!-- Error Message -->
@@ -18,10 +26,15 @@
   </div>
 
   <!-- Calendar Grid -->
-  <div *ngIf="!loading && !error" class="calendar-grid">
+  <div *ngIf="!loading" class="calendar-grid">
     <mat-card *ngFor="let calendar of getPaginatedCalendars()" class="calendar-card">
       <mat-card-header class="calendar-card-header">
-        <mat-card-title>{{ calendar.calendarCode }}</mat-card-title>
+        <mat-card-title>
+          {{ calendar.calendarCode }}
+          <span class="status-badge" [ngClass]="{ 'active': isCalendarActive(calendar), 'inactive': !isCalendarActive(calendar) }">
+            {{ isCalendarActive(calendar) ? 'Active' : 'Inactive' }}
+          </span>
+        </mat-card-title>
         <mat-card-subtitle>{{ calendar.calendarType.typeName }}</mat-card-subtitle>
       </mat-card-header>
 
@@ -49,7 +62,7 @@
         </div>
       </mat-card-content>
 
-      <mat-card-actions class="calendar-card-footer">
+      <mat-card-actions class="calendar-card-footer" *ngIf="isCalendarActive(calendar)">
         <button mat-raised-button color="primary" (click)="onViewCalendar(calendar)">
           <mat-icon>edit</mat-icon>
           Modify
@@ -63,7 +76,7 @@
   </div>
 
   <!-- Pagination -->
-  <div *ngIf="!loading && !error && filteredCalendars.length > 0" class="pagination-controls">
+  <div *ngIf="!loading && filteredCalendars.length > 0" class="pagination-controls">
     <mat-paginator
       [length]="totalRecords"
       [pageSize]="pageSize"
@@ -74,7 +87,7 @@
   </div>
 
   <!-- Empty State -->
-  <div *ngIf="!loading && !error && calendars.length === 0" class="empty-state">
+  <div *ngIf="!loading && calendars.length === 0" class="empty-state">
     No calendars found.
   </div>
 </div>

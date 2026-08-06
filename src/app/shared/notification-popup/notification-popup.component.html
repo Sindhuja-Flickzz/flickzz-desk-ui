@@ -1,0 +1,26 @@
+<div class="notification-popup-card" [ngClass]="accentClass" role="alert" aria-live="assertive">
+  <div class="main-content">
+      <div class="top-row">
+        <div class="icon-shell">
+          <mat-icon>notifications</mat-icon>
+        </div>
+
+        <div class="content top-content">
+          <div class="title">{{ notification.title || 'Notification' }}</div>
+          <div class="subtitle">{{ notification.message || 'You have a new notification' }}</div>
+        </div>
+
+        <button mat-icon-button aria-label="Close notification" class="close-btn" (click)="close()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="body-row">
+        <div></div>
+        <button mat-button class="action-btn" *ngIf="notification.actionUrl" (click)="action()">
+          Review Request
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </div>
+  </div>
+</div>

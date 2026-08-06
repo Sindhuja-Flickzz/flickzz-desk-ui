@@ -30,8 +30,11 @@ import { SlaTypeComponent } from './pages/sla-type/sla-type.component';
 import { CategoryComponent } from './pages/category/category.component';
 import { SupportGroupComponent } from './pages/support-group/support-group.component';
 import { SupportCategoryComponent } from './pages/support-category/support-category.component';
+import { ConfigApprovalComponent } from './pages/config-approval/config-approval.component';
 import { authGuard } from './service/auth/auth.guard';
 import { SystemAuditComponent } from './pages/system-audit/system-audit.component';
+import { HomeComponent } from './pages/home/home.component';
+import { NotificationCenterComponent } from './pages/notification-center/notification-center.component';
 
 const routes: Routes = [
   {
@@ -46,6 +49,11 @@ const routes: Routes = [
   {
     path: 'welcome',
     component: WelcomeComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'home',
+    component: HomeComponent,
     canActivate: [authGuard]
   },
   {
@@ -205,6 +213,17 @@ const routes: Routes = [
     component: SupportGroupComponent,
     canActivate: [authGuard]
   },
+  {
+    path: 'config-approval',
+    loadComponent: () => import('./pages/config-approval/config-approval.component').then(m => m.ConfigApprovalComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'notifications',
+    component: NotificationCenterComponent,
+    canActivate: [authGuard]
+  },
+  
   {
     path: 'agent',
     component: AgentComponent,

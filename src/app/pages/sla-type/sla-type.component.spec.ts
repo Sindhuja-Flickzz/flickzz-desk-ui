@@ -74,4 +74,18 @@ describe('SlaTypeComponent', () => {
     expect(component.filteredSlaList.length).toBe(1);
     expect(component.filteredSlaList[0].priority.code).toBe('P1');
   });
+
+  it('should filter the SLA list by status', () => {
+    component.slaList = [
+      { priority: { code: 'P1', ticketType: { ticketTypeName: 'Incident' }, isActive: true } },
+      { priority: { code: 'P2', ticketType: { ticketTypeName: 'Request' }, isActive: false, isUnderApproval: true } },
+      { priority: { code: 'P3', ticketType: { ticketTypeName: 'Request' }, isActive: false, isUnderApproval: false } }
+    ] as any;
+
+    component.selectedStatusFilter = 'under-approval';
+    component.applySlaListFilters();
+
+    expect(component.filteredSlaList.length).toBe(1);
+    expect(component.filteredSlaList[0].priority.code).toBe('P2');
+  });
 });

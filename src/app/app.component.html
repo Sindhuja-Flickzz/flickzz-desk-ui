@@ -9,6 +9,9 @@
       <button class="popup-hamburger" *ngIf="!isPopupOpen" (click)="togglePopup()" aria-label="Toggle multi-level menu">
         ☰
       </button>
+      <button class="topbar-icon" type="button" (click)="goHome()" aria-label="Go to home">
+        <mat-icon>home</mat-icon>
+      </button>
       <!-- <button class="mobile-hamburger" *ngIf="showSidebar && !isPopupOpen" (click)="toggleMobileMenu()" aria-label="Toggle sidebar navigation">
         ☰
       </button>
@@ -20,7 +23,7 @@
       </div>
       <div class="page-title">{{ getActivePageTitle() }}</div>
       <div class="topbar-actions">
-        <!-- <button class="logout" *ngIf="isLoggedIn()" (click)="logout()">Logout</button> -->
+        <app-notification *ngIf="isLoggedIn()"></app-notification>
         <app-profile-icon *ngIf="isLoggedIn()"></app-profile-icon>
       </div>
     </header>

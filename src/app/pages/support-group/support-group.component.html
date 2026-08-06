@@ -25,7 +25,7 @@
     </div>
     <div class="context-banner">{{ contextLabel }}</div>
 
-    <form [formGroup]="supportGroupForm" (ngSubmit)="onSave()" aria-label="Support group form">
+    <form [formGroup]="supportGroupForm" (ngSubmit)="openProceedDialog()" aria-label="Support group form">
 
       <div class="form-row">
         <div class="field">
@@ -122,7 +122,7 @@
       </div>
 
       <div class="actions">
-        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update' : 'Save') }}</button>
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Processing...' : 'Proceed' }}</button>
         <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
         <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel Edit</button>
       </div>
@@ -150,6 +150,7 @@
             <th *ngIf="selectionMode === 'bp'">BP Managers</th>
             <th>Agents</th>
             <th>Organization</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -217,7 +218,8 @@
               </div>
             </td>
             <td>{{ getSupportGroupOrganization(group) }}</td>
-            <td class="action-buttons">
+            <td><span [class]="getSupportGroupStatusClass(group)">{{ getSupportGroupStatusLabel(group) }}</span></td>
+            <td class="action-buttons" *ngIf="group.isActive">
               <button type="button" title="Edit" (click)="startEdit(group)"><mat-icon>edit</mat-icon></button>
               <button type="button" title="Delete" (click)="deleteSupportGroup(group)"><mat-icon>delete</mat-icon></button>
             </td>

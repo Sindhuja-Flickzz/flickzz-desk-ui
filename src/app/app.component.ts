@@ -3,6 +3,8 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthenticationService } from './service/authentication.service';
 import { ThemeService } from './service/theme.service';
+import { NotificationService } from './service/notification.service';
+import { NotificationOverlayService } from './service/notification-overlay.service';
 import { MenuItem } from './models/menu';
 import { MENU_INFO, APP_CONSTANTS } from './data/app_constants';
 
@@ -31,6 +33,7 @@ export class AppComponent implements OnInit, OnDestroy {
   menuTree: MenuNode[] = [];
 
   activeRoute = '';
+  currentUrl = '';
   activeNodeId?: number;
   showSidebar = false;
 
@@ -60,21 +63,27 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private authService: AuthenticationService,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    private notificationService: NotificationService,
+    private notificationOverlayService: NotificationOverlayService
   ) {}
 
   ngOnInit() {
     const currentUrl = this.router.url;
+    this.currentUrl = currentUrl;
     this.showSidebar = !!localStorage.getItem('token') && !currentUrl.startsWith('/login') ;
     if (this.showSidebar) {
       this.loadMenu();
     }
+
+    this.syncNotificationConnection(currentUrl);
 
     this.routerSub = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
         // Update active route
         this.activeRoute = event.url;
+        this.currentUrl = event.url;
 
         // Show sidebar for authenticated routes only
         const show = !!localStorage.getItem('token') && !event.url.startsWith('/login') ;
@@ -82,6 +91,8 @@ export class AppComponent implements OnInit, OnDestroy {
         if (show) {
           this.loadMenu();
         }
+
+        this.syncNotificationConnection(event.url);
 
         // Close mobile menu on route change
         this.isMobileMenuOpen = false;
@@ -95,6 +106,19 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.routerSub?.unsubscribe();
+    this.notificationService.disconnect();
+  }
+
+  private syncNotificationConnection(url: string): void {
+    const isAuthenticated = !!localStorage.getItem('token');
+    const isLoginRoute = url.startsWith('/login');
+
+    if (isAuthenticated && !isLoginRoute) {
+      console.log('AppComponent: User is authenticated and not on login route. Connecting to notification service.');
+      this.notificationService.connect();
+    } else {
+      this.notificationService.disconnect();
+    }
   }
 
   // Drag-to-resize methods
@@ -328,6 +352,10 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  goHome() {
+    this.router.navigate(['/home']);
+  }
+
   toggleExpansion(node: MenuNode) {
     if (this.expandedNodeIds.has(node.id)) {
       // collapse this node and descendants
@@ -436,6 +464,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   logout() {
     const refreshToken = localStorage.getItem('refreshToken') ?? '';
+    this.notificationService.disconnect();
     this.authService.logout({ refreshToken }).subscribe({
       next: () => {
         localStorage.clear();

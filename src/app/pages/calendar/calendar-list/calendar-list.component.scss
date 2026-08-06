@@ -82,6 +82,23 @@ h2 {
         color: #999;
       }
     }
+    .active-filter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      label {
+        font-weight: 600;
+        color: #333;
+      }
+
+      select {
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #ccd6e8;
+        background: white;
+      }
+    }
   }
 
   .type-filter-options {
@@ -109,6 +126,23 @@ h2 {
 
 .list-summary span {
   font-weight: 500;
+}
+
+.status-badge {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  vertical-align: middle;
+}
+.status-badge.active {
+  background: #e6f4ea;
+  color: #1b5e20;
+}
+.status-badge.inactive {
+  background: #fff0f0;
+  color: #b71c1c;
 }
 
 #calendarSearch {

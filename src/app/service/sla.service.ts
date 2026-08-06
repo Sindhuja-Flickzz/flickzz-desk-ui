@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { APP_CONSTANTS } from '../data/app_constants';
+import { APP_CONSTANTS, USER_ROLES } from '../data/app_constants';
 
 @Injectable({ providedIn: 'root' })
 export class SlaService {
@@ -24,7 +24,13 @@ export class SlaService {
     return this.http.post(url, request);
   }
 
-  deleteSlaType(slaId: number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/bp/sla/delete/${slaId}`);
+  deleteSlaType(slaId: number, remarks?: string): Observable<any> {
+    const payload = {
+      slaId,
+      remarks: remarks || '',
+      deletedBy: Number(localStorage.getItem('userId') || 0),
+      isDeletedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
+    };
+    return this.http.delete(`${this.baseUrl}/bp/sla/delete/${slaId}`, { body: payload });
   }
 }

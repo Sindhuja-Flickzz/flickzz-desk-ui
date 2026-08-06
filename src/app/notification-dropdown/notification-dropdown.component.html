@@ -1,0 +1,50 @@
+<div class="notification-dropdown">
+  <button #bellBtn mat-icon-button class="bell-btn" (click)="togglePanel($event)" aria-label="Notifications">
+    <mat-icon>notifications</mat-icon>
+    <span *ngIf="unreadCount > 0" class="badge">{{ unreadCount }}</span>
+  </button>
+
+  <div *ngIf="isOpen" @panelAnimation class="notification-dropdown-panel" role="dialog" aria-label="Notifications panel">
+    <div class="panel-card">
+      <div class="panel-header">
+        <div class="title">Notifications</div>
+        <button mat-button class="mark-all" *ngIf="unreadCount>0" (click)="markAll()">Mark all as read</button>
+      </div>
+
+      <div class="panel-body">
+        <div *ngIf="loading" class="skeleton-list">
+          <div class="skeleton-item" *ngFor="let s of [1,2]"></div>
+        </div>
+
+        <div *ngIf="!loading && notifications.length === 0" class="empty-state">
+          <mat-icon class="empty-illustration">notifications_none</mat-icon>
+          <div class="empty-title">No notifications</div>
+          <div class="empty-sub">You're all caught up.</div>
+        </div>
+
+        <div *ngIf="notifications.length>0" class="list">
+          <div *ngFor="let n of notifications; index as i; trackBy: trackById" (click)="openNotification(n, $event)" class="notification-item" [class.unread]="!n.isRead" [class.highlight]="i===0 && !n.isRead">
+            <div class="avatar-shell">
+              <div class="avatar">
+                <mat-icon>{{ getIconForType(n.notificationType) || 'notifications' }}</mat-icon>
+              </div>
+            </div>
+
+            <div class="notification-content">
+              <div class="notification-top">
+                <div class="notification-title">{{ n.title }}</div>
+                <div class="unread-dot" *ngIf="!n.isRead"></div>
+              </div>
+              <div class="notification-message">{{ n.message }}</div>
+              <div class="notification-meta">{{ timeAgo(n.createdOn) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <a (click)="openAll()">View All Notifications</a>
+      </div>
+    </div>
+  </div>
+</div>

@@ -59,6 +59,11 @@ body {
   box-sizing: border-box;
 }
 
+.notification-overlay-pane {
+  display: block;
+  pointer-events: auto;
+}
+
 .required {
   color: #d32f2f;
   margin-left: 4px;
@@ -86,3 +91,4 @@ a:hover {
     color: #90cdf4;
   }
 }
+

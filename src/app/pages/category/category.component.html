@@ -11,7 +11,7 @@
     </div>
     <div class="context-banner">{{ contextLabel }}</div>
 
-    <form [formGroup]="categoryForm" (ngSubmit)="onSave()" aria-label="Category form">
+    <form [formGroup]="categoryForm" (ngSubmit)="openProceedDialog()" aria-label="Category form">
       <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
       <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
 
@@ -51,7 +51,7 @@
       </div>
 
       <div class="actions">
-        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update' : 'Save') }}</button>
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Processing...' : 'Proceed' }}</button>
         <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
         <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel Edit</button>
       </div>
@@ -65,6 +65,12 @@
 
     <div class="search-container">
       <input class="search-input" type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by category or subcategory" />
+      <select class="search-input" [(ngModel)]="selectedStatusFilter" (ngModelChange)="filterBySearch()">
+        <option value="all">All Status</option>
+        <option value="live">Live</option>
+        <option value="under-approval">Under Approval</option>
+        <option value="inactive">Inactive</option>
+      </select>
     </div>
 
     <div *ngIf="loading" class="context-banner">Loading categories...</div>
@@ -77,6 +83,7 @@
             <th>Category</th>
             <th>Sub Categories</th>
             <th>Organization</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -104,7 +111,8 @@
               </div>
             </td>
             <td>{{ getCategoryOrganization() }}</td>
-            <td class="action-buttons">
+            <td><span [class]="getCategoryStatusClass(category)">{{ getCategoryStatusLabel(category) }}</span></td>
+            <td class="action-buttons" *ngIf="category.isActive">
               <button type="button" title="Edit" (click)="startEdit(category)"><mat-icon>edit</mat-icon></button>
               <button type="button" title="Delete" (click)="deleteCategory(category)"><mat-icon>delete</mat-icon></button>
             </td>

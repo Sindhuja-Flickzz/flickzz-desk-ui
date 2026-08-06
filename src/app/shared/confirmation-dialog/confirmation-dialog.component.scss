@@ -5,3 +5,25 @@
 .dialog-actions {
   margin-top: 16px;
 }
+
+.remarks-field {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.remarks-field label {
+  font-weight: 600;
+  color: #1d326d;
+}
+
+.remarks-field textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  border: 1px solid #ccd6e8;
+  border-radius: 8px;
+  resize: vertical;
+  box-sizing: border-box;
+}

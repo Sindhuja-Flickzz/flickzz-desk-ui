@@ -7,6 +7,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { SupportCategoryService } from '../../service/support-category.service';
 import { USER_ROLES } from '../../data/app_constants';
+import { CompanyService } from '../../service/company.service';
 
 interface OptionItem { id: number; name: string; }
 
@@ -38,6 +39,8 @@ export class SupportCategoryComponent implements OnInit {
   pageSizeOptions = [5, 10, 25, 50];
   totalRecords = 0;
   currentPage = 0;
+  orgId = Number(localStorage.getItem('userOrgId') || 0);
+  bpOptions: any[] = [];
 
   supportGroupQuery = '';
   supportGroupOptions: OptionItem[] = [];
@@ -50,6 +53,7 @@ export class SupportCategoryComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private supportCategoryService: SupportCategoryService,
+    private companyService: CompanyService,
     private dialog: MatDialog,
     private route: ActivatedRoute,
     private location: Location
@@ -171,7 +175,41 @@ export class SupportCategoryComponent implements OnInit {
     this.subCategoryQuery = this.selectedSubCategory?.name || '';
   }
 
-  onSave(): void {
+  openProceedDialog(): void {
+    this.isSubmitting = false;
+    this.formError = {};
+    this.submitError = '';
+    this.submitSuccess = '';
+
+    const sg = this.assignmentForm.get('supportGroupId')?.value ?? this.selectedSupportGroup?.id ?? null;
+    const sc = this.assignmentForm.get('subCategoryId')?.value ?? this.selectedSubCategory?.id ?? null;
+    if (!sg) { this.formError['supportGroupId'] = 'Support group is required.'; }
+    if (!sc) { this.formError['subCategoryId'] = 'Sub category is required.'; }
+    if (Object.keys(this.formError).length > 0) { return; }
+
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '480px',
+      disableClose: true,
+      data: {
+        title: this.isEditMode ? 'Confirm Update' : 'Confirm Save',
+        message: this.isEditMode
+          ? 'Please review the assignment details and add remarks before updating.'
+          : 'Please review the assignment details and add remarks before saving.',
+        confirmText: this.isEditMode ? 'Update' : 'Save',
+        cancelText: 'Cancel',
+        includeRemarks: true,
+        remarksLabel: 'Remarks',
+        remarksPlaceholder: 'Enter remarks for this action'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (!result?.confirmed) { return; }
+      this.onSave(result.remarks);
+    });
+  }
+
+  onSave(remarks?: string): void {
     this.isSubmitting = true;
     this.formError = {};
     this.submitError = '';
@@ -187,6 +225,7 @@ export class SupportCategoryComponent implements OnInit {
       assignmentId: this.editingAssignmentId,
       supportGroupId: sg,
       subCategoryId: sc,
+      remarks: remarks || '',
       businessPartnerId: this.businessPartnerId,
       createdBy: Number(localStorage.getItem('userId') || 0),
       orgId: localStorage.getItem('userOrgId') ? Number(localStorage.getItem('userOrgId')) : null,
@@ -214,6 +253,22 @@ export class SupportCategoryComponent implements OnInit {
 
   loadAssignments(): void {
     this.loading = true;
+    if(this.businessPartnerId == null && this.orgId != null) {
+        this.companyService.getServiceProviderList(this.orgId).subscribe({
+        next: (response) => {
+          this.bpOptions = (response as any).attributes || response || [];
+          const matchingRole = this.bpOptions.find((bp) => {
+            return bp.company?.companyId != null && bp.mappedCompany?.companyId != null
+              && bp.company.companyId === bp.mappedCompany.companyId;
+          });
+
+          this.businessPartnerId = matchingRole?.businessPartnerId ?? null;
+        },
+        error: () => {
+          console.error('Failed to load business partners');
+        }
+      });
+    }
     this.supportCategoryService.getAllAssignments(this.businessPartnerId).subscribe({
       next: (res) => { this.assignments = (res as any)?.attributes || res || []; this.filterBySearch(); this.loading = false; },
       error: (err) => { console.error('Failed to load assignments', err); this.assignments = []; this.filteredAssignments = []; this.loading = false; }
@@ -221,13 +276,25 @@ export class SupportCategoryComponent implements OnInit {
   }
 
   deleteAssignment(item: any): void {
-    const dialogRef = this.dialog.open(ConfirmationDialogComponent, { width: '420px', disableClose: true, data: { title: 'Delete Assignment', message: `Delete assignment?` } });
-    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
-      if (!confirmed) { return; }
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '420px',
+      disableClose: true,
+      data: {
+        title: 'Delete Assignment',
+        message: 'Delete assignment?',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        includeRemarks: true,
+        remarksLabel: 'Remarks',
+        remarksPlaceholder: 'Enter remarks for deletion'
+      }
+    });
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (!result?.confirmed) { return; }
       const id = item.assignmentId ?? item.id;
       if (!id) { return; }
       this.loading = true;
-      this.supportCategoryService.deleteAssignment(id).subscribe({ next: () => { this.loading = false; this.submitSuccess = 'Assignment deleted.'; this.loadAssignments(); }, error: (err) => { this.loading = false; console.error('Delete error', err); this.submitError = 'Failed to delete assignment.'; } });
+      this.supportCategoryService.deleteAssignment(id, result.remarks).subscribe({ next: () => { this.loading = false; this.submitSuccess = 'Assignment deleted.'; this.loadAssignments(); }, error: (err) => { this.loading = false; console.error('Delete error', err); this.submitError = 'Failed to delete assignment.'; } });
     });
   }
 

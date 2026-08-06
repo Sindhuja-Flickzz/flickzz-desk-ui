@@ -8,6 +8,7 @@ import { PriorityService } from '../../service/priority.service';
 import { CompanyService } from '../../service/company.service';
 import { SlaService } from '../../service/sla.service';
 import { PriorityMaster } from '../../models/priority-master';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-sla-type',
@@ -38,9 +39,11 @@ export class SlaTypeComponent implements OnInit {
   filteredSlaList: any[] = [];
   priorityFilterOptions: string[] = [];
   ticketTypeFilterOptions: string[] = [];
+  selectedStatusFilter: 'all' | 'live' | 'under-approval' | 'inactive' = 'all';
   priorityFilter: string | null = null;
   ticketTypeFilter: string | null = null;
   editingSlaId: number | null = null;
+  orgId = Number(localStorage.getItem('userOrgId') || 0);
   private pendingEditTicketTypeId: number | null = null;
   formSubmitError = '';
   contextLabel = 'Using your organization configuration';
@@ -126,7 +129,7 @@ export class SlaTypeComponent implements OnInit {
   }
 
   loadPriorities(businessPartnerId: number | null): void {
-    this.priorityService.getAllPriorities(businessPartnerId).subscribe({
+    this.priorityService.getAllActivePriorities(businessPartnerId).subscribe({
       next: (res) => {
         this.prioritiesRaw = (res as any).attributes || [];
         // keep original list as priorities but also create grouped unique codes
@@ -250,16 +253,21 @@ export class SlaTypeComponent implements OnInit {
       disableClose: true,
       data: {
         title: 'Delete SLA Type',
-        message: `Are you sure you want to delete SLA for priority "${sla.priority?.code}"?`
+        message: `Are you sure you want to delete SLA for priority "${sla.priority?.code}"?`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        includeRemarks: true,
+        remarksLabel: 'Remarks',
+        remarksPlaceholder: 'Enter remarks for deletion'
       }
     });
 
-    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
-      if (!confirmed || !sla.slaId) {
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (!result?.confirmed || !sla.slaId) {
         return;
       }
       this.loading = true;
-      this.slaService.deleteSlaType(sla.slaId).subscribe({
+      this.slaService.deleteSlaType(sla.slaId, result.remarks).subscribe({
         next: () => {
           this.loading = false;
           this.loadSlaList();
@@ -299,7 +307,53 @@ export class SlaTypeComponent implements OnInit {
     return true;
   }
 
-  onSave(): void {
+  openProceedDialog(): void {
+    this.formSubmitError = '';
+
+    if (!this.validateUpdateFrequency()) {
+      this.formSubmitError = 'Update Frequency must be less than or equal to Resolution Time.';
+      return;
+    }
+
+    if (this.slaForm.invalid) {
+      this.slaForm.markAllAsTouched();
+      this.formSubmitError = 'Please fill in all required fields.';
+      return;
+    }
+
+    if (this.selectedPriorityId == null || this.ticketTypeId == null) {
+      this.formSubmitError = 'Please select a valid priority and ticket type.';
+      return;
+    }
+
+    if (this.selectionMode === 'bp' && !this.businessPartnerId) {
+      this.formSubmitError = 'Please select a business partner.';
+      return;
+    }
+
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '480px',
+      disableClose: true,
+      data: {
+        title: this.editingSlaId ? 'Confirm Update' : 'Confirm Save',
+        message: this.editingSlaId ? 'Please review the SLA details and add remarks before updating.' : 'Please review the SLA details and add remarks before saving.',
+        confirmText: this.editingSlaId ? 'Update' : 'Save',
+        cancelText: 'Cancel',
+        includeRemarks: true,
+        remarksLabel: 'Remarks',
+        remarksPlaceholder: 'Enter remarks for this action'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (!result?.confirmed) {
+        return;
+      }
+      this.onSave(result.remarks);
+    });
+  }
+
+  onSave(remarks?: string): void {
     this.formSubmitError = '';
 
     if (!this.validateUpdateFrequency()) {
@@ -335,16 +389,19 @@ export class SlaTypeComponent implements OnInit {
       resolutionTerm: mapTerm(this.slaForm.value.resolutionUnit),
       updateFrequency: this.slaForm.value.updateFrequencyValue,
       updateFrequencyTerm: mapTerm(this.slaForm.value.updateFrequencyUnit),
+      remarks: remarks || '',
       businessPartnerId: this.businessPartnerId,
       orgId: localStorage.getItem('userOrgId') ? Number(localStorage.getItem('userOrgId')) : null,
       createdBy: Number(localStorage.getItem('userId') || 0),
-      updatedBy: Number(localStorage.getItem('userId') || 0)
+      updatedBy: Number(localStorage.getItem('userId') || 0),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
     const request$ = this.editingSlaId
       ? this.slaService.updateSlaType(payload)
       : this.slaService.createSlaType(payload);
-
+    console.log('request payload', request$);
     request$.subscribe({
       next: () => { this.loadSlaList(); this.activeTab = 'list'; },
       error: (err) => {
@@ -358,17 +415,68 @@ export class SlaTypeComponent implements OnInit {
     this.filteredSlaList = this.slaList.filter(sla => {
       const priorityMatch = !this.priorityFilter || sla.priority?.code === this.priorityFilter;
       const ticketTypeMatch = !this.ticketTypeFilter || sla.priority?.ticketType?.ticketTypeName === this.ticketTypeFilter;
-      return priorityMatch && ticketTypeMatch;
+      const statusMatch = this.matchesSlaStatusFilter(sla);
+      return priorityMatch && ticketTypeMatch && statusMatch;
     });
+  }
+
+  matchesSlaStatusFilter(sla: any): boolean {
+    switch (this.selectedStatusFilter) {
+      case 'live':
+        return sla.isActive === true;
+      case 'under-approval':
+        return sla.isActive === false && sla.isUnderApproval === true;
+      case 'inactive':
+        return sla.isActive === false && sla.isUnderApproval === false;
+      default:
+        return true;
+    }
+  }
+
+  getSlaStatusLabel(sla: any): string {
+    if (sla.isActive === true) {
+      return 'Live';
+    }
+    if (sla.isUnderApproval === true) {
+      return 'Under Approval';
+    }
+    return 'Inactive';
+  }
+
+  getSlaStatusClass(sla: any): string {
+    if (sla.isActive === true) {
+      return 'status-pill live';
+    }
+    if (sla.isUnderApproval === true) {
+      return 'status-pill under-approval';
+    }
+    return 'status-pill inactive';
   }
 
   loadSlaList(): void {
     this.loading = true;
+    if(this.businessPartnerId == null && this.orgId != null) {
+        this.companyService.getServiceProviderList(this.orgId).subscribe({
+        next: (response) => {
+          this.bpOptions = (response as any).attributes || response || [];
+          const matchingRole = this.bpOptions.find((bp) => {
+            return bp.company?.companyId != null && bp.mappedCompany?.companyId != null
+              && bp.company.companyId === bp.mappedCompany.companyId;
+          });
+
+          this.businessPartnerId = matchingRole?.businessPartnerId ?? null;
+        },
+        error: () => {
+          console.error('Failed to load business partners');
+        }
+      });
+    }
     this.slaService.getAllSlaTypes(this.businessPartnerId).subscribe({
       next: (res) => {
         this.slaList = (res as any).attributes || [];
         this.priorityFilterOptions = Array.from(new Set(this.slaList.map(sla => sla.priority?.code).filter(Boolean))) as string[];
         this.ticketTypeFilterOptions = Array.from(new Set(this.slaList.map(sla => sla.priority?.ticketType?.ticketTypeName).filter(Boolean))) as string[];
+        this.selectedStatusFilter = 'all';
         this.priorityFilter = null;
         this.ticketTypeFilter = null;
         this.applySlaListFilters();
@@ -379,6 +487,7 @@ export class SlaTypeComponent implements OnInit {
         this.filteredSlaList = [];
         this.priorityFilterOptions = [];
         this.ticketTypeFilterOptions = [];
+        this.selectedStatusFilter = 'all';
         this.priorityFilter = null;
         this.ticketTypeFilter = null;
         this.loading = false;
