@@ -1,0 +1,33 @@
+<div class="approval-dialog">
+  <h2 mat-dialog-title class="dialog-title">{{ getDialogTitle() }}</h2>
+
+  <div mat-dialog-content class="dialog-content">
+    <p class="dialog-description">{{ getDialogDescription() }}</p>
+
+    <mat-form-field class="remark-field">
+      <mat-label>Remark *</mat-label>
+      <textarea
+        matInput
+        [(ngModel)]="remark"
+        [maxlength]="maxCharacters"
+        rows="6"
+        placeholder="Enter your remark here...">
+      </textarea>
+      <mat-hint align="end">{{ remark.length }} / {{ maxCharacters }}</mat-hint>
+    </mat-form-field>
+  </div>
+
+  <div mat-dialog-actions class="dialog-actions">
+    <button mat-stroked-button (click)="onCancel()" class="btn-cancel">Cancel</button>
+    <button
+      mat-raised-button
+      [disabled]="!isValid"
+      (click)="onSubmit()"
+      class="btn-submit"
+      [class.approve]="data.action === 'approve'"
+      [class.decline]="data.action === 'decline'"
+      [class.clarify]="data.action === 'clarify'">
+      Submit
+    </button>
+  </div>
+</div>

@@ -657,6 +657,10 @@
   padding: 10px;
   overflow: auto;
   color: #00246B;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Updated sidebar style */

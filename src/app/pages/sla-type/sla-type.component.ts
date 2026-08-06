@@ -8,6 +8,7 @@ import { PriorityService } from '../../service/priority.service';
 import { CompanyService } from '../../service/company.service';
 import { SlaService } from '../../service/sla.service';
 import { PriorityMaster } from '../../models/priority-master';
+import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
   selector: 'app-sla-type',
@@ -38,6 +39,7 @@ export class SlaTypeComponent implements OnInit {
   filteredSlaList: any[] = [];
   priorityFilterOptions: string[] = [];
   ticketTypeFilterOptions: string[] = [];
+  selectedStatusFilter: 'all' | 'live' | 'under-approval' | 'inactive' = 'all';
   priorityFilter: string | null = null;
   ticketTypeFilter: string | null = null;
   editingSlaId: number | null = null;
@@ -391,7 +393,9 @@ export class SlaTypeComponent implements OnInit {
       businessPartnerId: this.businessPartnerId,
       orgId: localStorage.getItem('userOrgId') ? Number(localStorage.getItem('userOrgId')) : null,
       createdBy: Number(localStorage.getItem('userId') || 0),
-      updatedBy: Number(localStorage.getItem('userId') || 0)
+      updatedBy: Number(localStorage.getItem('userId') || 0),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
 
     const request$ = this.editingSlaId
@@ -411,8 +415,42 @@ export class SlaTypeComponent implements OnInit {
     this.filteredSlaList = this.slaList.filter(sla => {
       const priorityMatch = !this.priorityFilter || sla.priority?.code === this.priorityFilter;
       const ticketTypeMatch = !this.ticketTypeFilter || sla.priority?.ticketType?.ticketTypeName === this.ticketTypeFilter;
-      return priorityMatch && ticketTypeMatch;
+      const statusMatch = this.matchesSlaStatusFilter(sla);
+      return priorityMatch && ticketTypeMatch && statusMatch;
     });
+  }
+
+  matchesSlaStatusFilter(sla: any): boolean {
+    switch (this.selectedStatusFilter) {
+      case 'live':
+        return sla.isActive === true;
+      case 'under-approval':
+        return sla.isActive === false && sla.isUnderApproval === true;
+      case 'inactive':
+        return sla.isActive === false && sla.isUnderApproval === false;
+      default:
+        return true;
+    }
+  }
+
+  getSlaStatusLabel(sla: any): string {
+    if (sla.isActive === true) {
+      return 'Live';
+    }
+    if (sla.isUnderApproval === true) {
+      return 'Under Approval';
+    }
+    return 'Inactive';
+  }
+
+  getSlaStatusClass(sla: any): string {
+    if (sla.isActive === true) {
+      return 'status-pill live';
+    }
+    if (sla.isUnderApproval === true) {
+      return 'status-pill under-approval';
+    }
+    return 'status-pill inactive';
   }
 
   loadSlaList(): void {
@@ -438,6 +476,7 @@ export class SlaTypeComponent implements OnInit {
         this.slaList = (res as any).attributes || [];
         this.priorityFilterOptions = Array.from(new Set(this.slaList.map(sla => sla.priority?.code).filter(Boolean))) as string[];
         this.ticketTypeFilterOptions = Array.from(new Set(this.slaList.map(sla => sla.priority?.ticketType?.ticketTypeName).filter(Boolean))) as string[];
+        this.selectedStatusFilter = 'all';
         this.priorityFilter = null;
         this.ticketTypeFilter = null;
         this.applySlaListFilters();
@@ -448,6 +487,7 @@ export class SlaTypeComponent implements OnInit {
         this.filteredSlaList = [];
         this.priorityFilterOptions = [];
         this.ticketTypeFilterOptions = [];
+        this.selectedStatusFilter = 'all';
         this.priorityFilter = null;
         this.ticketTypeFilter = null;
         this.loading = false;

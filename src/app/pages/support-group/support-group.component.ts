@@ -32,6 +32,7 @@ export class SupportGroupComponent implements OnInit {
   filteredSupportGroups: any[] = [];
   bpOptions: any[] = [];
   searchValue = '';
+  selectedStatusFilter: 'all' | 'live' | 'under-approval' | 'inactive' = 'all';
   loading = false;
   isSubmitting = false;
   formError: Record<string, string> = {};
@@ -534,17 +535,48 @@ export class SupportGroupComponent implements OnInit {
 
   filterBySearch(): void {
     const term = (this.searchValue || '').trim().toLowerCase();
-    if (!term) {
-      this.filteredSupportGroups = this.supportGroups;
-    } else {
-      this.filteredSupportGroups = this.supportGroups.filter((group) => {
-        const groupName = (group.groupName || group.supportGroupName || '').toLowerCase();
-        const agentNames = this.getDisplayableAgentNames(group).toLowerCase();
-        return groupName.includes(term) || agentNames.includes(term);
-      });
-    }
+    this.filteredSupportGroups = this.supportGroups.filter((group) => {
+      const groupName = (group.groupName || group.supportGroupName || '').toLowerCase();
+      const agentNames = this.getDisplayableAgentNames(group).toLowerCase();
+      const matchesSearch = !term || groupName.includes(term) || agentNames.includes(term);
+      const matchesStatus = this.matchesSupportGroupStatusFilter(group);
+      return matchesSearch && matchesStatus;
+    });
     this.totalRecords = this.filteredSupportGroups.length;
     this.currentPage = 0;
+  }
+
+  matchesSupportGroupStatusFilter(group: any): boolean {
+    switch (this.selectedStatusFilter) {
+      case 'live':
+        return group?.isActive === true;
+      case 'under-approval':
+        return group?.isActive === false && group?.isUnderApproval === true;
+      case 'inactive':
+        return group?.isActive === false && group?.isUnderApproval !== true;
+      default:
+        return true;
+    }
+  }
+
+  getSupportGroupStatusLabel(group: any): string {
+    if (group?.isActive === true) {
+      return 'Live';
+    }
+    if (group?.isUnderApproval === true) {
+      return 'Under Approval';
+    }
+    return 'Inactive';
+  }
+
+  getSupportGroupStatusClass(group: any): string {
+    if (group?.isActive === true) {
+      return 'status-pill live';
+    }
+    if (group?.isUnderApproval === true) {
+      return 'status-pill under-approval';
+    }
+    return 'status-pill inactive';
   }
 
   onPageChange(event: PageEvent): void {

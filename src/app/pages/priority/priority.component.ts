@@ -26,6 +26,8 @@ export class PriorityComponent implements OnInit {
   priorities: PriorityMaster[] = [];
   filteredPriorities: PriorityMaster[] = [];
   searchValue = '';
+  selectedStatusFilter: 'all' | 'live' | 'under-approval' | 'inactive' = 'all';
+  selectedTicketTypeFilter: number | null = null;
   loading = false;
   formError: any = {};
   submitSuccess = '';
@@ -353,6 +355,30 @@ export class PriorityComponent implements OnInit {
     return localStorage.getItem('userOrgName') || (priority as any).organization?.companyName || '-';
   }
 
+  getPriorityStatus(priority: PriorityMaster): string {
+    if (priority.isActive === true) {
+      return 'Live';
+    }
+
+    if (priority.isUnderApproval === true) {
+      return 'Under Approval';
+    }
+
+    return 'Inactive';
+  }
+
+  getPriorityStatusClass(priority: PriorityMaster): string {
+    if (priority.isActive === true) {
+      return 'status-pill live';
+    }
+
+    if (priority.isUnderApproval === true) {
+      return 'status-pill under-approval';
+    }
+
+    return 'status-pill inactive';
+  }
+
   deletePriority(priority: PriorityMaster): void {
     const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
       width: '420px',
@@ -391,16 +417,45 @@ export class PriorityComponent implements OnInit {
 
   filterBySearch(): void {
     const term = (this.searchValue || '').trim().toLowerCase();
-    if (!term) {
-      this.filteredPriorities = this.priorities;
-    } else {
-      this.filteredPriorities = this.priorities.filter(priority =>
-        (priority.code || '').toLowerCase().includes(term) ||
-        (priority.description || '').toLowerCase().includes(term)
-      );
-    }
+
+    this.filteredPriorities = this.priorities.filter(priority => {
+      const matchesSearch = !term || (priority.code || '').toLowerCase().includes(term) || (priority.description || '').toLowerCase().includes(term);
+      const matchesStatus = this.matchesStatusFilter(priority);
+      const matchesTicketType = this.matchesTicketTypeFilter(priority);
+      return matchesSearch && matchesStatus && matchesTicketType;
+    });
+
     this.totalRecords = this.filteredPriorities.length;
     this.currentPage = 0;
+  }
+
+  matchesTicketTypeFilter(priority: PriorityMaster): boolean {
+    if (this.selectedTicketTypeFilter == null) {
+      return true;
+    }
+
+    return priority.ticketType?.ticketTypeId === this.selectedTicketTypeFilter;
+  }
+
+  matchesStatusFilter(priority: PriorityMaster): boolean {
+    switch (this.selectedStatusFilter) {
+      case 'live':
+        return priority.isActive === true;
+      case 'under-approval':
+        return priority.isActive === false && priority.isUnderApproval === true;
+      case 'inactive':
+        return priority.isActive === false && priority.isUnderApproval === false;
+      default:
+        return true;
+    }
+  }
+
+  onStatusFilterChange(): void {
+    this.filterBySearch();
+  }
+
+  onTicketTypeFilterChange(): void {
+    this.filterBySearch();
   }
 
   onPageChange(event: PageEvent): void {

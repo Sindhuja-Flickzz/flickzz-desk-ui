@@ -21,6 +21,8 @@ export interface PriorityMaster {
   ticketType: TicketTypeMaster;
   createdBy: string;
   updatedBy: string;
+  isActive?: boolean;
+  isUnderApproval?: boolean;
 }
 
 export interface PriorityRequest {

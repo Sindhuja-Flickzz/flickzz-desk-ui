@@ -22,6 +22,7 @@ export class CategoryComponent implements OnInit {
   categories: CategoryMaster[] = [];
   filteredCategories: CategoryMaster[] = [];
   searchValue = '';
+  selectedStatusFilter: 'all' | 'live' | 'under-approval' | 'inactive' = 'all';
   loading = false;
   isSubmitting = false;
   formError: Record<string, string> = {};
@@ -378,17 +379,48 @@ export class CategoryComponent implements OnInit {
 
   filterBySearch(): void {
     const term = (this.searchValue || '').trim().toLowerCase();
-    if (!term) {
-      this.filteredCategories = this.categories;
-    } else {
-      this.filteredCategories = this.categories.filter((category) => {
-        const categoryName = category.categoryName || '';
-        const subCategories = this.extractSubCategoryNames(category).join(', ');
-        return categoryName.toLowerCase().includes(term) || subCategories.toLowerCase().includes(term);
-      });
-    }
+    this.filteredCategories = this.categories.filter((category) => {
+      const categoryName = category.categoryName || '';
+      const subCategories = this.extractSubCategoryNames(category).join(', ');
+      const matchesSearch = !term || categoryName.toLowerCase().includes(term) || subCategories.toLowerCase().includes(term);
+      const matchesStatus = this.matchesCategoryStatusFilter(category);
+      return matchesSearch && matchesStatus;
+    });
     this.totalRecords = this.filteredCategories.length;
     this.currentPage = 0;
+  }
+
+  matchesCategoryStatusFilter(category: CategoryMaster): boolean {
+    switch (this.selectedStatusFilter) {
+      case 'live':
+        return category.isActive === true;
+      case 'under-approval':
+        return category.isActive === false && (category as any).isUnderApproval === true;
+      case 'inactive':
+        return category.isActive === false && (category as any).isUnderApproval !== true;
+      default:
+        return true;
+    }
+  }
+
+  getCategoryStatusLabel(category: CategoryMaster): string {
+    if (category.isActive === true) {
+      return 'Live';
+    }
+    if ((category as any).isUnderApproval === true) {
+      return 'Under Approval';
+    }
+    return 'Inactive';
+  }
+
+  getCategoryStatusClass(category: CategoryMaster): string {
+    if (category.isActive === true) {
+      return 'status-pill live';
+    }
+    if ((category as any).isUnderApproval === true) {
+      return 'status-pill under-approval';
+    }
+    return 'status-pill inactive';
   }
 
   getPaginatedCategories(): CategoryMaster[] {
@@ -416,7 +448,9 @@ export class CategoryComponent implements OnInit {
           if (typeof item === 'string') {
             return item;
           }
-          return item?.subCategoryName || item?.name || item?.subcategoryName || '';
+          if (item.isActive) {            
+            return item?.subCategoryName || item?.name || item?.subcategoryName || '';
+          }
         })
         .filter(Boolean);
     }

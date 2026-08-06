@@ -81,6 +81,16 @@
 
     <div class="search-container">
       <input class="search-input" type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by priority or organization" />
+      <select class="search-input" [(ngModel)]="selectedStatusFilter" (ngModelChange)="onStatusFilterChange()">
+        <option value="all">All Status</option>
+        <option value="live">Live</option>
+        <option value="under-approval">Under Approval</option>
+        <option value="inactive">Inactive</option>
+      </select>
+      <select class="search-input" [(ngModel)]="selectedTicketTypeFilter" (ngModelChange)="onTicketTypeFilterChange()">
+        <option [ngValue]="null">All Ticket Types</option>
+        <option *ngFor="let type of ticketTypes" [ngValue]="type.ticketTypeId">{{ type.ticketTypeName }}</option>
+      </select>
     </div>
 
     <div *ngIf="loading" class="context-banner">Loading priorities...</div>
@@ -95,6 +105,7 @@
             <th>Level</th>
             <th>Ticket Type</th>
             <th>Description</th>
+            <th>Status</th>
             <th>Organization</th>
             <th>Actions</th>
           </tr>
@@ -105,8 +116,11 @@
             <td>{{ getPriorityLevel(priority) }}</td>
             <td>{{ getPriorityTicketType(priority) }}</td>
             <td>{{ getPriorityDescription(priority) }}</td>
+            <td>
+              <span [class]="getPriorityStatusClass(priority)">{{ getPriorityStatus(priority) }}</span>
+            </td>
             <td>{{ getPriorityOrganization(priority) }}</td>
-            <td class="action-buttons">
+            <td class="action-buttons" *ngIf="priority.isActive">
               <button type="button" title="Edit" (click)="startEdit(priority)"><mat-icon>edit</mat-icon></button>
               <button type="button" title="Delete" (click)="deletePriority(priority)"><mat-icon>delete</mat-icon></button>
             </td>

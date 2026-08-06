@@ -33,6 +33,7 @@ export class AppComponent implements OnInit, OnDestroy {
   menuTree: MenuNode[] = [];
 
   activeRoute = '';
+  currentUrl = '';
   activeNodeId?: number;
   showSidebar = false;
 
@@ -69,6 +70,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     const currentUrl = this.router.url;
+    this.currentUrl = currentUrl;
     this.showSidebar = !!localStorage.getItem('token') && !currentUrl.startsWith('/login') ;
     if (this.showSidebar) {
       this.loadMenu();
@@ -81,6 +83,7 @@ export class AppComponent implements OnInit, OnDestroy {
       .subscribe((event: any) => {
         // Update active route
         this.activeRoute = event.url;
+        this.currentUrl = event.url;
 
         // Show sidebar for authenticated routes only
         const show = !!localStorage.getItem('token') && !event.url.startsWith('/login') ;

@@ -83,13 +83,11 @@ export class AuthInterceptor implements HttpInterceptor {
           catchError((error) => {
             this.isRefreshing = false;
             this.refreshTokenSubject.next(null);
-            this.logout();
-            return throwError(error);
+            return throwError(() => error);
           })
         );
       } else {
-        this.logout();
-        return throwError('No refresh token available');
+        return throwError(() => new Error('No refresh token available'));
       }
     } else {
       // If refreshing, wait for new token

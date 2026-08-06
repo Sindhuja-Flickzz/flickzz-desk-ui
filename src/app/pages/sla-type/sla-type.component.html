@@ -118,6 +118,16 @@
           <option *ngFor="let ticketType of ticketTypeFilterOptions" [ngValue]="ticketType">{{ ticketType }}</option>
         </select>
       </div>
+
+      <div class="field">
+        <label for="statusFilter">Status</label>
+        <select id="statusFilter" [(ngModel)]="selectedStatusFilter" (change)="applySlaListFilters()">
+          <option value="all">All Status</option>
+          <option value="live">Live</option>
+          <option value="under-approval">Under Approval</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
     </div>
 
     <div *ngIf="!loading && slaList.length > 0 && filteredSlaList.length === 0" class="context-banner">No SLA types match the selected filters.</div>
@@ -131,6 +141,7 @@
             <th>First Response Time</th>
             <th>Resolution</th>
             <th>Update Freq</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -141,10 +152,12 @@
             <td>{{ s.firstResponseTime }} {{ s.firstResponseTerm }}</td>
             <td>{{ s.resolutionTime }} {{ s.resolutionTerm }}</td>
             <td>{{ s.updateFrequency }} {{ s.updateFrequencyTerm }}</td>
-            <td class="action-buttons">
+            <td><span [class]="getSlaStatusClass(s)">{{ getSlaStatusLabel(s) }}</span></td>
+            <td class="action-buttons" *ngIf="s.isActive">
               <button type="button" title="Edit" (click)="startEditSla(s)"><mat-icon>edit</mat-icon></button>
               <button type="button" title="Delete" (click)="deleteSla(s)"><mat-icon>delete</mat-icon></button>
             </td>
+            <td *ngIf="!s.isActive">NA</td>
           </tr>
         </tbody>
       </table>

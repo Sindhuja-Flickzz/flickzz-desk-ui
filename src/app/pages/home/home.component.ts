@@ -18,8 +18,10 @@ export class HomeComponent {
   constructor(private router: Router) {}
 
   open(tile: any) {
-    // No direct navigation for removed feature
-    // default: navigate to home feature (placeholder)
+    // console.log('Open tile', tile.title);
+    // this.router.navigateByUrl('/config-approval').catch(() => {
+    //   this.router.navigate(['/home']);
+    // });
     console.log('Open tile', tile.title);
   }
 }

@@ -64,6 +64,8 @@ import { SettingsComponent } from './pages/settings/settings.component';
 import { CategoryComponent } from './pages/category/category.component';
 import { SupportGroupComponent } from './pages/support-group/support-group.component';
 import { SupportCategoryComponent } from './pages/support-category/support-category.component';
+import { ConfigApprovalComponent } from './pages/config-approval/config-approval.component';
+import { ApprovalDialogComponent } from './pages/config-approval/approval-dialog/approval-dialog.component';
 import { ProfileIconComponent } from './shared/profile-icon/profile-icon.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
@@ -79,6 +81,7 @@ import { HomeComponent } from './pages/home/home.component';
 import { NotificationComponent } from './notification/notification.component';
 import { NotificationPopupComponent } from './shared/notification-popup/notification-popup.component';
 import { NotificationDropdownComponent } from './notification-dropdown/notification-dropdown.component';
+import { NotificationCenterComponent } from './pages/notification-center/notification-center.component';
 
 @NgModule({
   declarations: [
@@ -110,6 +113,8 @@ import { NotificationDropdownComponent } from './notification-dropdown/notificat
     CategoryComponent,
     SupportGroupComponent,
     SupportCategoryComponent,
+    ConfigApprovalComponent,
+    ApprovalDialogComponent,
     DetailsTemplateComponent,
     DetailsTemplateOptionsDialogComponent,
     ProfileIconComponent,
@@ -134,6 +139,7 @@ import { NotificationDropdownComponent } from './notification-dropdown/notificat
     FormsModule,
     ReactiveFormsModule,
     CommonModule,
+    NotificationCenterComponent,
     // Angular Material modules
     MatDialogModule,
     MatIconModule,

@@ -52,6 +52,19 @@ describe('PriorityComponent', () => {
     expect(component.priorityForm.contains('rank')).toBeFalse();
   });
 
+  it('should filter priorities by selected ticket type', () => {
+    component.priorities = [
+      { ticketType: { ticketTypeId: 1, ticketTypeName: 'incident' }, code: 'P1', description: 'Desc1' } as any,
+      { ticketType: { ticketTypeId: 2, ticketTypeName: 'request' }, code: 'P2', description: 'Desc2' } as any
+    ];
+    component.selectedTicketTypeFilter = 2;
+
+    component.filterBySearch();
+
+    expect(component.filteredPriorities.length).toBe(1);
+    expect(component.filteredPriorities[0].ticketType.ticketTypeId).toBe(2);
+  });
+
   it('should reject level values below 1', () => {
     const levelControl = component.priorityForm.get('level');
     levelControl?.setValue(0);
@@ -80,6 +93,21 @@ describe('PriorityComponent', () => {
     expect(component.priorityForm.get('code')?.value).toBe('P1');
     expect(component.priorityForm.get('description')?.value).toBe('High priority');
     expect(component.priorityForm.get('level')?.value).toBe(2);
+  });
+
+  it('should derive the right status label and class for each priority state', () => {
+    const livePriority = { isActive: true, isUnderApproval: false } as any;
+    const approvalPriority = { isActive: false, isUnderApproval: true } as any;
+    const inactivePriority = { isActive: false, isUnderApproval: false } as any;
+
+    expect(component.getPriorityStatus(livePriority)).toBe('Live');
+    expect(component.getPriorityStatusClass(livePriority)).toContain('live');
+
+    expect(component.getPriorityStatus(approvalPriority)).toBe('Under Approval');
+    expect(component.getPriorityStatusClass(approvalPriority)).toContain('under-approval');
+
+    expect(component.getPriorityStatus(inactivePriority)).toBe('Inactive');
+    expect(component.getPriorityStatusClass(inactivePriority)).toContain('inactive');
   });
 
   it('should send the BP-config payload shape when creating a priority', () => {

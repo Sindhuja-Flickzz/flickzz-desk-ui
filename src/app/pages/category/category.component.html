@@ -65,6 +65,12 @@
 
     <div class="search-container">
       <input class="search-input" type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by category or subcategory" />
+      <select class="search-input" [(ngModel)]="selectedStatusFilter" (ngModelChange)="filterBySearch()">
+        <option value="all">All Status</option>
+        <option value="live">Live</option>
+        <option value="under-approval">Under Approval</option>
+        <option value="inactive">Inactive</option>
+      </select>
     </div>
 
     <div *ngIf="loading" class="context-banner">Loading categories...</div>
@@ -77,6 +83,7 @@
             <th>Category</th>
             <th>Sub Categories</th>
             <th>Organization</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -104,7 +111,8 @@
               </div>
             </td>
             <td>{{ getCategoryOrganization() }}</td>
-            <td class="action-buttons">
+            <td><span [class]="getCategoryStatusClass(category)">{{ getCategoryStatusLabel(category) }}</span></td>
+            <td class="action-buttons" *ngIf="category.isActive">
               <button type="button" title="Edit" (click)="startEdit(category)"><mat-icon>edit</mat-icon></button>
               <button type="button" title="Delete" (click)="deleteCategory(category)"><mat-icon>delete</mat-icon></button>
             </td>

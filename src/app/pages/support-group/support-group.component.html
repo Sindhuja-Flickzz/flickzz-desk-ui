@@ -150,6 +150,7 @@
             <th *ngIf="selectionMode === 'bp'">BP Managers</th>
             <th>Agents</th>
             <th>Organization</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -217,7 +218,8 @@
               </div>
             </td>
             <td>{{ getSupportGroupOrganization(group) }}</td>
-            <td class="action-buttons">
+            <td><span [class]="getSupportGroupStatusClass(group)">{{ getSupportGroupStatusLabel(group) }}</span></td>
+            <td class="action-buttons" *ngIf="group.isActive">
               <button type="button" title="Edit" (click)="startEdit(group)"><mat-icon>edit</mat-icon></button>
               <button type="button" title="Delete" (click)="deleteSupportGroup(group)"><mat-icon>delete</mat-icon></button>
             </td>
