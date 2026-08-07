@@ -41,6 +41,7 @@ export interface ConfigChangeApprovalVO {
   approvalId?: number;
   changeRequest?: BPConfigurationChangeRequestVO;
   approvalType?: string;
+  approverType?: string;
   approverLevel?: number;
   approverUserId?: number;
   approverOrgId?: number;

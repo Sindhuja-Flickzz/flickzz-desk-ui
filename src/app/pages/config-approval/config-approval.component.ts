@@ -7,7 +7,6 @@ import { ConfigChangeApprovalVO, BPConfigurationChangeRequestVO } from '../../mo
 interface KPICard {
   title: string;
   count: number;
-  trend: string;
   icon: string;
   color: string;
 }
@@ -59,11 +58,11 @@ export class ConfigApprovalComponent implements OnInit {
   loadApprovals(): void {
     this.isLoading = true;
     this.errorMessage = '';
-    const userId = this.getCurrentUserId();
+    const userId = Number(localStorage.getItem('userId')); // Default to 1 if not found
 
     this.configApprovalService.getApprovalsList(userId).subscribe({
       next: (data: ConfigChangeApprovalVO[]) => {
-        this.approvals = data || [];
+        this.approvals = (data as any).attributes || [];
         this.calculateKPIs();
         this.lastRefreshed = new Date();
         this.isLoading = false;
@@ -81,46 +80,49 @@ export class ConfigApprovalComponent implements OnInit {
   }
 
   calculateKPIs(): void {
+    console.log('Calculating KPIs for approvals:', this.approvals);
     const total = this.approvals.length;
     const pending = this.approvals.filter(a => a.status === 'Pending').length;
-    const approved = this.approvals.filter(a => a.status === 'Approved' && this.isToday(a.approvedOn)).length;
+    const approved = this.approvals.filter(a => a.status === 'Approved').length;
+    const requested_clarification = this.approvals.filter(a => a.status === 'Requested Clarification').length;
     const rejected = this.approvals.filter(a => a.status === 'Rejected').length;
-    const internal = this.approvals.filter(a => a.approvalType === 'Internal').length;
-    const bp = this.approvals.filter(a => a.approvalType === 'BP').length;
+    const internal = this.approvals.filter(a => this.getApprovalType(a) === 'Internal').length;
+    const bp = this.approvals.filter(a => this.getApprovalType(a) === 'BP').length;
 
     this.kpiCards = [
       {
         title: 'Pending Approvals',
         count: pending,
-        trend: '↓ 3% vs last week',
         icon: 'schedule',
         color: '#FFB81C'
       },
       {
-        title: 'Approved Today',
+        title: 'Approved',
         count: approved,
-        trend: '↑ 2% vs last week',
         icon: 'check_circle',
         color: '#107C10'
       },
       {
+        title: 'Requested Clarification',
+        count: requested_clarification,
+        icon: 'help_outline',
+        color: '#FFB81C'
+      },
+      {
         title: 'Rejected',
         count: rejected,
-        trend: '↓ 1% vs last week',
         icon: 'cancel',
         color: '#DA3B01'
       },
       {
         title: 'Internal Approval',
         count: internal,
-        trend: '→ 0% vs last week',
         icon: 'group',
         color: '#0078D4'
       },
       {
         title: 'BP Approval',
         count: bp,
-        trend: '→ 0% vs last week',
         icon: 'business',
         color: '#8661C5'
       }
@@ -140,7 +142,7 @@ export class ConfigApprovalComponent implements OnInit {
     // Filter by status
     if (this.filterStatus !== 'All') {
       if (this.filterStatus === 'Internal' || this.filterStatus === 'BP') {
-        filtered = filtered.filter(a => a.approvalType === this.filterStatus);
+        filtered = filtered.filter(a => this.getApprovalType(a) === this.filterStatus);
       } else {
         filtered = filtered.filter(a => a.status === this.filterStatus);
       }
@@ -156,6 +158,20 @@ export class ConfigApprovalComponent implements OnInit {
     }
 
     return filtered;
+  }
+
+  getConfigName(approval: ConfigChangeApprovalVO): string {
+    return approval.changeRequest?.bpPriority ? 'Priority' : approval.changeRequest?.bpSla ? 'SLA' : approval.changeRequest?.category ? 'Category' : approval.changeRequest?.supportGroup ? 'Support Group' : approval.changeRequest?.assignment ? 'Assignment' : 'Configuration';
+  }
+
+  getApprovalTitle(approval: ConfigChangeApprovalVO): string {
+    const configType = this.getConfigName(approval);
+    const operation = this.getOperationLabel(approval.changeRequest?.operation);
+    return `${configType} - ${operation}`;
+  }
+
+  getApprovalType(approval: ConfigChangeApprovalVO): string {
+    return approval.approverType || '';
   }
 
   selectApproval(approval: ConfigChangeApprovalVO): void {
@@ -229,10 +245,10 @@ export class ConfigApprovalComponent implements OnInit {
     this.loadApprovals();
   }
 
-  private getCurrentUserId(): number {
-    // TODO: Get from authentication service
-    return 1;
-  }
+  // private getCurrentUserId(): number {
+  //   // TODO: Get from authentication service
+  //   return 1;
+  // }
 
   getFormattedDate(date: string | null | undefined): string {
     if (!date) return '';

@@ -1,11 +1,10 @@
 <div class="config-approval-container">
-  <!-- PAGE HEADER -->
   <div class="page-header">
-    <div class="header-left">
-      <h1 class="page-title">Configuration Approvals</h1>
-      <p class="page-subtitle">Review and take action on configuration changes</p>
+    <div class="header-title">
+      <h2>Configuration Approvals</h2>
+      <p>Review and take action on configuration changes</p>
     </div>
-    <div class="header-right">
+    <div class="header-actions">
       <span class="last-refreshed">Last refreshed: {{ lastRefreshed | date: 'MMM d, yyyy h:mm a' }}</span>
       <button mat-icon-button (click)="refresh()" class="refresh-button" [disabled]="isLoading">
         <mat-icon>refresh</mat-icon>
@@ -13,24 +12,21 @@
     </div>
   </div>
 
-  <!-- KPI CARDS -->
-  <div class="kpi-cards-section">
+  <section class="kpi-cards-section">
     <div class="kpi-cards-grid">
-      <div *ngFor="let card of kpiCards" class="kpi-card" [style.--card-color]="card.color">
-        <div class="kpi-card-header">
-          <mat-icon class="kpi-icon">{{ card.icon }}</mat-icon>
+      <article *ngFor="let card of kpiCards" class="kpi-card" [style.--card-color]="card.color" onclick="selectKpiCard(card)">
+        <div class="kpi-card-top">
+          <div class="kpi-icon-wrap">
+            <mat-icon class="kpi-icon">{{ card.icon }}</mat-icon>
+          </div>
+          <span class="kpi-title">{{ card.title }}</span>          
+          <span class="kpi-count">{{ card.count }}</span>
         </div>
-        <div class="kpi-card-content">
-          <p class="kpi-title">{{ card.title }}</p>
-          <p class="kpi-count">{{ card.count }}</p>
-          <p class="kpi-trend">{{ card.trend }}</p>
-        </div>
-      </div>
+      </article>
     </div>
-  </div>
+  </section>
 
-  <!-- FILTER BAR -->
-  <div class="filter-bar">
+  <section class="filter-bar">
     <div class="filter-chips">
       <button
         *ngFor="let status of filterStatuses"
@@ -41,203 +37,143 @@
         {{ status }}
       </button>
     </div>
-    <div class="search-container">
-      <mat-form-field class="search-field">
-        <mat-label>Search approvals...</mat-label>
-        <input matInput [(ngModel)]="searchText" type="text">
-        <mat-icon matSuffix>search</mat-icon>
-      </mat-form-field>
-    </div>
-  </div>
+  </section>
 
-  <!-- MAIN CONTENT -->
   <div class="main-content" [class.mobile]="isMobile" [class.tablet]="isTablet">
-    <!-- LEFT SIDE - APPROVAL LIST -->
-    <div class="approval-list-section">
-      <div *ngIf="isLoading" class="loading-spinner">
-        <mat-spinner diameter="40"></mat-spinner>
-      </div>
+    <section class="approval-list-section">
+      <div class="section-panel">
+        <div class="section-heading">
+          <div>
+            <p class="section-label">Approval requests</p>
+            <h2 class="section-title">{{ filterApprovals().length }} requests</h2>
+          </div>
+        </div>
 
-      <div *ngIf="!isLoading && filterApprovals().length === 0" class="empty-state">
-        <mat-icon>inbox</mat-icon>
-        <p *ngIf="!errorMessage">No approval requests found</p>
-        <p *ngIf="errorMessage">{{ errorMessage }}</p>
-      </div>
+        <div *ngIf="isLoading" class="loading-spinner">
+          <mat-spinner diameter="36"></mat-spinner>
+        </div>
 
-      <div #scrollableList class="approval-list-container" *ngIf="!isLoading && filterApprovals().length > 0">
-        <div
-          *ngFor="let approval of filterApprovals()"
-          class="approval-card"
-          [class.selected]="selectedApproval?.approvalId === approval.approvalId"
-          (click)="selectApproval(approval)">
+        <div *ngIf="!isLoading && filterApprovals().length === 0" class="empty-state">
+          <mat-icon>inbox</mat-icon>
+          <p *ngIf="!errorMessage">No approval requests found</p>
+          <p *ngIf="errorMessage">{{ errorMessage }}</p>
+        </div>
 
-          <div class="approval-card-header">
-            <div class="card-icon">
-              <mat-icon>settings</mat-icon>
-            </div>
-            <div class="card-title-section">
-              <h3 class="approval-title">
-                {{ approval.changeRequest?.configuration?.type || 'Configuration' }} — {{ getOperationLabel(approval.changeRequest?.operation) }}
-              </h3>
-              <div class="approval-metadata">
-                <span class="metadata-item">{{ approval.changeRequest?.requestedByOrg?.companyName }}</span>
-                <span class="metadata-item">{{ approval.createdByName }}</span>
-                <span class="metadata-item">{{ getFormattedDate(approval.createdOn) }}</span>
+        <div #scrollableList class="approval-list-container" *ngIf="!isLoading && filterApprovals().length > 0">
+          <article
+            *ngFor="let approval of filterApprovals()"
+            class="approval-card"
+            [class.selected]="selectedApproval?.approvalId === approval.approvalId"
+            (click)="selectApproval(approval)">
+
+            <div class="approval-card-top">
+              <div class="card-icon">
+                <mat-icon>settings</mat-icon>
+              </div>
+              <div class="card-title-content">
+                <div class="approval-title-row">
+                  <span class="approval-title">{{ getApprovalTitle(approval) }}</span>
+                  <span class="approval-operation">{{ getConfigName(approval) }}</span>
+                  <span class="approval-operation">{{ getOperationLabel(approval.changeRequest?.operation) }}</span>
+                  <span class="approval-operation">{{ approval.approverType }}</span>
+                  <span class="value status-badge" [style.color]="getApprovalStatusColor(approval.status)">{{ approval.status }}</span>
+                </div>
+                <div class="approval-meta-row">
+                  <span>{{ approval.changeRequest?.requestedByOrg?.companyName }} • {{ approval.createdByName }}</span>
+                  <span>{{ getFormattedDate(approval.createdOn) }}</span>
+                </div>
+              </div>
+              <div class="card-action-icon">
+                <mat-icon>chevron_right</mat-icon>
               </div>
             </div>
-          </div>
 
-          <p class="approval-description">
-            {{ approval.changeRequest?.configuration?.description || 'No description available' }}
-          </p>
+            <div class="approval-description">{{ approval.remarks?.[0]?.remark || 'No description available' }}</div>
 
-          <div class="approval-tags-section">
-            <div class="tags-row">
+            <div class="approval-chip-row">
               <mat-chip-set aria-label="Status chips">
-                <mat-chip
-                  *ngFor="let chip of getStatusChips(approval.changeRequest!)"
-                  class="status-chip">
-                  {{ chip }}
-                </mat-chip>
+                <mat-chip *ngFor="let chip of getStatusChips(approval.changeRequest!)" class="status-chip">{{ chip }}</mat-chip>
               </mat-chip-set>
             </div>
-
-            <div class="tags-row">
-              <span class="tag-label">Operation:</span>
-              <mat-chip-set aria-label="Operation">
-                <mat-chip class="operation-chip">
-                  {{ getOperationLabel(approval.changeRequest?.operation) }}
-                </mat-chip>
-              </mat-chip-set>
-            </div>
-
-            <div class="tags-row">
-              <span class="tag-label">Type:</span>
-              <mat-chip-set aria-label="Approval type">
-                <mat-chip
-                  *ngFor="let type of getApprovalTypeLabel(approval.approvalType)"
-                  [style.background-color]="type === 'Internal' ? '#E7F1F8' : '#F3E8F8'"
-                  class="approval-type-chip">
-                  {{ type }}
-                </mat-chip>
-              </mat-chip-set>
-            </div>
-
-            <div class="tags-row">
-              <span class="tag-label">Status:</span>
-              <span
-                class="status-badge"
-                [style.background-color]="getApprovalStatusColor(approval.status) + '20'"
-                [style.color]="getApprovalStatusColor(approval.status)">
-                {{ approval.status }}
-              </span>
-            </div>
-          </div>
-
-          <div class="card-arrow">
-            <mat-icon>chevron_right</mat-icon>
-          </div>
+          </article>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- RIGHT SIDE - APPROVAL DETAILS -->
-    <div class="approval-details-section" *ngIf="selectedApproval">
-      <div class="details-panel">
-        <!-- CONFIGURATION SUMMARY -->
-        <div class="details-section">
-          <h3 class="section-title">Configuration Summary</h3>
-          <div class="details-content">
-            <div class="detail-row">
-              <span class="detail-label">Configuration Type</span>
-              <span class="detail-value">{{ selectedApproval.changeRequest?.configuration?.type || 'N/A' }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Operation</span>
-              <span class="detail-value">{{ getOperationLabel(selectedApproval.changeRequest?.operation) }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Approval Type</span>
-              <span class="detail-value">{{ selectedApproval.approvalType }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Remark</span>
-              <span class="detail-value">{{ selectedApproval.changeRequest?.configuration?.remark || 'No remarks' }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Created By</span>
-              <span class="detail-value">{{ selectedApproval.createdByName }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Creator Organization</span>
-              <span class="detail-value">{{ selectedApproval.changeRequest?.requestedByOrg?.companyName }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Requested Date</span>
-              <span class="detail-value">{{ getFormattedDate(selectedApproval.createdOn) }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Status</span>
-              <span
-                class="status-badge"
-                [style.background-color]="getApprovalStatusColor(selectedApproval.status) + '20'"
-                [style.color]="getApprovalStatusColor(selectedApproval.status)">
-                {{ selectedApproval.status }}
-              </span>
-            </div>
+    <aside class="approval-details-section">
+      <div class="details-panel" *ngIf="selectedApproval; else noSelection">
+        <section class="details-section details-summary">
+          <div class="section-heading">
+            <p class="section-label">Configuration Summary</p>
           </div>
-        </div>
+          <div class="details-grid">
+            <div class="detail-row"><span class="detail-label">Configuration Type</span><span class="detail-value">{{ selectedApproval.changeRequest?.configuration?.type || 'N/A' }}</span></div>
+            <div class="detail-row"><span class="detail-label">Operation</span><span class="detail-value">{{ getOperationLabel(selectedApproval.changeRequest?.operation) }}</span></div>
+            <div class="detail-row"><span class="detail-label">Approval Type</span><span class="detail-value">{{ selectedApproval.approvalType || 'N/A' }}</span></div>
+            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value status-badge" [style.background-color]="getApprovalStatusColor(selectedApproval.status) + '20'" [style.color]="getApprovalStatusColor(selectedApproval.status)">{{ selectedApproval.status }}</span></div>
+            <div class="detail-row"><span class="detail-label">Created By</span><span class="detail-value">{{ selectedApproval.createdByName }}</span></div>
+            <div class="detail-row"><span class="detail-label">Organization</span><span class="detail-value">{{ selectedApproval.changeRequest?.requestedByOrg?.companyName }}</span></div>
+            <div class="detail-row"><span class="detail-label">Created On</span><span class="detail-value">{{ getFormattedDate(selectedApproval.createdOn) }}</span></div>
+            <div class="detail-row"><span class="detail-label">Remark</span><span class="detail-value">{{ selectedApproval.changeRequest?.configuration?.remark || 'No remarks' }}</span></div>
+          </div>
+        </section>
 
-        <!-- CONFIGURATION DETAILS TABLE -->
-        <div class="details-section">
-          <h3 class="section-title">Configuration Details</h3>
+        <section class="details-section">
+          <div class="section-heading">
+            <p class="section-label">Configuration Details</p>
+          </div>
           <div class="details-table-container">
             <table class="details-table">
               <thead>
                 <tr>
                   <th>Field</th>
                   <th>Current Value</th>
-                  <th>New Value</th>
+                  <th>Updated Value</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngIf="selectedApproval.changeRequest?.configuration">
                   <td>Priority Name</td>
-                  <td>{{ selectedApproval.changeRequest?.configuration?.priorityName || 'N/A' }}</td>
-                  <td>{{ selectedApproval.changeRequest?.configuration?.newPriorityName || 'N/A' }}</td>
+                  <td>'selectedApproval.changeRequest.configuration.priorityName'</td>
+                  <td>'selectedApproval.changeRequest.configuration.newPriorityName'</td>
                 </tr>
                 <tr *ngIf="selectedApproval.changeRequest?.configuration">
                   <td>Priority Code</td>
-                  <td>{{ selectedApproval.changeRequest?.configuration?.priorityCode || 'N/A' }}</td>
-                  <td>{{ selectedApproval.changeRequest?.configuration?.newPriorityCode || 'N/A' }}</td>
+                  <td>'selectedApproval.changeRequest.configuration.priorityCode'</td>
+                  <td>'selectedApproval.changeRequest.configuration.newPriorityCode'</td>
                 </tr>
                 <tr *ngIf="selectedApproval.changeRequest?.configuration">
                   <td>Category</td>
-                  <td>{{ selectedApproval.changeRequest?.configuration?.category || 'N/A' }}</td>
-                  <td>{{ selectedApproval.changeRequest?.configuration?.newCategory || 'N/A' }}</td>
+                  <td>'selectedApproval.changeRequest.configuration.category'</td>
+                  <td>'selectedApproval.changeRequest.configuration.newCategory'</td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
 
-        <!-- APPROVAL TRACKING -->
-        <div class="details-section">
-          <h3 class="section-title">Approval Tracking</h3>
+        <section class="details-section">
+          <div class="section-heading">
+            <p class="section-label">Approval Tracking</p>
+          </div>
           <div class="approval-timeline">
             <div *ngFor="let stage of getApprovalTrackingStages(selectedApproval); let last = last"
               class="timeline-step"
               [class.completed]="stage.completed"
               [class.current]="stage.current"
               [class.rejected]="stage.rejected">
-              <div class="timeline-dot" [class.completed]="stage.completed" [class.current]="stage.current" [class.rejected]="stage.rejected"></div>
-              <div class="timeline-label">{{ stage.stage }}</div>
+              <div class="timeline-dot"></div>
+              <div class="timeline-text">
+                <span class="timeline-stage">{{ stage.stage }}</span>
+                <span class="timeline-status">
+                  {{ stage.completed ? 'Completed' : stage.current ? 'In progress' : stage.rejected ? 'Rejected' : 'Pending' }}
+                </span>
+              </div>
               <div *ngIf="!last" class="timeline-connector"></div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- ACTION BUTTONS -->
         <div class="action-buttons">
           <button mat-raised-button class="btn-approve" (click)="openApprovalDialog('approve')">
             <mat-icon>check_circle</mat-icon>
@@ -253,14 +189,13 @@
           </button>
         </div>
       </div>
-    </div>
 
-    <!-- EMPTY STATE WHEN NO SELECTION -->
-    <div class="approval-details-section empty-state" *ngIf="!selectedApproval">
-      <div class="empty-details">
-        <mat-icon>task_alt</mat-icon>
-        <p>Select an approval request to view details</p>
-      </div>
-    </div>
+      <ng-template #noSelection>
+        <div class="empty-details">
+          <mat-icon>task_alt</mat-icon>
+          <p>Select an approval request to view details</p>
+        </div>
+      </ng-template>
+    </aside>
   </div>
 </div>
