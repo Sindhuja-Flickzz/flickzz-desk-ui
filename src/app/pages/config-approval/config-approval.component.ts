@@ -569,7 +569,7 @@ export class ConfigApprovalComponent implements OnInit {
 
     stages.push({
       stage: 'Activation',
-      completed: status === 'Approved',
+      completed: request?.status === 'Approved',
       current: !isDraft && allPreviousCompleted && status !== 'Approved' && !isRejected,
       rejected: isRejected
     });
