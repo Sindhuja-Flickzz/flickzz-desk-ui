@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ConfigChangeApprovalVO } from '../models/config-change-approval.model';
+import { ConfigChangeApprovalVO, BPConfigurationChangeRequestRemarkVO } from '../models/config-change-approval.model';
 import { APP_CONSTANTS } from '../data/app_constants';
 
 @Injectable({
@@ -58,6 +58,10 @@ export class ConfigApprovalService {
    * @param approvalId - The ID of the approval
    * @returns Observable of ConfigChangeApprovalVO
    */
+  getApprovalRemarks(approvalId: number): Observable<BPConfigurationChangeRequestRemarkVO[]> {
+    return this.http.get<BPConfigurationChangeRequestRemarkVO[]>(`${this.baseUrl}/bp/approval/remark/${approvalId}`);
+  }
+
   // getApprovalDetails(approvalId: number): Observable<ConfigChangeApprovalVO> {
   //   return this.http.get<ConfigChangeApprovalVO>(`${this.apiUrl}/${approvalId}`);
   // }

@@ -285,6 +285,35 @@
           </div>
         </section>
 
+        <section class="details-section remarks-table-section">
+          <div class="section-heading">
+            <p class="section-label">Remarks</p>
+          </div>
+          <div class="remarks-table-wrapper">
+            <table class="remarks-table" *ngIf="selectedApprovalRemarks.length; else noRemarks">
+              <thead>
+                <tr>
+                  <th>Action Owner</th>
+                  <th>Action</th>
+                  <th>Remark</th>
+                  <th class="date-column">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let remark of selectedApprovalRemarks" class="remark-row">
+                  <td>{{ getRemarkAuthor(remark) }}</td>
+                  <td>{{ getRemarkLevelText(remark) || 'N/A' }}</td>
+                  <td class="remark-text-cell">{{ remark.remark || '-' }}</td>
+                  <td class="remark-date-cell">{{ getFormattedDate(remark.createdOn) }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <ng-template #noRemarks>
+              <p class="no-remarks">No remarks available for this approval.</p>
+            </ng-template>
+          </div>
+        </section>
+
         <section class="details-section">
           <div class="section-heading">
             <p class="section-label">Approval Tracking</p>
@@ -305,7 +334,7 @@
           </div>
         </section>
 
-        <div class="action-buttons" *ngIf="selectedApproval.status != 'Approved' && selectedApproval.status != 'Declined' && selectedApproval.status != 'Internal Approved'">
+        <div class="action-buttons" *ngIf="selectedApproval.status != 'Approved' && selectedApproval.status != 'Declined' && selectedApproval.status != 'Internal Approved' && selectedApproval.status != 'Clarify'">
           <button mat-raised-button class="btn-approve" (click)="openApprovalDialog('approve')">
             <mat-icon>check_circle</mat-icon>
             Approve
