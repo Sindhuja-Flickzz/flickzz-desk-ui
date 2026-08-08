@@ -57,6 +57,10 @@ export class AgentService {
     return this.http.get(`${this.baseUrl}/agent/list/${userOrgId}`);
   }
 
+  getActiveAgentList(userOrgId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/agent/list/active/${userOrgId}`);
+  }
+
   getAgentInfoByName(agentName: string): Observable<AgentMaster> {
     return this.http.get<AgentMaster>(`${this.baseUrl}/agent/get/${agentName}`);
   }
