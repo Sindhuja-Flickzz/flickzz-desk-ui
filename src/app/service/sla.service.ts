@@ -33,4 +33,8 @@ export class SlaService {
     };
     return this.http.delete(`${this.baseUrl}/bp/sla/delete/${slaId}`, { body: payload });
   }
+
+  getSlaById(slaId: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/bp/sla/${slaId}`);
+  }
 }

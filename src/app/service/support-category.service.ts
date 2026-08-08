@@ -26,6 +26,10 @@ export class SupportCategoryService {
     return this.http.get(url);
   }
 
+  getAssignmentById(assignmentId: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/bp/assignment/${assignmentId}`);
+  }
+
   createAssignment(request: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/bp/assignment/create`, request);
   }

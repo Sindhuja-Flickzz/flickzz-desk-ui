@@ -9,7 +9,7 @@ import { APP_CONSTANTS } from '../data/app_constants';
 })
 export class ConfigApprovalService {
   private baseUrl = APP_CONSTANTS.API_BASE_URL;
-  private readonly apiUrl = '/bp/config/approval';
+  // private readonly apiUrl = '/bp/config/approval';
 
   constructor(private http: HttpClient) {}
 
@@ -28,9 +28,8 @@ export class ConfigApprovalService {
    * @param remark - Optional remark
    * @returns Observable of the response
    */
-  approveConfiguration(approvalId: number, remark?: string): Observable<any> {
-    const payload = { approvalId, remark };
-    return this.http.post(`${this.apiUrl}/approve`, payload);
+  applyAction(payload: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/bp/config/approval/action`, payload);
   }
 
   /**
@@ -39,10 +38,10 @@ export class ConfigApprovalService {
    * @param remark - Optional remark
    * @returns Observable of the response
    */
-  declineConfiguration(approvalId: number, remark?: string): Observable<any> {
-    const payload = { approvalId, remark };
-    return this.http.post(`${this.apiUrl}/decline`, payload);
-  }
+  // declineConfiguration(payload: any): Observable<any> {
+    // const payload = { approvalId, remark };
+  //   return this.http.post(`${this.baseUrl}/bp/config/approval/action`, { ...payload, action: 'decline' });
+  // }
 
   /**
    * Request clarification for a configuration change
@@ -50,26 +49,25 @@ export class ConfigApprovalService {
    * @param remark - Clarification remark
    * @returns Observable of the response
    */
-  requestClarification(approvalId: number, remark: string): Observable<any> {
-    const payload = { approvalId, remark };
-    return this.http.post(`${this.apiUrl}/clarify`, payload);
-  }
+  // requestClarification(payload: any): Observable<any> {
+  //   return this.http.post(`${this.apiUrl}/clarify`, payload);
+  // }
 
   /**
    * Get detailed information about a specific approval
    * @param approvalId - The ID of the approval
    * @returns Observable of ConfigChangeApprovalVO
    */
-  getApprovalDetails(approvalId: number): Observable<ConfigChangeApprovalVO> {
-    return this.http.get<ConfigChangeApprovalVO>(`${this.apiUrl}/${approvalId}`);
-  }
+  // getApprovalDetails(approvalId: number): Observable<ConfigChangeApprovalVO> {
+  //   return this.http.get<ConfigChangeApprovalVO>(`${this.apiUrl}/${approvalId}`);
+  // }
 
   /**
    * Get approval history/tracking for a specific approval
    * @param approvalId - The ID of the approval
    * @returns Observable of the history
    */
-  getApprovalHistory(approvalId: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/${approvalId}/history`);
-  }
+  // getApprovalHistory(approvalId: number): Observable<any> {
+  //   return this.http.get(`${this.apiUrl}/${approvalId}/history`);
+  // }
 }
