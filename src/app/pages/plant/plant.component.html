@@ -40,6 +40,32 @@
       </div>
       
       <div class="field">
+        <label for="agentName">Agent</label>
+        <div class="agent-input-row">
+          <input id="agentName" type="text" formControlName="agentName" placeholder="Type active agent name or email" autocomplete="off" (input)="onAgentSearch()" (keydown.enter)="addSelectedAgent()" />
+          <button type="button" class="add-skill-btn" (click)="addSelectedAgent()" [disabled]="!selectedAgent" title="Add Agent">+</button>
+        </div>
+        <span *ngIf="formError.agentName" class="error-text">{{ formError.agentName }}</span>
+        <div class="suggestions" *ngIf="agentSuggestions.length > 0 && plantForm.get('agentName')?.value?.trim().length > 0">
+          <div class="suggestion-items">
+            <div class="suggestion" *ngFor="let agent of agentSuggestions" (click)="selectAgent(agent)">
+              <div class="suggestion-content">
+                <span class="suggestion-name">{{ agent.agentName }}</span>
+                <span class="suggestion-email" *ngIf="agent.mailId">{{ agent.mailId }}</span>
+              </div>
+              <span class="suggestion-meta" *ngIf="agent.accessId">{{ agent.accessId }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="selected-agents" *ngIf="selectedAgents.length > 0">
+          <span class="chip" *ngFor="let agent of selectedAgents; let i = index">
+            {{ agent.agentName }}<span *ngIf="agent.mailId"> • {{ agent.mailId }}</span>
+            <button type="button" class="remove-chip" (click)="removeSelectedAgent(agent.agentId)">×</button>
+          </span>
+        </div>
+      </div>
+
+      <div class="field">
         <label>Week Off</label>
         <div class="days-row">
           <div class="day-checkbox" *ngFor="let day of daysOfWeek; let i = index">
@@ -73,6 +99,7 @@
           <tr>
             <th>Plant Name</th>
             <th>Region</th>
+            <th>Agents</th>
             <th>Week Off</th>
             <th>Calendar</th>
             <th>Actions</th>
@@ -82,6 +109,25 @@
           <tr *ngFor="let plant of getPaginatedPlants()">
             <td>{{ plant.plantName }}</td>
             <td>{{ plant.region.countryName }}</td>
+            <td>
+              <div class="list-eye-cell agents"
+                   (mouseenter)="setHoveredAgentsPlantId(plant.plantId)"
+                   (mouseleave)="clearHoveredAgents()">
+                <div class="eye-wrapper agents">
+                  <button type="button" class="eye-btn agents" aria-label="View agents" *ngIf="getPlantAgentLabels(plant).length > 0">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <div class="hover-list" [class.visible]="isAgentsPopoverVisible(plant.plantId)">
+                    <ng-container *ngIf="getPlantAgentLabels(plant).length > 0; else noAgentsList">
+                      <div class="hover-list-item" *ngFor="let label of getPlantAgentLabels(plant)">{{ label }}</div>
+                    </ng-container>
+                    <ng-template #noAgentsList>
+                      <span class="hover-list-empty">No active agents assigned</span>
+                    </ng-template>
+                  </div>
+                </div>
+              </div>
+            </td>
             <td>
               <div class="list-eye-cell weekoff"
                    (mouseenter)="setHoveredWeekOff(plant.plantId)"

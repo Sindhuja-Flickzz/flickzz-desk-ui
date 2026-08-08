@@ -4,10 +4,18 @@ import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { PageEvent } from '@angular/material/paginator';
 import { PlantService } from '../../service/plant.service';
+import { AgentService } from '../../service/agent.service';
 import { CountryMasterVO, PlantMaster, PlantMasterRequest } from '../../models/plant-master';
 import { CalendarMasterVO } from '../../models/calendar-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { USER_ROLES, DAYS_OF_WEEK } from 'src/app/data/app_constants';
+
+interface AgentSuggestion {
+  agentId: number;
+  agentName: string;
+  mailId?: string;
+  accessId?: string;
+}
 
 @Component({
   selector: 'app-plant',
@@ -26,6 +34,11 @@ export class PlantComponent implements OnInit {
   daysOfWeek = DAYS_OF_WEEK;
   plants: PlantMaster[] = [];
   filteredPlants: PlantMaster[] = [];
+  activeAgents: AgentSuggestion[] = [];
+  agentSuggestions: AgentSuggestion[] = [];
+  selectedAgents: AgentSuggestion[] = [];
+  selectedAgent: AgentSuggestion | null = null;
+  originalSelectedAgentIds: number[] = [];
   searchValue = '';
   loading = false;
   formError: any = {};
@@ -50,6 +63,7 @@ export class PlantComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private plantService: PlantService,
+    private agentService: AgentService,
     private dialog: MatDialog,
     private router: Router
   ) {
@@ -58,6 +72,7 @@ export class PlantComponent implements OnInit {
       plantName: ['', Validators.required],
       countryId: [null, Validators.required],
       calendarId: [null, Validators.required],
+      agentName: [''],
       weekOff: this.fb.array(this.createDaysCheckboxes())
     });
     this.userOrgId = localStorage.getItem('userOrgId') || '';
@@ -87,9 +102,11 @@ export class PlantComponent implements OnInit {
       error: () => { this.calendars = []; }
     });
 
+    this.loadActiveAgents();
     this.plantForm.patchValue({
         countryId: "",
-        calendarId: ""
+        calendarId: "",
+        agentName: ''
     });
     this.loadPlantList();
     this.loading = false;
@@ -140,11 +157,16 @@ export class PlantComponent implements OnInit {
     this.pageTitle = 'Create Plant';
     this.plantForm.reset({ isActive: true });
     this.originalFormValue = null;
+    this.originalSelectedAgentIds = [];
     this.submitError = '';
     this.submitSuccess = '';
+    this.selectedAgents = [];
+    this.selectedAgent = null;
+    this.agentSuggestions = this.getAvailableAgents();
     this.plantForm.patchValue({
         countryId: "",
-        calendarId: ""
+        calendarId: "",
+        agentName: ''
     });
     // Reset weekOff checkboxes
     this.weekOffArray.controls.forEach(ctrl => ctrl.setValue(false));
@@ -172,6 +194,11 @@ export class PlantComponent implements OnInit {
       return
     }
 
+    if (this.plantForm.value.agentName && !this.selectedAgent) {
+      this.formError.agentName = 'Please select an active agent from the list or clear the field';
+      return;
+    }
+
     const selectedWeekOff = this.daysOfWeek.filter((_, index) => this.weekOffArray.at(index).value);
 
     const payload: PlantMasterRequest = {
@@ -179,6 +206,7 @@ export class PlantComponent implements OnInit {
       plantName: this.plantForm.value.plantName,
       countryId: Number(this.plantForm.value.countryId),
       calendarId: Number(this.plantForm.value.calendarId),
+      agents: this.selectedAgents.map(agent => Number(agent.agentId)),
       weekOff: selectedWeekOff,
       companyId: Number(localStorage.getItem('userOrgId') || 0),
       createdBy: Number(localStorage.getItem('userId')),
@@ -236,7 +264,10 @@ export class PlantComponent implements OnInit {
       return true;
     }
     const current = this.plantForm.getRawValue();
-    return JSON.stringify(current) !== JSON.stringify(this.originalFormValue);
+    const currentAgentIds = this.selectedAgents.map(agent => agent.agentId).sort();
+    const originalAgentIds = [...this.originalSelectedAgentIds].sort();
+    return JSON.stringify(current) !== JSON.stringify(this.originalFormValue) ||
+      JSON.stringify(currentAgentIds) !== JSON.stringify(originalAgentIds);
   }
 
   onViewPlant(plant: PlantMaster): void {
@@ -253,6 +284,19 @@ export class PlantComponent implements OnInit {
       createdBy: plant.createdBy,
       updatedBy: plant.updatedBy || plant.createdBy
     });
+    console.log('Plant object received for editing:', plant);
+    const rawAgents = (plant as any).agentPlantMappings || [];
+    console.log('Raw agents from plant object:', rawAgents);
+    if (Array.isArray(rawAgents) && rawAgents.length > 0) {
+      this.selectedAgents = rawAgents
+        .map((item: any) => this.createSelectedAgentFromRaw(item))
+        .filter((agent): agent is AgentSuggestion => agent != null);
+    } else {
+      this.selectedAgents = [];
+    }
+    this.hydrateSelectedAgentsFromActiveList();
+    this.originalSelectedAgentIds = this.selectedAgents.map(agent => agent.agentId);
+    this.agentSuggestions = this.getAvailableAgents();
     // Prefill weekOff if available on the plant object (accept multiple property shapes)
     const rawWeekOff = (plant as any).weekOff || (plant as any).weekoff || (plant as any).weekOffs || (plant as any).week_off || [];
     if (Array.isArray(rawWeekOff) && rawWeekOff.length > 0) {
@@ -303,6 +347,154 @@ export class PlantComponent implements OnInit {
     }
   }
 
+  getPlantAgentLabels(plant: PlantMaster): string[] {
+    const rawAgents = (plant as any).agentPlantMappings || [];
+    const agentIds = rawAgents
+      .map((item: any): number | null => item?.agentId ?? item?.id ?? item?.agent?.agentId ?? null)
+      .filter((id: number | null): id is number => id != null);
+
+    return agentIds.map((id: number) => {
+      const activeMatch = this.activeAgents.find(agent => agent.agentId === id);
+      return activeMatch?.agentName || `Agent ${id}`;
+    });
+  }
+
+  loadActiveAgents(): void {
+    if (!this.userOrgId) {
+      this.activeAgents = [];
+      this.agentSuggestions = [];
+      return;
+    }
+
+    this.agentService.getActiveAgentList(this.userOrgId).subscribe({
+      next: (response) => {
+        this.activeAgents = this.normalizeAgentResponse(response);
+        this.agentSuggestions = this.getAvailableAgents();
+      },
+      error: (err) => {
+        console.error('Failed to load active agents:', err);
+        this.activeAgents = [];
+        this.agentSuggestions = [];
+      }
+    });
+  }
+
+  normalizeAgentResponse(response: any): AgentSuggestion[] {
+    const list = (response as any)?.attributes || response;
+    const items = Array.isArray(list) ? list : Array.isArray(list?.data) ? list.data : [];
+
+    return items
+      .map((item: any) => ({
+        agentId: item?.agentId ?? item?.id ?? item?.agent?.agentId ?? null,
+        agentName: item?.agentName ?? item?.name ?? item?.agent?.agentName ?? '',
+        mailId: item?.mailId ?? item?.email ?? item?.agent?.mailId ?? '',
+        accessId: item?.accessId ?? item?.agent?.accessId ?? ''
+      }))
+      .filter((agent: AgentSuggestion) => agent.agentId != null && agent.agentName.trim().length > 0) as AgentSuggestion[];
+  }
+
+  private createSelectedAgentFromRaw(item: any): AgentSuggestion | null {
+    if (item == null) {
+      return null;
+    }
+    console.log('Creating selected agent from raw item:', item);
+    const agentId = item?.agentId ?? item?.id ?? (typeof item === 'number' ? item : item?.agent?.agentId ?? null);
+    if (agentId == null) {
+      return null;
+    }
+
+    let agentName = '';
+    let mailId = '';
+    let accessId = '';
+
+    if (typeof item === 'object') {
+      agentName = item?.agentName ?? item?.name ?? item?.agent?.agentName ?? '';
+      mailId = item?.mailId ?? item?.email ?? item?.agent?.mailId ?? '';
+      accessId = item?.accessId ?? item?.agent?.accessId ?? '';
+    }
+
+    if (!agentName) {
+      const activeMatch = this.activeAgents.find(agent => agent.agentId === agentId);
+      if (activeMatch) {
+        agentName = activeMatch.agentName;
+        mailId = activeMatch.mailId ?? '';
+        accessId = activeMatch.accessId ?? '';
+      }
+    }
+
+    if (!agentName) {
+      return null;
+    }
+
+    return {
+      agentId,
+      agentName,
+      mailId,
+      accessId
+    };
+  }
+
+  private hydrateSelectedAgentsFromActiveList(): void {
+    if (!this.activeAgents.length) {
+      return;
+    }
+
+    this.selectedAgents = this.selectedAgents.map(agent => {
+      const activeMatch = this.activeAgents.find(item => item.agentId === agent.agentId);
+      return activeMatch ?? agent;
+    });
+  }
+
+  getAvailableAgents(): AgentSuggestion[] {
+    const excluded = new Set(this.selectedAgents.map(agent => agent.agentId));
+    return this.activeAgents.filter(agent => !excluded.has(agent.agentId));
+  }
+
+  onAgentSearch(): void {
+    const searchTerm = (this.plantForm.get('agentName')?.value || '').trim();
+    this.selectedAgent = null;
+
+    const available = this.getAvailableAgents();
+    if (!searchTerm) {
+      this.agentSuggestions = available;
+      return;
+    }
+
+    const lowerTerm = searchTerm.toLowerCase();
+    this.agentSuggestions = available.filter(agent => {
+      const haystack = `${agent.agentName} ${agent.mailId || ''} ${agent.accessId || ''}`.toLowerCase();
+      return haystack.includes(lowerTerm);
+    });
+  }
+
+  selectAgent(agent: AgentSuggestion): void {
+    this.selectedAgent = agent;
+    this.plantForm.patchValue({ agentName: agent.agentName }, { emitEvent: false });
+    this.agentSuggestions = [];
+  }
+
+  addSelectedAgent(): void {
+    if (!this.selectedAgent) {
+      this.formError.agentName = 'Select a valid active agent first';
+      return;
+    }
+
+    const exists = this.selectedAgents.some(a => a.agentId === this.selectedAgent?.agentId);
+    if (!exists) {
+      this.selectedAgents.push(this.selectedAgent);
+      this.formError.agentName = null;
+    }
+
+    this.plantForm.patchValue({ agentName: '' }, { emitEvent: false });
+    this.selectedAgent = null;
+    this.agentSuggestions = this.getAvailableAgents();
+  }
+
+  removeSelectedAgent(agentId: number): void {
+    this.selectedAgents = this.selectedAgents.filter(agent => agent.agentId !== agentId);
+    this.agentSuggestions = this.getAvailableAgents();
+  }
+
   onDeletePlant(plant: PlantMaster): void {
     const dialogData: ConfirmationDialogData = {
       title: 'Delete Plant',
@@ -326,7 +518,7 @@ export class PlantComponent implements OnInit {
         next: () => {
           this.loadPlantList();
           this.submitSuccess = 'Plant deleted successfully.';
-          setTimeout(() => {  
+          setTimeout(() => {
             this.submitSuccess = '';
           }, 1500);
         },
@@ -339,6 +531,20 @@ export class PlantComponent implements OnInit {
   }
 
   // WeekOff popover controls
+  hoveredAgentsPlantId: number | null = null;
+
+  setHoveredAgentsPlantId(plantId: number | null): void {
+    this.hoveredAgentsPlantId = plantId ?? null;
+  }
+
+  clearHoveredAgents(): void {
+    this.hoveredAgentsPlantId = null;
+  }
+
+  isAgentsPopoverVisible(plantId: number | null): boolean {
+    return this.hoveredAgentsPlantId === plantId;
+  }
+
   setHoveredWeekOff(plantId: number | null): void {
     this.hoveredWeekOffPlantId = plantId ?? null;
   }
