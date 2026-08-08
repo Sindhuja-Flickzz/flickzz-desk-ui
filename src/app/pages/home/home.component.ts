@@ -18,9 +18,9 @@ export class HomeComponent {
   constructor(private router: Router) {}
 
   open(tile: any) {
-    // console.log('Open tile', tile.title);
+    console.log('Open tile', tile.title);
     // this.router.navigateByUrl('/config-approval').catch(() => {
-    //   this.router.navigate(['/home']);
+      this.router.navigate(['/config-approval']);
     // });
     console.log('Open tile', tile.title);
   }

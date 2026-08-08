@@ -215,7 +215,7 @@ const routes: Routes = [
   },
   {
     path: 'config-approval',
-    loadComponent: () => import('./pages/config-approval/config-approval.component').then(m => m.ConfigApprovalComponent),
+    component: ConfigApprovalComponent,
     canActivate: [authGuard]
   },
   {

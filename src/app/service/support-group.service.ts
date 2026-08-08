@@ -16,6 +16,10 @@ export class SupportGroupService {
     return this.http.get(url);
   }
 
+  getSupportGroupById(supportGroupId: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/bp/support-group/${supportGroupId}`);
+  }
+
   createSupportGroup(request: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/bp/support-group/create`, request);
   }

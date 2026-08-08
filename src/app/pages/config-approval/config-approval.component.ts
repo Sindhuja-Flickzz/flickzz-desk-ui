@@ -1,13 +1,22 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { forkJoin, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ConfigApprovalService } from '../../service/config-approval.service';
+import { PriorityService } from '../../service/priority.service';
+import { SlaService } from '../../service/sla.service';
+import { CategoryService } from '../../service/category.service';
+import { SupportGroupService } from '../../service/support-group.service';
+import { SupportCategoryService } from '../../service/support-category.service';
+import { AuthenticationService } from '../../service/authentication.service';
 import { ApprovalDialogComponent } from './approval-dialog/approval-dialog.component';
-import { ConfigChangeApprovalVO, BPConfigurationChangeRequestVO } from '../../models/config-change-approval.model';
+import { ConfigChangeApprovalVO } from '../../models/config-change-approval.model';
+import { UserVO } from '../../models/user-vo';
+import { USER_ROLES } from '../../data/app_constants';  
 
 interface KPICard {
   title: string;
   count: number;
-  trend: string;
   icon: string;
   color: string;
 }
@@ -23,9 +32,15 @@ export class ConfigApprovalComponent implements OnInit {
   // Data
   approvals: ConfigChangeApprovalVO[] = [];
   selectedApproval: ConfigChangeApprovalVO | null = null;
+  selectedApprovalCurrent: any | null = null;
+  selectedApprovalUpdated: any | null = null;
+  selectedApprovalTrackingStages: any[] = [];
+  detailsVisible = false;
   lastRefreshed: Date = new Date();
   isLoading = false;
+  isDetailLoading = false;
   errorMessage = '';
+  detailLoadError = '';
 
   // KPI Cards
   kpiCards: KPICard[] = [];
@@ -41,6 +56,12 @@ export class ConfigApprovalComponent implements OnInit {
 
   constructor(
     private configApprovalService: ConfigApprovalService,
+    private priorityService: PriorityService,
+    private slaService: SlaService,
+    private categoryService: CategoryService,
+    private supportGroupService: SupportGroupService,
+    private supportCategoryService: SupportCategoryService,
+    private authService: AuthenticationService,
     private dialog: MatDialog
   ) {
     this.checkScreenSize();
@@ -59,15 +80,20 @@ export class ConfigApprovalComponent implements OnInit {
   loadApprovals(): void {
     this.isLoading = true;
     this.errorMessage = '';
-    const userId = this.getCurrentUserId();
+    const userId = Number(localStorage.getItem('userId')); // Default to 1 if not found
 
     this.configApprovalService.getApprovalsList(userId).subscribe({
       next: (data: ConfigChangeApprovalVO[]) => {
-        this.approvals = data || [];
+        this.approvals = (data as any).attributes || [];
+        this.populateApprovalCreatorNames();
         this.calculateKPIs();
         this.lastRefreshed = new Date();
         this.isLoading = false;
-        this.selectedApproval = this.approvals.length > 0 ? this.approvals[0] : null;
+        this.detailsVisible = false;
+        this.selectedApproval = null;
+        this.selectedApprovalCurrent = null;
+        this.selectedApprovalUpdated = null;
+        this.selectedApprovalTrackingStages = [];
       },
       error: (error) => {
         console.error('Error loading approvals:', error);
@@ -81,46 +107,49 @@ export class ConfigApprovalComponent implements OnInit {
   }
 
   calculateKPIs(): void {
+    console.log('Calculating KPIs for approvals:', this.approvals);
     const total = this.approvals.length;
     const pending = this.approvals.filter(a => a.status === 'Pending').length;
-    const approved = this.approvals.filter(a => a.status === 'Approved' && this.isToday(a.approvedOn)).length;
+    const approved = this.approvals.filter(a => a.status === 'Approved').length;
+    const requested_clarification = this.approvals.filter(a => a.status === 'Requested Clarification').length;
     const rejected = this.approvals.filter(a => a.status === 'Rejected').length;
-    const internal = this.approvals.filter(a => a.approvalType === 'Internal').length;
-    const bp = this.approvals.filter(a => a.approvalType === 'BP').length;
+    const internal = this.approvals.filter(a => this.getApprovalType(a) === 'Internal').length;
+    const bp = this.approvals.filter(a => this.getApprovalType(a) === 'BP').length;
 
     this.kpiCards = [
       {
         title: 'Pending Approvals',
         count: pending,
-        trend: '↓ 3% vs last week',
         icon: 'schedule',
         color: '#FFB81C'
       },
       {
-        title: 'Approved Today',
+        title: 'Approved',
         count: approved,
-        trend: '↑ 2% vs last week',
         icon: 'check_circle',
         color: '#107C10'
       },
       {
+        title: 'Requested Clarification',
+        count: requested_clarification,
+        icon: 'help_outline',
+        color: '#FFB81C'
+      },
+      {
         title: 'Rejected',
         count: rejected,
-        trend: '↓ 1% vs last week',
         icon: 'cancel',
         color: '#DA3B01'
       },
       {
         title: 'Internal Approval',
         count: internal,
-        trend: '→ 0% vs last week',
         icon: 'group',
         color: '#0078D4'
       },
       {
         title: 'BP Approval',
         count: bp,
-        trend: '→ 0% vs last week',
         icon: 'business',
         color: '#8661C5'
       }
@@ -140,7 +169,7 @@ export class ConfigApprovalComponent implements OnInit {
     // Filter by status
     if (this.filterStatus !== 'All') {
       if (this.filterStatus === 'Internal' || this.filterStatus === 'BP') {
-        filtered = filtered.filter(a => a.approvalType === this.filterStatus);
+        filtered = filtered.filter(a => this.getApprovalType(a) === this.filterStatus);
       } else {
         filtered = filtered.filter(a => a.status === this.filterStatus);
       }
@@ -158,8 +187,246 @@ export class ConfigApprovalComponent implements OnInit {
     return filtered;
   }
 
+  getConfigName(approval: ConfigChangeApprovalVO): string {
+    return approval.changeRequest?.bpPriority ? 'Priority' : approval.changeRequest?.bpSla ? 'SLA' : approval.changeRequest?.category ? 'Category' : approval.changeRequest?.supportGroup ? 'Support Group' : approval.changeRequest?.assignment ? 'Assignment' : 'Configuration';
+  }
+
+  getApprovalTitle(approval: ConfigChangeApprovalVO): string {
+    const configType = this.getConfigName(approval);
+    const operation = this.getOperationLabel(approval.changeRequest?.operation);
+    return `${configType} - ${operation}`;
+  }
+
+  getConfigIcon(approval: ConfigChangeApprovalVO): string {
+    const configName = this.getConfigName(approval);
+    switch (configName) {
+      case 'Priority':
+        return 'speed';
+      case 'SLA':
+        return 'timer';
+      case 'Category':
+        return 'category';
+      case 'Support Group':
+        return 'groups';
+      case 'Assignment':
+        return 'assignment_ind';
+      default:
+        return 'settings';
+    }
+  }
+
+  getApprovalType(approval: ConfigChangeApprovalVO): string {
+    return approval.approverType || '';
+  }
+
   selectApproval(approval: ConfigChangeApprovalVO): void {
+    this.detailsVisible = true;
+    this.loadApprovalDetails(approval);
+  }
+
+  closeDetails(): void {
+    this.detailsVisible = false;
+    this.selectedApproval = null;
+    this.selectedApprovalCurrent = null;
+    this.selectedApprovalUpdated = null;
+    this.selectedApprovalTrackingStages = [];
+    this.detailLoadError = '';
+  }
+
+  private populateApprovalCreatorNames(): void {
+    const creatorIds = Array.from(new Set(
+      this.approvals
+        .filter(approval => approval.createdBy != null && !approval.createdByName)
+        .map(approval => approval.createdBy as number)
+    ));
+
+    if (!creatorIds.length) {
+      return;
+    }
+
+    const userRequests = creatorIds.map(userId =>
+      this.authService.getUserInfoById(userId).pipe(
+        map(response => ({
+          userId,
+          user: (response as any).attributes as UserVO
+        }))
+      )
+    );
+
+    forkJoin(userRequests).subscribe({
+      next: results => {
+        const userMap = new Map<number, UserVO>(
+          results.map(result => [result.userId, result.user])
+        );
+
+        this.approvals = this.approvals.map(approval => {
+          if (approval.createdBy && !approval.createdByName) {
+            const user = userMap.get(approval.createdBy);
+            if (user) {
+              approval.createdByName = this.getUserDisplayName(user);
+            }
+          }
+          return approval;
+        });
+      },
+      error: error => {
+        console.warn('Unable to resolve approval creator names:', error);
+      }
+    });
+  }
+
+  private getUserDisplayName(user: UserVO): string {
+    const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+    return fullName || user.userName || user.registerId || 'Unknown User';
+  }
+
+  getSubCategoryNames(subCategories: any[] | undefined): string {
+    if (!subCategories || !Array.isArray(subCategories) || subCategories.length === 0) {
+      return '';
+    }
+
+    return subCategories
+      .map(sub => sub?.subCategoryName)
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  getSupportGroupManagerNames(groups: any[] | undefined): string {
+    if (!groups || !Array.isArray(groups) || groups.length === 0) {
+      return '';
+    }
+
+    return groups
+      .map(group => group?.agent?.agentName || '')
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  getSupportGroupMemberNames(members: any[] | undefined): string {
+    if (!members || !Array.isArray(members) || members.length === 0) {
+      return '';
+    }
+    return members
+      .map(member => member?.agent?.agentName || member?.memberName || member?.name || '')
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  loadApprovalDetails(approval: ConfigChangeApprovalVO): void {
     this.selectedApproval = approval;
+    this.selectedApprovalCurrent = null;
+    this.selectedApprovalUpdated = null;
+    this.detailLoadError = '';
+    this.selectedApprovalTrackingStages = this.getApprovalTrackingStages(approval);
+
+    const configName = this.getConfigName(approval).toLowerCase();
+    const changedId = approval.changeRequest?.changedRequestId;
+    const sourceId = approval.changeRequest?.sourceChangeId;
+    const operation = approval.changeRequest?.operation?.toLowerCase();
+
+    if (!changedId) {
+      this.selectedApprovalUpdated = null;
+      this.selectedApprovalCurrent = null;
+      return;
+    }
+
+    this.isDetailLoading = true;
+
+    if (configName === 'priority') {
+      const updated$ = this.priorityService.getPriorityById(changedId);
+      const current$ = (operation === 'update' || operation === 'delete') && sourceId
+        ? this.priorityService.getPriorityById(sourceId)
+        : of(null);
+
+      forkJoin([updated$, current$]).subscribe({
+        next: ([updated, current]) => {
+          this.selectedApprovalUpdated = updated ? (updated as any).attributes : null;
+          this.selectedApprovalCurrent = current ? (current as any).attributes : null;
+          this.isDetailLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading priority details:', error);
+          this.detailLoadError = 'Unable to load configuration details right now.';
+          this.isDetailLoading = false;
+        }
+      });
+    } else if (configName === 'sla') {
+      const updated$ = this.slaService.getSlaById(changedId);
+      const current$ = (operation === 'update' || operation === 'delete') && sourceId
+        ? this.slaService.getSlaById(sourceId)
+        : of(null);
+
+      forkJoin([updated$, current$]).subscribe({
+        next: ([updated, current]) => {
+          this.selectedApprovalUpdated = updated ? (updated as any).attributes || updated : null;
+          this.selectedApprovalCurrent = current ? (current as any).attributes || current : null;
+          this.isDetailLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading SLA details:', error);
+          this.detailLoadError = 'Unable to load configuration details right now.';
+          this.isDetailLoading = false;
+        }
+      });
+    } else if (configName === 'category') {
+      const updated$ = this.categoryService.getCategoryById(changedId);
+      const current$ = (operation === 'update' || operation === 'delete') && sourceId
+        ? this.categoryService.getCategoryById(sourceId)
+        : of(null);
+
+      forkJoin([updated$, current$]).subscribe({
+        next: ([updated, current]) => {
+          this.selectedApprovalUpdated = updated ? (updated as any).attributes || updated : null;
+          this.selectedApprovalCurrent = current ? (current as any).attributes || current : null;
+          this.isDetailLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading category details:', error);
+          this.detailLoadError = 'Unable to load configuration details right now.';
+          this.isDetailLoading = false;
+        }
+      });
+    } else if (configName === 'support group') {
+      const updated$ = this.supportGroupService.getSupportGroupById(changedId);
+      const current$ = (operation === 'update' || operation === 'delete') && sourceId
+        ? this.supportGroupService.getSupportGroupById(sourceId)
+        : of(null);
+
+      forkJoin([updated$, current$]).subscribe({
+        next: ([updated, current]) => {
+          this.selectedApprovalUpdated = updated ? (updated as any).attributes || updated : null;
+          this.selectedApprovalCurrent = current ? (current as any).attributes || current : null;
+          this.isDetailLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading support group details:', error);
+          this.detailLoadError = 'Unable to load configuration details right now.';
+          this.isDetailLoading = false;
+        }
+      });
+    } else if (configName === 'assignment') {
+      const updated$ = this.supportCategoryService.getAssignmentById(changedId);
+      const current$ = (operation === 'update' || operation === 'delete') && sourceId
+        ? this.supportCategoryService.getAssignmentById(sourceId)
+        : of(null);
+
+      forkJoin([updated$, current$]).subscribe({
+        next: ([updated, current]) => {
+          this.selectedApprovalUpdated = updated ? (updated as any).attributes || updated : null;
+          this.selectedApprovalCurrent = current ? (current as any).attributes || current : null;
+          this.isDetailLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading assignment details:', error);
+          this.detailLoadError = 'Unable to load configuration details right now.';
+          this.isDetailLoading = false;
+        }
+      });
+    } else {
+      this.selectedApprovalUpdated = null;
+      this.selectedApprovalCurrent = null;
+      this.isDetailLoading = false;
+    }
   }
 
   setFilterStatus(status: string): void {
@@ -215,7 +482,7 @@ export class ConfigApprovalComponent implements OnInit {
         action: action
       }
     });
-
+    
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.submitApprovalAction(action, result.remark);
@@ -224,14 +491,35 @@ export class ConfigApprovalComponent implements OnInit {
   }
 
   submitApprovalAction(action: string, remark: string): void {
-    // TODO: Call service to submit approval action
-    console.log('Submitted:', action, remark);
-    this.loadApprovals();
-  }
+    if (!this.selectedApproval?.approvalId) return;
 
-  private getCurrentUserId(): number {
-    // TODO: Get from authentication service
-    return 1;
+    const approvalActionData = {
+      approvalId: this.selectedApproval.approvalId,
+      action,
+      remarks: remark,
+      updatedBy: Number(localStorage.getItem('userId') || 0),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
+    };
+    console.log('Submitting approval action data:', action);
+
+    let request$;
+    request$ = this.configApprovalService.applyAction(approvalActionData);
+    // if (action === 'approve') {
+    //   request$ = this.configApprovalService.approveConfiguration(approvalActionData);
+    // } else if (action === 'decline') {
+    //   request$ = this.configApprovalService.declineConfiguration(approvalActionData);
+    // } else {
+    //   request$ = this.configApprovalService.requestClarification(approvalActionData);
+    // }
+
+    request$.subscribe({
+      next: () => {
+        this.loadApprovals();
+      },
+      error: (error) => {
+        console.error(`Error submitting ${action}:`, error);
+      }
+    });
   }
 
   getFormattedDate(date: string | null | undefined): string {
@@ -246,32 +534,46 @@ export class ConfigApprovalComponent implements OnInit {
   }
 
   getApprovalTrackingStages(approval: ConfigChangeApprovalVO): any[] {
-    const cr = approval.changeRequest;
-    return [
+    const status = approval.status;
+    const request = approval.changeRequest;
+    const isDraft = status === 'Draft';
+    const isRejected = status === 'Rejected';
+    const internalCompleted = !!request?.internalApprovalCompleted;
+    const bpCompleted = !!request?.bpApprovalCompleted;
+    const hasBpStage = request?.changedRequestId != null && request?.sourceChangeId != null && request.changedRequestId !== request.sourceChangeId;
+    const allPreviousCompleted = internalCompleted && (!hasBpStage || bpCompleted);
+
+    const stages: any[] = [
       {
         stage: 'Draft',
-        completed: approval.status !== 'Draft',
-        current: approval.status === 'Draft',
-        rejected: false
+        completed: !isDraft,
+        current: isDraft,
+        rejected: isRejected
       },
       {
-        stage: 'Internal Approval',
-        completed: cr?.currentInternalApprovalLevel! > (cr?.totalInternalApprovalLevels || 0),
-        current: cr?.currentInternalApprovalLevel !== undefined && cr?.currentInternalApprovalLevel <= (cr?.totalInternalApprovalLevels || 0),
-        rejected: approval.status === 'Rejected' && approval.approvalType === 'Internal'
-      },
-      {
-        stage: 'Business Partner Approval',
-        completed: cr?.currentBpApprovalLevel! > (cr?.totalBpApprovalLevels || 0),
-        current: cr?.currentBpApprovalLevel !== undefined && cr?.currentBpApprovalLevel <= (cr?.totalBpApprovalLevels || 0),
-        rejected: approval.status === 'Rejected' && approval.approvalType === 'BP'
-      },
-      {
-        stage: 'Activation',
-        completed: approval.status === 'Approved',
-        current: false,
-        rejected: false
+        stage: 'Internal',
+        completed: internalCompleted,
+        current: !isDraft && !internalCompleted && !isRejected,
+        rejected: isRejected
       }
     ];
+
+    if (hasBpStage) {
+      stages.push({
+        stage: 'BP',
+        completed: bpCompleted,
+        current: !isDraft && internalCompleted && !bpCompleted && !isRejected,
+        rejected: isRejected
+      });
+    }
+
+    stages.push({
+      stage: 'Activation',
+      completed: status === 'Approved',
+      current: !isDraft && allPreviousCompleted && status !== 'Approved' && !isRejected,
+      rejected: isRejected
+    });
+
+    return stages;
   }
 }

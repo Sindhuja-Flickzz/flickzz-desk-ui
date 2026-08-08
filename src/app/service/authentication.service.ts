@@ -80,6 +80,12 @@ export class AuthenticationService {
     );
   }
 
+  getUserInfoById(userId: number): Observable<FlickzzDeskResponse> {
+    return this.http.get<FlickzzDeskResponse>(
+      `${APP_CONSTANTS.API_BASE_URL}/get/user/${userId}`
+    );
+  }
+
   updateEnquiry(enquiryRegisterRequest: EnquiryRegisterRequest): Observable<FlickzzDeskResponse> {
     return this.http.post<FlickzzDeskResponse>(
       `${APP_CONSTANTS.API_BASE_URL}/enquiry/update`,

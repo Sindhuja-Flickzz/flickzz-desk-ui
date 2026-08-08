@@ -10,6 +10,8 @@ export interface BPConfigurationChangeRequestVO {
   category?: boolean;
   supportGroup?: boolean;
   assignment?: boolean;
+  internalApprovalCompleted?: boolean;
+  bpApprovalCompleted?: boolean;
   operation?: string;
   requestedByOrg?: CompanyMaster;
   requestedByUserId?: number;
@@ -41,6 +43,7 @@ export interface ConfigChangeApprovalVO {
   approvalId?: number;
   changeRequest?: BPConfigurationChangeRequestVO;
   approvalType?: string;
+  approverType?: string;
   approverLevel?: number;
   approverUserId?: number;
   approverOrgId?: number;
