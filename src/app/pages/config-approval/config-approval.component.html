@@ -39,7 +39,7 @@
     </div>
   </section>
 
-  <div class="main-content" [class.mobile]="isMobile" [class.tablet]="isTablet">
+  <div class="main-content" [class.details-visible]="detailsVisible" [class.mobile]="isMobile" [class.tablet]="isTablet">
     <section class="approval-list-section">
       <div class="section-panel">
         <div class="section-heading">
@@ -68,7 +68,7 @@
 
             <div class="approval-card-top">
               <div class="card-icon">
-                <mat-icon>settings</mat-icon>
+                <mat-icon>{{ getConfigIcon(approval) }}</mat-icon>
               </div>
               <div class="card-title-content">
                 <div class="approval-title-row">
@@ -100,11 +100,14 @@
       </div>
     </section>
 
-    <aside class="approval-details-section">
+    <aside class="approval-details-section" *ngIf="detailsVisible">
       <div class="details-panel" *ngIf="selectedApproval; else noSelection">
         <section class="details-section details-summary">
           <div class="section-heading">
             <p class="section-label">Configuration Summary</p>
+            <button mat-icon-button class="close-details-button" (click)="closeDetails()" aria-label="Close details">
+              <mat-icon>close</mat-icon>
+            </button>
           </div>
           <div class="details-grid">
             <div class="detail-row"><span class="detail-label">Configuration Type</span><span class="detail-value">{{ getConfigName(selectedApproval) }}</span></div>
@@ -282,7 +285,7 @@
           </div>
         </section>
 
-        <!-- <section class="details-section">
+        <section class="details-section">
           <div class="section-heading">
             <p class="section-label">Approval Tracking</p>
           </div>
@@ -300,7 +303,7 @@
               </div>
             </div>
           </div>
-        </section> -->
+        </section>
 
         <div class="action-buttons" *ngIf="selectedApproval.status != 'Approved' && selectedApproval.status != 'Declined' && selectedApproval.status != 'Internal Approved'">
           <button mat-raised-button class="btn-approve" (click)="openApprovalDialog('approve')">

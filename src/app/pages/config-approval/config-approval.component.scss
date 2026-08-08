@@ -325,6 +325,22 @@ $text-primary: #00246B;
   border-bottom: 1px solid $gray-border;
   gap: 12px;
 
+  .close-details-button {
+    color: $gray-text;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: rgba($gray-text, 0.08);
+    }
+
+    mat-icon {
+      font-size: 20px;
+    }
+  }
+
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: flex-start;
@@ -383,7 +399,7 @@ $text-primary: #00246B;
     flex-shrink: 0;
 
     mat-icon {
-      color: $primary-blue;
+      color: #00246B;
       font-size: 20px;
       width: 20px;
       height: 20px;
@@ -679,13 +695,18 @@ $text-primary: #00246B;
 
 .main-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 20px;
   min-height: 1px;
 }
 
+.main-content.details-visible {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr);
+}
+
 @media (max-width: 1024px) {
-  .main-content {
+  .main-content,
+  .main-content.details-visible {
     grid-template-columns: 1fr;
   }
 }
@@ -864,7 +885,7 @@ $text-primary: #00246B;
       flex-shrink: 0;
 
       mat-icon {
-        color: $primary-blue;
+        color: #00246B;
         font-size: 22px;
         width: 22px;
         height: 22px;
@@ -1038,7 +1059,7 @@ $text-primary: #00246B;
 // MAIN CONTENT
 .main-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  // grid-template-columns: 1fr 1fr;
     gap: 10px;
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;

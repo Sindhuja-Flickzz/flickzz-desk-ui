@@ -10,6 +10,8 @@ export interface BPConfigurationChangeRequestVO {
   category?: boolean;
   supportGroup?: boolean;
   assignment?: boolean;
+  internalApprovalCompleted?: boolean;
+  bpApprovalCompleted?: boolean;
   operation?: string;
   requestedByOrg?: CompanyMaster;
   requestedByUserId?: number;

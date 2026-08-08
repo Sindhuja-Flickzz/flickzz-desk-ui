@@ -35,6 +35,7 @@ export class ConfigApprovalComponent implements OnInit {
   selectedApprovalCurrent: any | null = null;
   selectedApprovalUpdated: any | null = null;
   selectedApprovalTrackingStages: any[] = [];
+  detailsVisible = false;
   lastRefreshed: Date = new Date();
   isLoading = false;
   isDetailLoading = false;
@@ -88,14 +89,11 @@ export class ConfigApprovalComponent implements OnInit {
         this.calculateKPIs();
         this.lastRefreshed = new Date();
         this.isLoading = false;
-        if (this.approvals.length > 0) {
-          this.loadApprovalDetails(this.approvals[0]);
-        } else {
-          this.selectedApproval = null;
-          this.selectedApprovalCurrent = null;
-          this.selectedApprovalUpdated = null;
-          this.selectedApprovalTrackingStages = [];
-        }
+        this.detailsVisible = false;
+        this.selectedApproval = null;
+        this.selectedApprovalCurrent = null;
+        this.selectedApprovalUpdated = null;
+        this.selectedApprovalTrackingStages = [];
       },
       error: (error) => {
         console.error('Error loading approvals:', error);
@@ -199,12 +197,40 @@ export class ConfigApprovalComponent implements OnInit {
     return `${configType} - ${operation}`;
   }
 
+  getConfigIcon(approval: ConfigChangeApprovalVO): string {
+    const configName = this.getConfigName(approval);
+    switch (configName) {
+      case 'Priority':
+        return 'speed';
+      case 'SLA':
+        return 'timer';
+      case 'Category':
+        return 'category';
+      case 'Support Group':
+        return 'groups';
+      case 'Assignment':
+        return 'assignment_ind';
+      default:
+        return 'settings';
+    }
+  }
+
   getApprovalType(approval: ConfigChangeApprovalVO): string {
     return approval.approverType || '';
   }
 
   selectApproval(approval: ConfigChangeApprovalVO): void {
+    this.detailsVisible = true;
     this.loadApprovalDetails(approval);
+  }
+
+  closeDetails(): void {
+    this.detailsVisible = false;
+    this.selectedApproval = null;
+    this.selectedApprovalCurrent = null;
+    this.selectedApprovalUpdated = null;
+    this.selectedApprovalTrackingStages = [];
+    this.detailLoadError = '';
   }
 
   private populateApprovalCreatorNames(): void {
@@ -508,28 +534,46 @@ export class ConfigApprovalComponent implements OnInit {
   }
 
   getApprovalTrackingStages(approval: ConfigChangeApprovalVO): any[] {
-    const approvalType = this.getApprovalType(approval);
     const status = approval.status;
+    const request = approval.changeRequest;
+    const isDraft = status === 'Draft';
+    const isRejected = status === 'Rejected';
+    const internalCompleted = !!request?.internalApprovalCompleted;
+    const bpCompleted = !!request?.bpApprovalCompleted;
+    const hasBpStage = request?.changedRequestId != null && request?.sourceChangeId != null && request.changedRequestId !== request.sourceChangeId;
+    const allPreviousCompleted = internalCompleted && (!hasBpStage || bpCompleted);
 
-    return [
+    const stages: any[] = [
       {
         stage: 'Draft',
-        completed: status !== 'Draft',
-        current: status === 'Draft',
-        rejected: false
+        completed: !isDraft,
+        current: isDraft,
+        rejected: isRejected
       },
       {
-        stage: approvalType || 'Approval',
-        completed: status === 'Approved',
-        current: status === 'Pending',
-        rejected: status === 'Rejected'
-      },
-      {
-        stage: 'Activation',
-        completed: status === 'Approved',
-        current: false,
-        rejected: false
+        stage: 'Internal',
+        completed: internalCompleted,
+        current: !isDraft && !internalCompleted && !isRejected,
+        rejected: isRejected
       }
     ];
+
+    if (hasBpStage) {
+      stages.push({
+        stage: 'BP',
+        completed: bpCompleted,
+        current: !isDraft && internalCompleted && !bpCompleted && !isRejected,
+        rejected: isRejected
+      });
+    }
+
+    stages.push({
+      stage: 'Activation',
+      completed: status === 'Approved',
+      current: !isDraft && allPreviousCompleted && status !== 'Approved' && !isRejected,
+      rejected: isRejected
+    });
+
+    return stages;
   }
 }
