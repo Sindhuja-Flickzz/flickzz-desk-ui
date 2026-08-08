@@ -10,7 +10,7 @@ import { SupportGroupService } from '../../service/support-group.service';
 import { SupportCategoryService } from '../../service/support-category.service';
 import { AuthenticationService } from '../../service/authentication.service';
 import { ApprovalDialogComponent } from './approval-dialog/approval-dialog.component';
-import { ConfigChangeApprovalVO } from '../../models/config-change-approval.model';
+import { BPConfigurationChangeRequestRemarkVO, ConfigChangeApprovalVO } from '../../models/config-change-approval.model';
 import { UserVO } from '../../models/user-vo';
 import { USER_ROLES } from '../../data/app_constants';  
 
@@ -35,6 +35,8 @@ export class ConfigApprovalComponent implements OnInit {
   selectedApprovalCurrent: any | null = null;
   selectedApprovalUpdated: any | null = null;
   selectedApprovalTrackingStages: any[] = [];
+  selectedApprovalRemarks: BPConfigurationChangeRequestRemarkVO[] = [];
+  remarkUserNames: Record<number, string> = {};
   detailsVisible = false;
   lastRefreshed: Date = new Date();
   isLoading = false;
@@ -221,7 +223,9 @@ export class ConfigApprovalComponent implements OnInit {
 
   selectApproval(approval: ConfigChangeApprovalVO): void {
     this.detailsVisible = true;
+    this.selectedApprovalRemarks = [];
     this.loadApprovalDetails(approval);
+    this.loadApprovalRemarks(approval.approvalId);
   }
 
   closeDetails(): void {
@@ -230,6 +234,7 @@ export class ConfigApprovalComponent implements OnInit {
     this.selectedApprovalCurrent = null;
     this.selectedApprovalUpdated = null;
     this.selectedApprovalTrackingStages = [];
+    this.selectedApprovalRemarks = [];
     this.detailLoadError = '';
   }
 
@@ -278,6 +283,71 @@ export class ConfigApprovalComponent implements OnInit {
   private getUserDisplayName(user: UserVO): string {
     const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
     return fullName || user.userName || user.registerId || 'Unknown User';
+  }
+
+  private loadApprovalRemarks(approvalId?: number): void {
+    if (!approvalId) {
+      this.selectedApprovalRemarks = [];
+      return;
+    }
+
+    this.configApprovalService.getApprovalRemarks(approvalId).subscribe({
+      next: (remarks) => {
+        this.selectedApprovalRemarks = (remarks as any).attributes || [];
+        this.populateRemarkUserNames(this.selectedApprovalRemarks);
+      },
+      error: (error) => {
+        console.warn('Unable to load approval remarks:', error);
+        this.selectedApprovalRemarks = [];
+      }
+    });
+  }
+
+  private populateRemarkUserNames(remarks: BPConfigurationChangeRequestRemarkVO[]): void {
+    const userIds = Array.from(new Set(
+      remarks
+        .filter(remark => remark.userId != null)
+        .map(remark => remark.userId as number)
+    ));
+
+    if (!userIds.length) {
+      return;
+    }
+
+    const userRequests = userIds.map(userId =>
+      this.authService.getUserInfoById(userId).pipe(
+        map(response => ({
+          userId,
+          user: (response as any).attributes as UserVO
+        }))
+      )
+    );
+
+    forkJoin(userRequests).subscribe({
+      next: (results) => {
+        this.remarkUserNames = results.reduce((map, result) => {
+          map[result.userId] = this.getUserDisplayName(result.user);
+          return map;
+        }, {} as Record<number, string>);
+      },
+      error: (error) => {
+        console.warn('Unable to resolve remark authors:', error);
+      }
+    });
+  }
+
+  getRemarkAuthor(remark: BPConfigurationChangeRequestRemarkVO): string {
+    if (remark.userId != null) {
+      return this.remarkUserNames[remark.userId] || 'Unknown';
+    }
+    return 'Unknown';
+  }
+
+  getRemarkLevelText(remark: BPConfigurationChangeRequestRemarkVO): string {
+    if(remark.remarkType != null) {
+      return remark.remarkType.toUpperCase();
+    }
+    return 'Unknown';
   }
 
   getSubCategoryNames(subCategories: any[] | undefined): string {
@@ -569,7 +639,7 @@ export class ConfigApprovalComponent implements OnInit {
 
     stages.push({
       stage: 'Activation',
-      completed: status === 'Approved',
+      completed: request?.status === 'Approved',
       current: !isDraft && allPreviousCompleted && status !== 'Approved' && !isRejected,
       rejected: isRejected
     });
