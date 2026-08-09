@@ -183,7 +183,7 @@ export class CompanyComponent implements OnInit {
         this.approverSuggestions = this.getAvailableApprovers();
         this.canUpdateCompany = normalized.length > 0;
         if (!this.canUpdateCompany) {
-          this.submitError = 'At least one agent must be available for this organization before the company can be updated.';
+          this.submitError = 'At least one agent must be available before updating the company.';
         }
       },
       error: () => {
@@ -259,7 +259,7 @@ export class CompanyComponent implements OnInit {
     this.submitSuccess = '';
 
     if (!this.canUpdateCompany) {
-      this.submitError = 'At least one agent must be available for this organization before the company can be updated.';
+      this.submitError = 'At least one agent must be available before updating the company.';
       this.isSubmitting = false;
       return;
     }

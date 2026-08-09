@@ -73,8 +73,8 @@ export class AgentService {
     return this.http.delete(`${this.baseUrl}/agent/delete/${agentId}`);
   }
 
-  getEnquiryByEmail(userEmail: string): Observable<EnquiryRegistration> {
-    return this.http.get<EnquiryRegistration>(`${this.baseUrl}/enquiry/${userEmail}`);
+  getEnquiryByEmail(userEmail: string, orgId: string): Observable<EnquiryRegistration> {
+    return this.http.get<EnquiryRegistration>(`${this.baseUrl}/enquiry/${userEmail}/${orgId}`);
   }
 
   getAgentInfoByEmail(userEmail: string): Observable<AgentMaster> {
