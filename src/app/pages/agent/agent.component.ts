@@ -194,13 +194,14 @@ export class AgentComponent implements OnInit {
 
   onMailIdChange(): void {
     const email = this.agentForm.get('mailId')?.value?.trim();
+    const orgId = localStorage.getItem('userOrgId') || '';
     this.formError['mailId'] = null;
 
     if (!email) {
       return;
     }
 
-    this.agentService.getEnquiryByEmail(email).subscribe({
+    this.agentService.getEnquiryByEmail(email, orgId).subscribe({
       next: (enquiryData) => {
         this.enquiryUser = true;
         enquiryData = (enquiryData as any).attributes || enquiryData;
