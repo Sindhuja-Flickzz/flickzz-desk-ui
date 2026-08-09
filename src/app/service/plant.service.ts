@@ -26,12 +26,28 @@ export class PlantService {
     return this.http.get<PlantMaster[]>(`${this.baseUrl}/plant/list/${userOrgId}`);
   }
 
+  getActivePlants(userOrgId: string): Observable<PlantMaster[]> {
+    return this.http.get<PlantMaster[]>(`${this.baseUrl}/plant/list/active/${userOrgId}`);
+  }
+
+  getPlantAgentMappings(userOrgId: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/plant/agent/mappings/${userOrgId}`);
+  }
+
   createPlant(request: PlantMasterRequest): Observable<any> {
     return this.http.post(`${this.baseUrl}/plant/create`, request);
   }
 
   updatePlant(request: PlantMasterRequest): Observable<any> {
     return this.http.post(`${this.baseUrl}/plant/update`, request);
+  }
+
+  createPlantAgentMapping(request: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/plant/agent/mapping/create`, request);
+  }
+
+  deletePlantAgentMapping(mappingId: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/plant/agent/mapping/delete/${mappingId}`);
   }
 
   deletePlant(plantId: number): Observable<any> {

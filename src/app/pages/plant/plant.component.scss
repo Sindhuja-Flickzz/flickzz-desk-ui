@@ -106,58 +106,6 @@
     }
   }
 
-  .agent-input-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    width: 100%;
-  }
-
-  .agent-input-row input {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
-  }
-
-  .add-skill-btn {
-      border: none;
-      background: #00246B;
-      color: #fff;
-      border-radius: 10px;
-      width: 40px;
-      height: 40px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.2s ease;
-
-      &:hover {
-        background: #003d99;
-      }
-
-      .add-icon {
-        font-size: 18px;
-        font-weight: bold;
-        line-height: 1;
-      }
-    }
-
-  .selected-agents {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
-  }
-
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: #f4f7ff;
-    color: #102a43;
     font-size: 13px;
   }
 
@@ -228,6 +176,170 @@
   .error-text { color: #d32f2f; margin-top: 10px; }
   .success-text { color: #2e7d32; margin-top: 10px; }
 
+  .mapping-panel {
+    padding: 22px;
+    border: 1px solid #eef2f9;
+    border-radius: 0 0 12px 12px;
+    background: #fff;
+  }
+
+  .mapping-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .mapping-table {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mapping-table-header,
+  .mapping-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.4fr) minmax(180px, 1.4fr) minmax(220px, 2fr) 80px;
+    gap: 14px;
+    align-items: start;
+    padding: 14px 16px;
+  }
+
+  .mapping-table-header {
+    background: #f4f7ff;
+    border-radius: 12px;
+    font-weight: 700;
+    color: #102a43;
+    border: 1px solid #dce4f1;
+  }
+
+  .mapping-table-header .header-cell {
+    display: flex;
+    align-items: center;
+  }
+
+  .mapping-row {
+    border: 1px solid #dce4f1;
+    border-radius: 12px;
+    background: #ffffff;
+  }
+
+  .mapping-cell {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mapping-cell label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #102a43;
+    margin-bottom: 6px;
+  }
+
+  .mapping-cell input {
+    width: 100%;
+    border: 1px solid #ccd6e8;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    outline: none;
+  }
+
+  .mapping-cell input:focus {
+    border-color: #0f5bba;
+  }
+
+  .mapping-row .suggestions {
+    margin-top: 6px;
+  }
+
+  .mapping-row .suggestion-items {
+    border: 1px solid #dfe8f6;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  }
+
+  .mapping-row .suggestion {
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f0f4fb;
+  }
+
+  .mapping-row .suggestion:last-child {
+    border-bottom: none;
+  }
+
+  .mapping-row .suggestion:hover {
+    background: #f8fbff;
+  }
+
+  .mapping-row .skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .mapping-row .chip {
+    background: #f4f7ff;
+    color: #102a43;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+  }
+
+  .action-cell {
+    display: block;
+    justify-content: flex-end;
+    align-items: start;
+  }
+
+  .save-icon-btn,
+  .remove-btn {
+    border: none;
+    background: transparent;
+    color: #00246B;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+  }
+
+  .remove-btn {
+    color: #eb5757;
+  }
+
+  .helper-text {
+    color: #607d8b;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+
+  .mapping-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .add-line-btn {
+    border: none;
+    background: #f4f7ff;
+    color: #00246b;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .mapping-panel .save-btn {
+    min-width: 150px;
+  }
+
   .search-container {
     margin: 15px 0;
     display: flex;
@@ -250,6 +362,10 @@
         color: #999;
       }
     }
+  }
+
+  .mapping-filter-row {
+    margin-bottom: 18px;
   }
 
   .table-wrapper {
@@ -362,4 +478,4 @@
     color: #666;
     font-size: 16px;
   }
-}
+

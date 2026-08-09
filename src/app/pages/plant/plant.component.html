@@ -4,6 +4,7 @@
     <button *ngIf="!isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
     <button *ngIf="isEditMode" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
     <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+    <button class="tab-btn" [class.active]="activeTab === 'mapping'" (click)="selectTab('mapping')">Mapping</button>
   </div>
 
   <div *ngIf="activeTab === 'create'" class="create-panel">
@@ -40,32 +41,6 @@
       </div>
       
       <div class="field">
-        <label for="agentName">Agent</label>
-        <div class="agent-input-row">
-          <input id="agentName" type="text" formControlName="agentName" placeholder="Type active agent name or email" autocomplete="off" (input)="onAgentSearch()" (keydown.enter)="addSelectedAgent()" />
-          <button type="button" class="add-skill-btn" (click)="addSelectedAgent()" [disabled]="!selectedAgent" title="Add Agent">+</button>
-        </div>
-        <span *ngIf="formError.agentName" class="error-text">{{ formError.agentName }}</span>
-        <div class="suggestions" *ngIf="agentSuggestions.length > 0 && plantForm.get('agentName')?.value?.trim().length > 0">
-          <div class="suggestion-items">
-            <div class="suggestion" *ngFor="let agent of agentSuggestions" (click)="selectAgent(agent)">
-              <div class="suggestion-content">
-                <span class="suggestion-name">{{ agent.agentName }}</span>
-                <span class="suggestion-email" *ngIf="agent.mailId">{{ agent.mailId }}</span>
-              </div>
-              <span class="suggestion-meta" *ngIf="agent.accessId">{{ agent.accessId }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="selected-agents" *ngIf="selectedAgents.length > 0">
-          <span class="chip" *ngFor="let agent of selectedAgents; let i = index">
-            {{ agent.agentName }}<span *ngIf="agent.mailId"> • {{ agent.mailId }}</span>
-            <button type="button" class="remove-chip" (click)="removeSelectedAgent(agent.agentId)">×</button>
-          </span>
-        </div>
-      </div>
-
-      <div class="field">
         <label>Week Off</label>
         <div class="days-row">
           <div class="day-checkbox" *ngFor="let day of daysOfWeek; let i = index">
@@ -90,6 +65,10 @@
     <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
     
     <div class="search-container">
+      <select class="search-input" [(ngModel)]="selectedPlantId" (ngModelChange)="filterBySearch()">
+        <option [ngValue]="null">All Plants</option>
+        <option *ngFor="let plant of plants" [ngValue]="plant.plantId">{{ plant.plantName }}</option>
+      </select>
       <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by name or region..." class="search-input">
     </div>
     
@@ -99,7 +78,6 @@
           <tr>
             <th>Plant Name</th>
             <th>Region</th>
-            <th>Agents</th>
             <th>Week Off</th>
             <th>Calendar</th>
             <th>Actions</th>
@@ -109,25 +87,6 @@
           <tr *ngFor="let plant of getPaginatedPlants()">
             <td>{{ plant.plantName }}</td>
             <td>{{ plant.region.countryName }}</td>
-            <td>
-              <div class="list-eye-cell agents"
-                   (mouseenter)="setHoveredAgentsPlantId(plant.plantId)"
-                   (mouseleave)="clearHoveredAgents()">
-                <div class="eye-wrapper agents">
-                  <button type="button" class="eye-btn agents" aria-label="View agents" *ngIf="getPlantAgentLabels(plant).length > 0">
-                    <mat-icon>visibility</mat-icon>
-                  </button>
-                  <div class="hover-list" [class.visible]="isAgentsPopoverVisible(plant.plantId)">
-                    <ng-container *ngIf="getPlantAgentLabels(plant).length > 0; else noAgentsList">
-                      <div class="hover-list-item" *ngFor="let label of getPlantAgentLabels(plant)">{{ label }}</div>
-                    </ng-container>
-                    <ng-template #noAgentsList>
-                      <span class="hover-list-empty">No active agents assigned</span>
-                    </ng-template>
-                  </div>
-                </div>
-              </div>
-            </td>
             <td>
               <div class="list-eye-cell weekoff"
                    (mouseenter)="setHoveredWeekOff(plant.plantId)"
@@ -171,5 +130,93 @@
         showFirstLastButtons>
       </mat-paginator>
     </div>
+  </div>
+
+  <div *ngIf="activeTab === 'mapping'" class="mapping-panel">
+    <h2>Plant-Agent Mapping</h2>
+    <div *ngIf="mappingError" class="error-text">✗ {{ mappingError }}</div>
+    <div *ngIf="mappingSuccess" class="success-text">✓ {{ mappingSuccess }}</div>
+
+    <div class="search-container mapping-filter-row">
+      <select class="search-input" [(ngModel)]="selectedMappingPlantId" (ngModelChange)="applyMappingFilter()">
+        <option [ngValue]="null">All Plants</option>
+        <option *ngFor="let plant of activePlants" [ngValue]="plant.plantId">{{ plant.plantName }}</option>
+      </select>
+      <input
+        type="text"
+        name="mappingFilter"
+        [(ngModel)]="mappingFilter"
+        (ngModelChange)="applyMappingFilter()"
+        placeholder="Filter plants and agents"
+        class="search-input"
+      />
+    </div>
+
+    <form [formGroup]="mappingForm" class="mapping-form">
+      <div formArrayName="rows" class="mapping-table">
+        <div class="mapping-table-header">
+          <div class="header-cell">Plant</div>
+          <div class="header-cell">Agent</div>
+          <div class="header-cell">Skills</div>
+          <div class="header-cell action-cell"></div>
+        </div>
+
+        <ng-container *ngFor="let row of mappingRows.controls; let i = index">
+          <div class="mapping-row" *ngIf="mappingRowVisibility[i]" [formGroupName]="i">
+            <div class="mapping-cell mapping-cell--plant">
+            <input id="plantQuery-{{ i }}" type="text" formControlName="plantQuery" placeholder="Select plant" autocomplete="off"
+              (input)="onMappingPlantSearch(i)" [readonly]="row.get('isExisting')?.value" />
+            <div class="suggestions" *ngIf="!row.get('isExisting')?.value && mappingPlantSuggestions[i].length > 0 && getMappingQueryValue(i, 'plantQuery').trim().length > 0">
+              <div class="suggestion-items">
+                <div class="suggestion" *ngFor="let plant of mappingPlantSuggestions[i]" (click)="selectMappingPlant(i, plant)">
+                  <div class="suggestion-content">
+                    <span class="suggestion-name">{{ plant.plantName }}</span>
+                    <span class="suggestion-email">{{ plant.region.countryName }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mapping-cell mapping-cell--agent">
+            <input id="agentQuery-{{ i }}" type="text" formControlName="agentQuery" placeholder="Select agent" autocomplete="off"
+              (input)="onMappingAgentSearch(i)" (keydown.enter)="onMappingAgentEnter(i, $event)" [readonly]="row.get('isExisting')?.value" />
+            <div class="suggestions" *ngIf="!row.get('isExisting')?.value && mappingAgentSuggestions[i].length > 0 && getMappingQueryValue(i, 'agentQuery').trim().length > 0">
+              <div class="suggestion-items">
+                <div class="suggestion" *ngFor="let agent of mappingAgentSuggestions[i]" (click)="selectMappingAgent(i, agent)">
+                  <div class="suggestion-content">
+                    <span class="suggestion-name">{{ agent.agentName }}</span>
+                    <span class="suggestion-email" *ngIf="agent.mailId">{{ agent.mailId }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mapping-cell mapping-cell--skills">
+            <div class="skill-tags" *ngIf="hasRowSkills(i); else noSkills">
+              <span class="chip" *ngFor="let skill of agentSkillsByRow[i]">{{ skill }}</span>
+            </div>
+            <ng-template #noSkills>
+              <div class="helper-text">Select an agent to view their skills.</div>
+            </ng-template>
+          </div>
+
+          <div class="mapping-cell action-cell">
+            <button *ngIf="!row.get('isExisting')?.value" type="button" class="save-icon-btn" (click)="saveMappingRow(i)" aria-label="Save mapping row">
+              <mat-icon>check</mat-icon>
+            </button>
+            <button type="button" class="remove-btn" (click)="deleteMappingRow(i)" aria-label="Delete mapping row">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="mapping-footer">
+        <button type="button" class="add-line-btn" (click)="addMappingRow()">Add a line</button>
+      </div>
+    </form>
   </div>
 </div>
