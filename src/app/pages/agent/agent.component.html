@@ -109,11 +109,30 @@
 
       <div class="field">
         <label>Language</label>
-        <select formControlName="languageId" title="Language" (change)="formError['languageId'] = null;">
-          <option value="" disabled>Select language</option>
-          <option *ngFor="let lang of languages" [value]="lang.languageId">{{ lang.languageName }}</option>
-        </select>
-        <span *ngIf="formError.languageId" class="error-text">{{ formError.languageId | fieldLabel }}</span>
+        <div class="skill-input-row language-input-row">
+          <div class="skill-name-container">
+            <input type="text" formControlName="languageName" (input)="onLanguageSearch()" placeholder="Start typing to pick language" (change)="clearFormError('languageIds')" (keydown.enter)="onLanguageEnter($event)" autocomplete="off" />
+            <div class="suggestions" *ngIf="filteredLanguages.length > 0">
+              <div class="suggestion-items">
+                <span class="suggestion" *ngFor="let lang of filteredLanguages" (click)="addLanguageFromSuggestion(lang)">{{ lang.languageName }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="months-input-container" *ngIf="selectedLanguage">
+            <!-- <label><br></label> -->
+            <button type="button" class="add-skill-btn" (click)="addLanguageFromSuggestion(selectedLanguage)" [disabled]="!selectedLanguage" title="Add Language">
+              <span class="add-icon">+</span>
+            </button>
+          </div>
+        </div>
+        <span *ngIf="formError.languageIds" class="error-text">{{ formError.languageIds | fieldLabel }}</span>
+      </div>
+
+      <div class="selected-skills selected-languages" *ngIf="selectedLanguages.length > 0">
+        <span class="chip" *ngFor="let lang of selectedLanguages; let i = index">
+          {{ lang.languageName }}
+          <button type="button" class="remove-chip" (click)="removeLanguage(i); $event.stopPropagation()">×</button>
+        </span>
       </div>
 
       <div class="field">
@@ -203,7 +222,27 @@
             <!-- <td>{{ agent.organization.companyName }}</td> -->
             <td>{{ agent.country.countryName }}</td>
             <td>{{ agent.city.cityName }}</td>
-            <td>{{ agent.language.languageName }}</td>
+            <td class="language-cell">
+              <button type="button" 
+                      class="language-view-btn" 
+                      title="View languages"
+                      (mouseenter)="hoveredLanguageAgentId = agent.agentId"
+                      (mouseleave)="hoveredLanguageAgentId = null"
+                      [disabled]="getAgentLanguageList(agent).length === 0">
+                <mat-icon>language</mat-icon>
+              </button>
+              <span class="language-count" *ngIf="getAgentLanguageList(agent).length > 0">{{ getAgentLanguageList(agent).length }}</span>
+              <div class="skill-tooltip" *ngIf="hoveredLanguageAgentId === agent.agentId && getAgentLanguageList(agent).length > 0">
+                <div class="skill-tooltip-content">
+                  <div class="tooltip-title">Languages</div>
+                  <div class="skill-items">
+                    <div class="skill-item" *ngFor="let name of getAgentLanguageList(agent)">
+                      <span class="skill-name">{{ name }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
             <td class="skill-cell">
               <button type="button" 
                       class="skill-view-btn" 

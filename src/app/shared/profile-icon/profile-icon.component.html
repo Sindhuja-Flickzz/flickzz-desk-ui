@@ -55,16 +55,10 @@
 
     <!-- Menu Items -->
     <div class="menu-items">
-      <button class="menu-item" (click)="navigateToProfile()" role="menuitem" *ngIf="!isEditing">
+      <button class="menu-item" (click)="navigateToProfile()" role="menuitem" *ngIf="!isEditing && userRole != 'Admin'">
         <i class="icon">👤</i>
         <span>Profile</span>
         <i class="chevron">›</i>
-      </button>
-
-      <button class="menu-item" role="menuitem">
-        <i class="icon">🔔</i>
-        <span>Notifications</span>
-        <span class="notification-indicator" *ngIf="notificationCount > 0">{{ notificationCount }}</span>
       </button>
 
       <!-- <button class="menu-item" (click)="toggleDarkMode()" role="menuitem">
@@ -74,12 +68,6 @@
           <div class="toggle-slider" [class.active]="isDarkMode"></div>
         </div>
       </button> -->
-
-      <button class="menu-item" (click)="openSettings()" role="menuitem">
-        <i class="icon">⚙️</i>
-        <span>Settings</span>
-        <i class="chevron">›</i>
-      </button>
 
       <div class="menu-divider"></div>
 

@@ -37,6 +37,7 @@ export class ProfileIconComponent implements OnInit, OnDestroy {
     firstName: '',
     lastName: ''
   };
+  userRole: string = '';
 
   editProfile: UserProfile = { ...this.userProfile };
 
@@ -46,7 +47,9 @@ export class ProfileIconComponent implements OnInit, OnDestroy {
     private themeService: ThemeService,
     private companyService: CompanyService,
     private elementRef: ElementRef
-  ) {}
+  ) {
+    this.userRole = localStorage.getItem('userRole') || '';
+  }
 
   ngOnInit(): void {
     this.loadUserProfile();
