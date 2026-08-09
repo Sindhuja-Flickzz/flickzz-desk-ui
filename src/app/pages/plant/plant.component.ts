@@ -9,12 +9,31 @@ import { CountryMasterVO, PlantMaster, PlantMasterRequest } from '../../models/p
 import { CalendarMasterVO } from '../../models/calendar-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { USER_ROLES, DAYS_OF_WEEK } from 'src/app/data/app_constants';
+import { AgentSkillMapping } from 'src/app/models/user-vo';
 
 interface AgentSuggestion {
   agentId: number;
   agentName: string;
   mailId?: string;
   accessId?: string;
+}
+
+interface AgentPlantMappingVO {
+  mappingId: number;
+  active: boolean;
+  agent?: {
+    agentId: number;
+    agentName: string;
+    agentSkillsMappings: AgentSkillMapping[];
+    mailId?: string;
+    accessId?: string;
+  };
+  plant?: {
+    plantId: number;
+    plantName: string;
+    region?: CountryMasterVO;
+    calendar?: CalendarMasterVO;
+  };
 }
 
 @Component({
@@ -24,7 +43,7 @@ interface AgentSuggestion {
 })
 export class PlantComponent implements OnInit {
   plantForm: FormGroup;
-  activeTab: 'create' | 'list' = 'create';
+  activeTab: 'create' | 'list' | 'mapping' = 'create';
   pageTitle = 'Create Plant';
   isEditMode = false;
   originalFormValue: any = null;
@@ -33,13 +52,22 @@ export class PlantComponent implements OnInit {
   calendars: CalendarMasterVO[] = [];
   daysOfWeek = DAYS_OF_WEEK;
   plants: PlantMaster[] = [];
+  activePlants: PlantMaster[] = [];
   filteredPlants: PlantMaster[] = [];
   activeAgents: AgentSuggestion[] = [];
-  agentSuggestions: AgentSuggestion[] = [];
-  selectedAgents: AgentSuggestion[] = [];
-  selectedAgent: AgentSuggestion | null = null;
-  originalSelectedAgentIds: number[] = [];
   searchValue = '';
+  selectedPlantId: number | null = null;
+
+  mappingForm: FormGroup;
+  mappingPlantSuggestions: { [key: number]: PlantMaster[] } = {};
+  mappingAgentSuggestions: { [key: number]: AgentSuggestion[] } = {};
+  agentSkillsByRow: { [key: number]: string[] } = {};
+  mappingFilter = '';
+  selectedMappingPlantId: number | null = null;
+  mappingRowVisibility: boolean[] = [];
+  mappingError = '';
+  mappingSuccess = '';
+  isMappingSubmitting = false;
   loading = false;
   formError: any = {};
   submitSuccess = '';
@@ -72,9 +100,13 @@ export class PlantComponent implements OnInit {
       plantName: ['', Validators.required],
       countryId: [null, Validators.required],
       calendarId: [null, Validators.required],
-      agentName: [''],
       weekOff: this.fb.array(this.createDaysCheckboxes())
     });
+
+    this.mappingForm = this.fb.group({
+      rows: this.fb.array([])
+    });
+
     this.userOrgId = localStorage.getItem('userOrgId') || '';
   }
 
@@ -103,10 +135,10 @@ export class PlantComponent implements OnInit {
     });
 
     this.loadActiveAgents();
+    this.loadActivePlantList();
     this.plantForm.patchValue({
         countryId: "",
-        calendarId: "",
-        agentName: ''
+        calendarId: ""
     });
     this.loadPlantList();
     this.loading = false;
@@ -128,6 +160,19 @@ export class PlantComponent implements OnInit {
     });
   }
 
+  loadActivePlantList(): void {
+    this.error = null;
+    this.plantService.getActivePlants(this.userOrgId).subscribe({
+      next: (result) => {
+        this.activePlants = (result as any).attributes || [];
+      },
+      error: (err) => {
+        this.activePlants = [];
+        console.error('Failed to load active plants:', err);
+      }
+    });
+  }
+
   cancelEdit(): void {
     this.resetForm();
     this.activeTab = 'list';  
@@ -137,7 +182,7 @@ export class PlantComponent implements OnInit {
     this.router.navigate(['/settings']);
   }
 
-  selectTab(tab: 'create' | 'list'): void {
+  selectTab(tab: 'create' | 'list' | 'mapping'): void {
     this.formError = {};
     this.activeTab = tab;
     if (tab === 'create') {
@@ -150,6 +195,17 @@ export class PlantComponent implements OnInit {
       this.resetForm();
       this.loadPlantList();
     }
+    if (tab === 'mapping') {
+      this.isEditMode = false;
+      this.pageTitle = 'Map Plant to Agent';
+      this.mappingError = '';
+      this.mappingSuccess = '';
+      this.mappingFilter = '';
+      this.selectedMappingPlantId = null;
+      this.loadActivePlantList();
+      this.loadActiveAgents();
+      this.loadPlantAgentMappings();
+    }
   }
 
   resetForm(): void {
@@ -157,16 +213,11 @@ export class PlantComponent implements OnInit {
     this.pageTitle = 'Create Plant';
     this.plantForm.reset({ isActive: true });
     this.originalFormValue = null;
-    this.originalSelectedAgentIds = [];
     this.submitError = '';
     this.submitSuccess = '';
-    this.selectedAgents = [];
-    this.selectedAgent = null;
-    this.agentSuggestions = this.getAvailableAgents();
     this.plantForm.patchValue({
         countryId: "",
-        calendarId: "",
-        agentName: ''
+        calendarId: ""
     });
     // Reset weekOff checkboxes
     this.weekOffArray.controls.forEach(ctrl => ctrl.setValue(false));
@@ -194,11 +245,6 @@ export class PlantComponent implements OnInit {
       return
     }
 
-    if (this.plantForm.value.agentName && !this.selectedAgent) {
-      this.formError.agentName = 'Please select an active agent from the list or clear the field';
-      return;
-    }
-
     const selectedWeekOff = this.daysOfWeek.filter((_, index) => this.weekOffArray.at(index).value);
 
     const payload: PlantMasterRequest = {
@@ -206,7 +252,6 @@ export class PlantComponent implements OnInit {
       plantName: this.plantForm.value.plantName,
       countryId: Number(this.plantForm.value.countryId),
       calendarId: Number(this.plantForm.value.calendarId),
-      agents: this.selectedAgents.map(agent => Number(agent.agentId)),
       weekOff: selectedWeekOff,
       companyId: Number(localStorage.getItem('userOrgId') || 0),
       createdBy: Number(localStorage.getItem('userId')),
@@ -264,10 +309,7 @@ export class PlantComponent implements OnInit {
       return true;
     }
     const current = this.plantForm.getRawValue();
-    const currentAgentIds = this.selectedAgents.map(agent => agent.agentId).sort();
-    const originalAgentIds = [...this.originalSelectedAgentIds].sort();
-    return JSON.stringify(current) !== JSON.stringify(this.originalFormValue) ||
-      JSON.stringify(currentAgentIds) !== JSON.stringify(originalAgentIds);
+    return JSON.stringify(current) !== JSON.stringify(this.originalFormValue);
   }
 
   onViewPlant(plant: PlantMaster): void {
@@ -285,18 +327,6 @@ export class PlantComponent implements OnInit {
       updatedBy: plant.updatedBy || plant.createdBy
     });
     console.log('Plant object received for editing:', plant);
-    const rawAgents = (plant as any).agentPlantMappings || [];
-    console.log('Raw agents from plant object:', rawAgents);
-    if (Array.isArray(rawAgents) && rawAgents.length > 0) {
-      this.selectedAgents = rawAgents
-        .map((item: any) => this.createSelectedAgentFromRaw(item))
-        .filter((agent): agent is AgentSuggestion => agent != null);
-    } else {
-      this.selectedAgents = [];
-    }
-    this.hydrateSelectedAgentsFromActiveList();
-    this.originalSelectedAgentIds = this.selectedAgents.map(agent => agent.agentId);
-    this.agentSuggestions = this.getAvailableAgents();
     // Prefill weekOff if available on the plant object (accept multiple property shapes)
     const rawWeekOff = (plant as any).weekOff || (plant as any).weekoff || (plant as any).weekOffs || (plant as any).week_off || [];
     if (Array.isArray(rawWeekOff) && rawWeekOff.length > 0) {
@@ -347,34 +377,19 @@ export class PlantComponent implements OnInit {
     }
   }
 
-  getPlantAgentLabels(plant: PlantMaster): string[] {
-    const rawAgents = (plant as any).agentPlantMappings || [];
-    const agentIds = rawAgents
-      .map((item: any): number | null => item?.agentId ?? item?.id ?? item?.agent?.agentId ?? null)
-      .filter((id: number | null): id is number => id != null);
-
-    return agentIds.map((id: number) => {
-      const activeMatch = this.activeAgents.find(agent => agent.agentId === id);
-      return activeMatch?.agentName || `Agent ${id}`;
-    });
-  }
-
   loadActiveAgents(): void {
     if (!this.userOrgId) {
       this.activeAgents = [];
-      this.agentSuggestions = [];
       return;
     }
 
     this.agentService.getActiveAgentList(this.userOrgId).subscribe({
       next: (response) => {
         this.activeAgents = this.normalizeAgentResponse(response);
-        this.agentSuggestions = this.getAvailableAgents();
       },
       error: (err) => {
         console.error('Failed to load active agents:', err);
         this.activeAgents = [];
-        this.agentSuggestions = [];
       }
     });
   }
@@ -393,106 +408,317 @@ export class PlantComponent implements OnInit {
       .filter((agent: AgentSuggestion) => agent.agentId != null && agent.agentName.trim().length > 0) as AgentSuggestion[];
   }
 
-  private createSelectedAgentFromRaw(item: any): AgentSuggestion | null {
-    if (item == null) {
-      return null;
-    }
-    console.log('Creating selected agent from raw item:', item);
-    const agentId = item?.agentId ?? item?.id ?? (typeof item === 'number' ? item : item?.agent?.agentId ?? null);
-    if (agentId == null) {
-      return null;
-    }
-
-    let agentName = '';
-    let mailId = '';
-    let accessId = '';
-
-    if (typeof item === 'object') {
-      agentName = item?.agentName ?? item?.name ?? item?.agent?.agentName ?? '';
-      mailId = item?.mailId ?? item?.email ?? item?.agent?.mailId ?? '';
-      accessId = item?.accessId ?? item?.agent?.accessId ?? '';
-    }
-
-    if (!agentName) {
-      const activeMatch = this.activeAgents.find(agent => agent.agentId === agentId);
-      if (activeMatch) {
-        agentName = activeMatch.agentName;
-        mailId = activeMatch.mailId ?? '';
-        accessId = activeMatch.accessId ?? '';
-      }
-    }
-
-    if (!agentName) {
-      return null;
-    }
-
-    return {
-      agentId,
-      agentName,
-      mailId,
-      accessId
-    };
+  get mappingRows(): FormArray {
+    return this.mappingForm.get('rows') as FormArray;
   }
 
-  private hydrateSelectedAgentsFromActiveList(): void {
-    if (!this.activeAgents.length) {
-      return;
-    }
-
-    this.selectedAgents = this.selectedAgents.map(agent => {
-      const activeMatch = this.activeAgents.find(item => item.agentId === agent.agentId);
-      return activeMatch ?? agent;
+  private createMappingRow(): FormGroup {
+    return this.fb.group({
+      mappingId: [null],
+      plantQuery: [''],
+      plantId: [null],
+      plantName: [''],
+      agentQuery: [''],
+      agentId: [null],
+      agentName: [''],
+      skills: [[]],
+      isExisting: [false],
+      active: [true]
     });
   }
 
-  getAvailableAgents(): AgentSuggestion[] {
-    const excluded = new Set(this.selectedAgents.map(agent => agent.agentId));
-    return this.activeAgents.filter(agent => !excluded.has(agent.agentId));
+  addMappingRow(): void {
+    this.mappingRows.push(this.createMappingRow());
+    const rowIndex = this.mappingRows.length - 1;
+    this.mappingPlantSuggestions[rowIndex] = this.filterMappingPlants(this.activePlants);
+    this.mappingAgentSuggestions[rowIndex] = this.filterMappingAgents(this.getAvailableAgentsForMappingRow(rowIndex));
+    this.agentSkillsByRow[rowIndex] = [];
+    this.mappingRowVisibility[rowIndex] = true;
   }
 
-  onAgentSearch(): void {
-    const searchTerm = (this.plantForm.get('agentName')?.value || '').trim();
-    this.selectedAgent = null;
+  removeMappingRow(index: number): void {
+    this.mappingRows.removeAt(index);
+    delete this.mappingPlantSuggestions[index];
+    delete this.mappingAgentSuggestions[index];
+    delete this.agentSkillsByRow[index];
+    this.mappingRowVisibility.splice(index, 1);
+  }
 
-    const available = this.getAvailableAgents();
+  loadPlantAgentMappings(): void {
+    this.mappingRows.clear();
+    this.plantService.getPlantAgentMappings(this.userOrgId).subscribe({
+      next: (result) => {
+        const mappings = (result as any)?.attributes || result || [];
+        if (Array.isArray(mappings) && mappings.length > 0) {
+          mappings.forEach((mapping: AgentPlantMappingVO) => {
+            const row = this.createMappingRow();
+              // derive skill names from agent.agentSkillsMappings if available
+              const skillNames = Array.isArray(mapping.agent?.agentSkillsMappings)
+                ? mapping.agent!.agentSkillsMappings
+                    .map((asm: any) => asm?.skill?.skillName)
+                    .filter(Boolean)
+                : [];
+
+              row.patchValue({
+                mappingId: mapping.mappingId,
+                plantQuery: mapping.plant?.plantName || '',
+                plantId: mapping.plant?.plantId || null,
+                plantName: mapping.plant?.plantName || '',
+                agentQuery: mapping.agent?.agentName || '',
+                agentId: mapping.agent?.agentId || null,
+                agentName: mapping.agent?.agentName || '',
+                skills: skillNames,
+                isExisting: true,
+                active: mapping.active ?? true
+              }, { emitEvent: false });
+
+              this.mappingRows.push(row);
+              const pushedIndex = this.mappingRows.length - 1;
+              this.agentSkillsByRow[pushedIndex] = skillNames;
+          });
+        }
+        if (this.mappingRows.length === 0) {
+          this.addMappingRow();
+        }
+        this.updateMappingRowVisibility();
+      },
+      error: (err) => {
+        console.error('Failed to load plant-agent mappings:', err);
+        this.mappingRows.clear();
+        this.addMappingRow();
+        this.updateMappingRowVisibility();
+      }
+    });
+  }
+
+  private getAvailableAgentsForMappingRow(rowIndex: number): AgentSuggestion[] {
+    return this.activeAgents;
+  }
+
+  onMappingPlantSearch(index: number): void {
+    const row = this.mappingRows.at(index);
+    const searchTerm = (row.get('plantQuery')?.value || '').trim();
     if (!searchTerm) {
-      this.agentSuggestions = available;
+      this.mappingPlantSuggestions[index] = this.filterMappingPlants(this.activePlants);
       return;
     }
 
     const lowerTerm = searchTerm.toLowerCase();
-    this.agentSuggestions = available.filter(agent => {
-      const haystack = `${agent.agentName} ${agent.mailId || ''} ${agent.accessId || ''}`.toLowerCase();
-      return haystack.includes(lowerTerm);
+    const matchingPlants = this.activePlants.filter(plant => {
+      const plantName = plant.plantName?.toLowerCase() || '';
+      const regionName = plant.region?.countryName?.toLowerCase() || '';
+      return plantName.includes(lowerTerm) || regionName.includes(lowerTerm);
     });
+
+    this.mappingPlantSuggestions[index] = this.filterMappingPlants(matchingPlants);
   }
 
-  selectAgent(agent: AgentSuggestion): void {
-    this.selectedAgent = agent;
-    this.plantForm.patchValue({ agentName: agent.agentName }, { emitEvent: false });
-    this.agentSuggestions = [];
+  selectMappingPlant(index: number, plant: PlantMaster): void {
+    const row = this.mappingRows.at(index);
+    row.patchValue({
+      plantId: plant.plantId,
+      plantName: plant.plantName,
+      plantQuery: plant.plantName
+    }, { emitEvent: false });
+    this.mappingPlantSuggestions[index] = [];
   }
 
-  addSelectedAgent(): void {
-    if (!this.selectedAgent) {
-      this.formError.agentName = 'Select a valid active agent first';
+  onMappingAgentSearch(index: number): void {
+    const row = this.mappingRows.at(index);
+    const searchTerm = (row.get('agentQuery')?.value || '').trim();
+    const available = this.getAvailableAgentsForMappingRow(index);
+
+    if (!searchTerm) {
+      this.mappingAgentSuggestions[index] = this.filterMappingAgents(available);
       return;
     }
 
-    const exists = this.selectedAgents.some(a => a.agentId === this.selectedAgent?.agentId);
-    if (!exists) {
-      this.selectedAgents.push(this.selectedAgent);
-      this.formError.agentName = null;
-    }
+    const lowerTerm = searchTerm.toLowerCase();
+    const matchingAgents = available.filter(agent => {
+      const haystack = `${agent.agentName} ${agent.mailId || ''} ${agent.accessId || ''}`.toLowerCase();
+      return haystack.includes(lowerTerm);
+    });
 
-    this.plantForm.patchValue({ agentName: '' }, { emitEvent: false });
-    this.selectedAgent = null;
-    this.agentSuggestions = this.getAvailableAgents();
+    this.mappingAgentSuggestions[index] = this.filterMappingAgents(matchingAgents);
   }
 
-  removeSelectedAgent(agentId: number): void {
-    this.selectedAgents = this.selectedAgents.filter(agent => agent.agentId !== agentId);
-    this.agentSuggestions = this.getAvailableAgents();
+  selectMappingAgent(index: number, agent: AgentSuggestion): void {
+    const row = this.mappingRows.at(index);
+    row.patchValue({
+      agentId: agent.agentId,
+      agentName: agent.agentName,
+      agentQuery: agent.agentName
+    }, { emitEvent: false });
+    this.mappingAgentSuggestions[index] = [];
+    this.agentSkillsByRow[index] = [];
+    this.agentService.getAgentSkills(agent.agentId).subscribe({
+      next: (skills) => {
+        skills = (skills as any)?.attributes || '';
+        const skillNames = Array.isArray(skills)
+          ? skills.map(s => s.skill?.skillName || '').filter(Boolean)
+          : [];
+        row.patchValue({ skills: skillNames }, { emitEvent: false });
+        this.agentSkillsByRow[index] = skillNames;
+      },
+      error: (err) => {
+        console.error('Failed to load agent skills:', err);
+        row.patchValue({ skills: [] }, { emitEvent: false });
+        this.agentSkillsByRow[index] = [];
+      }
+    });
+  }
+
+  onMappingAgentEnter(index: number, event: Event): void {
+    event.preventDefault();
+    const row = this.mappingRows.at(index);
+    const agentId = row.get('agentId')?.value;
+    const agentQuery = (row.get('agentQuery')?.value || '').trim();
+
+    if (!agentId && agentQuery) {
+      const exactAgent = this.mappingAgentSuggestions[index].find(agent => agent.agentName.toLowerCase() === agentQuery.toLowerCase());
+      if (exactAgent) {
+        this.selectMappingAgent(index, exactAgent);
+      }
+    }
+
+    const selectedPlantId = row.get('plantId')?.value;
+    const selectedAgentId = row.get('agentId')?.value;
+
+    if (selectedPlantId && selectedAgentId) {
+      this.submitMapping();
+      return;
+    }
+
+    this.mappingError = 'Please select both plant and agent before saving.';
+  }
+
+  submitMapping(): void {
+    this.mappingError = '';
+    this.mappingSuccess = '';
+    this.isMappingSubmitting = true;
+
+    const rowValues = this.mappingRows.controls.map(row => ({
+      plantId: row.get('plantId')?.value,
+      agentId: row.get('agentId')?.value
+    }));
+
+    if (rowValues.length === 0) {
+      this.mappingError = 'Add at least one plant-to-agent mapping.';
+      this.isMappingSubmitting = false;
+      return;
+    }
+
+    const invalidIndex = rowValues.findIndex(row => !row.plantId || !row.agentId);
+    if (invalidIndex >= 0) {
+      this.mappingError = `Row ${invalidIndex + 1} needs both plant and agent selected.`;
+      this.isMappingSubmitting = false;
+      return;
+    }
+
+    const payload = {
+      mappings: rowValues.map(row => ({
+        plantId: Number(row.plantId),
+        agentId: Number(row.agentId),
+        companyId: Number(this.userOrgId),
+        createdBy: Number(localStorage.getItem('userId') || 0),
+        updatedBy: Number(localStorage.getItem('userId') || 0)
+      }))
+    };
+
+    this.plantService.createPlantAgentMapping(payload).subscribe({
+      next: () => {
+        this.isMappingSubmitting = false;
+        this.mappingSuccess = 'Plant-agent mapping saved successfully.';
+        this.mappingError = '';
+        setTimeout(() => { this.mappingSuccess = ''; }, 3000);
+      },
+      error: (err) => {
+        this.isMappingSubmitting = false;
+        this.mappingError = err.error?.message || 'Failed to save mappings.';
+        console.error('Mapping save error', err);
+      }
+    });
+  }
+
+  saveMappingRow(index: number): void {
+    const row = this.mappingRows.at(index);
+    const plantId = row.get('plantId')?.value;
+    const agentId = row.get('agentId')?.value;
+
+    if (!plantId || !agentId) {
+      this.mappingError = 'Select both plant and agent before saving.';
+      return;
+    }
+
+    this.mappingError = '';
+    this.mappingSuccess = '';
+    this.isMappingSubmitting = true;
+
+    const payload = {
+      plantId: Number(plantId),
+      agentId: Number(agentId),
+      companyId: Number(this.userOrgId),
+      createdBy: Number(localStorage.getItem('userId') || 0),
+      updatedBy: Number(localStorage.getItem('userId') || 0),
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
+    };
+
+    this.plantService.createPlantAgentMapping(payload).subscribe({
+      next: () => {
+        this.isMappingSubmitting = false;
+        this.mappingSuccess = 'Plant-agent mapping saved successfully.';
+        this.loadPlantAgentMappings();
+        setTimeout(() => { this.mappingSuccess = ''; }, 3000);
+      },
+      error: (err) => {
+        this.isMappingSubmitting = false;
+        this.mappingError = err.error?.message || 'Failed to save mapping.';
+        console.error('Mapping row save error', err);
+      }
+    });
+  }
+
+  deleteMappingRow(index: number): void {
+    const row = this.mappingRows.at(index);
+    if (!row.get('isExisting')?.value) {
+      this.removeMappingRow(index);
+      return;
+    }
+
+    const mappingId = row.get('mappingId')?.value;
+
+    if (!mappingId) {
+      this.mappingError = 'Unable to delete mapping: missing mapping identifier.';
+      return;
+    }
+
+    this.mappingError = '';
+    this.mappingSuccess = '';
+    this.isMappingSubmitting = true;
+
+    this.plantService.deletePlantAgentMapping(Number(mappingId)).subscribe({
+      next: () => {
+        this.isMappingSubmitting = false;
+        this.mappingSuccess = 'Plant-agent mapping deleted successfully.';
+        this.removeMappingRow(index);
+        setTimeout(() => { this.mappingSuccess = ''; }, 3000);
+      },
+      error: (err) => {
+        this.isMappingSubmitting = false;
+        this.mappingError = err.error?.message || 'Failed to delete mapping.';
+        console.error('Mapping row delete error', err);
+      }
+    });
+  }
+
+  getMappingQueryValue(index: number, field: string): string {
+    const control = this.mappingRows.at(index).get(field);
+    return typeof control?.value === 'string' ? control.value : '';
+  }
+
+  hasRowSkills(index: number): boolean {
+    return Array.isArray(this.agentSkillsByRow[index]) && this.agentSkillsByRow[index].length > 0;
   }
 
   onDeletePlant(plant: PlantMaster): void {
@@ -531,20 +757,6 @@ export class PlantComponent implements OnInit {
   }
 
   // WeekOff popover controls
-  hoveredAgentsPlantId: number | null = null;
-
-  setHoveredAgentsPlantId(plantId: number | null): void {
-    this.hoveredAgentsPlantId = plantId ?? null;
-  }
-
-  clearHoveredAgents(): void {
-    this.hoveredAgentsPlantId = null;
-  }
-
-  isAgentsPopoverVisible(plantId: number | null): boolean {
-    return this.hoveredAgentsPlantId === plantId;
-  }
-
   setHoveredWeekOff(plantId: number | null): void {
     this.hoveredWeekOffPlantId = plantId ?? null;
   }
@@ -566,6 +778,51 @@ export class PlantComponent implements OnInit {
     return this.openWeekOffPlantId === plantId || this.hoveredWeekOffPlantId === plantId;
   }
 
+  applyMappingFilter(): void {
+    this.updateMappingRowVisibility();
+  }
+
+  private updateMappingRowVisibility(): void {
+    const filter = (this.mappingFilter || '').trim().toLowerCase();
+    const selectedPlantId = this.selectedMappingPlantId != null ? Number(this.selectedMappingPlantId) : null;
+
+    this.mappingRowVisibility = this.mappingRows.controls.map(row => {
+      const plantId = row.get('plantId')?.value;
+      const plantName = (row.get('plantName')?.value || '').toLowerCase();
+      const agentName = (row.get('agentName')?.value || '').toLowerCase();
+      const matchesPlant = selectedPlantId == null || plantId === selectedPlantId;
+      const matchesText = !filter || plantName.includes(filter) || agentName.includes(filter);
+      return matchesPlant && matchesText;
+    });
+  }
+
+  private filterMappingPlants(plants: PlantMaster[]): PlantMaster[] {
+    const filter = (this.mappingFilter || '').trim().toLowerCase();
+    if (!filter) {
+      return plants;
+    }
+
+    return plants.filter(plant => {
+      const plantName = plant.plantName?.toLowerCase() || '';
+      const regionName = plant.region?.countryName?.toLowerCase() || '';
+      return plantName.includes(filter) || regionName.includes(filter);
+    });
+  }
+
+  private filterMappingAgents(agents: AgentSuggestion[]): AgentSuggestion[] {
+    const filter = (this.mappingFilter || '').trim().toLowerCase();
+    if (!filter) {
+      return agents;
+    }
+
+    return agents.filter(agent => {
+      const name = agent.agentName?.toLowerCase() || '';
+      const email = agent.mailId?.toLowerCase() || '';
+      const accessId = agent.accessId?.toLowerCase() || '';
+      return name.includes(filter) || email.includes(filter) || accessId.includes(filter);
+    });
+  }
+
   getPaginatedPlants(): PlantMaster[] {
     const startIndex = this.currentPage * this.pageSize;
     const endIndex = startIndex + this.pageSize;
@@ -574,15 +831,17 @@ export class PlantComponent implements OnInit {
 
   filterBySearch(): void {
     const term = (this.searchValue || '').trim().toLowerCase();
-    if (!term) {
-      this.filteredPlants = this.plants;
-    } else {
-      this.filteredPlants = this.plants.filter(plant =>
-        plant.plantName.toLowerCase().includes(term) ||
-        plant.calendar?.calendarCode.toLowerCase().includes(term) ||
-        (plant.region && plant.region.countryName && plant.region.countryName.toLowerCase().includes(term))
-      );
-    }
+    const selectedPlantId = this.selectedPlantId != null ? Number(this.selectedPlantId) : null;
+
+    this.filteredPlants = this.plants.filter(plant => {
+      const matchesPlant = selectedPlantId == null || plant.plantId === selectedPlantId;
+      const matchesText = !term ||
+        plant.plantName?.toLowerCase().includes(term) ||
+        plant.calendar?.calendarCode?.toLowerCase().includes(term) ||
+        plant.region?.countryName?.toLowerCase().includes(term);
+      return matchesPlant && matchesText;
+    });
+
     this.totalRecords = this.filteredPlants.length;
     this.currentPage = 0;
   }
