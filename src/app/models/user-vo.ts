@@ -1,6 +1,7 @@
 import { CompanyMaster, CountryMaster } from './company-master';
 import { CityMaster, LanguageMaster } from './city-master';
 import { CalendarMasterVO } from './calendar-master';
+import { UserLanguageMapping } from './agent-master';
 
 export interface AgentSkillMapping {
   agentSkillId: number;
@@ -24,6 +25,7 @@ export interface AgentMasterVO {
   calendar: CalendarMasterVO;
   organization: CompanyMaster
   agentSkillsMappings: AgentSkillMapping[];
+  languages?: UserLanguageMapping[];
 }
 
 export interface UserVO {

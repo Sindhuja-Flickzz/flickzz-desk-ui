@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ValidatorFn, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthenticationService } from '../../service/authentication.service';
 import { UserVO } from '../../models/user-vo';
@@ -41,6 +41,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
   states: StateMaster[] = [];
   cities: CityMaster[] = [];
   languages: LanguageMaster[] = [];
+  selectedLanguages: LanguageMaster[] = [];
+  filteredLanguages: LanguageMaster[] = [];
+  selectedLanguage: LanguageMaster | null = null;
   skills: SkillMaster[] = [];
   calendars: CalendarMasterVO[] = [];
 
@@ -86,7 +89,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
       state: [{ value: '', disabled: false }, this.isAdminRole ? Validators.required : []],
       city: [{ value: '', disabled: false }, Validators.required],
       calendar: [{ value: '', disabled: false }, !this.isAdminRole ? Validators.required : []],
-      language: [{ value: '', disabled: false }, !this.isAdminRole ? Validators.required : []],
+      languageName: [{ value: '', disabled: false }, []],
+      languageIds: [{ value: [], disabled: false }, this.minArrayLengthValidator(1)],
       skillName: [{ value: '', disabled: false }, []],
       experienceYears: [{ value: 0, disabled: false }, []],
       experienceMonths: [{ value: 0, disabled: false }, []]
@@ -155,6 +159,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private minArrayLengthValidator(minLength: number): ValidatorFn {
+    return (control: AbstractControl) => {
+      const value = control.value;
+      if (!Array.isArray(value) || value.length < minLength) {
+        return { minLengthArray: true };
+      }
+      return null;
+    };
   }
 
   private loadProfileData(): void {
@@ -350,8 +364,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
       registeredNumber: (user.agent?.phoneCode || '') + '-' + (user.agent?.phoneNumber || ''),
       country: user.country?.countryId || '',
       city: user.city?.cityId || '',
-      language: user.language?.languageId || ''
+      languageIds: user.agent?.languages?.map(lang => lang.language?.languageId).filter((id): id is number => id !== undefined) || (user.language ? [user.language.languageId] : [])
     });
+
+    this.selectedLanguages = user.agent?.languages?.map(lang => lang.language).filter((lang): lang is LanguageMaster => !!lang) || [];
+    if (this.selectedLanguages.length === 0 && user.language) {
+      this.selectedLanguages = [user.language];
+    }
+    this.selectedLanguage = null;
+    this.filteredLanguages = [];
 
     // Extract skills data from agent
     if (user.agent?.agentSkillsMappings) {
@@ -376,7 +397,62 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   private disableNonAdminFields(): void {
-    this.profileForm.get('language')?.disable();
+    this.profileForm.get('languageName')?.disable();
+    this.profileForm.get('languageIds')?.disable();
+  }
+
+  onLanguageSearch(): void {
+    const term = (this.profileForm.get('languageName')?.value || '').toString().trim().toLowerCase();
+    this.filteredLanguages = [];
+    this.selectedLanguage = null;
+
+    if (!term) {
+      return;
+    }
+
+    this.filteredLanguages = this.languages.filter(lang =>
+      lang.languageName.toLowerCase().includes(term) &&
+      !this.selectedLanguages.some(selected => selected.languageId === lang.languageId)
+    );
+  }
+
+  addLanguageFromSuggestion(lang: LanguageMaster): void {
+    if (!lang || this.selectedLanguages.some(selected => selected.languageId === lang.languageId)) {
+      return;
+    }
+
+    this.selectedLanguages.push(lang);
+    this.profileForm.patchValue({
+      languageIds: this.selectedLanguages.map(language => language.languageId),
+      languageName: ''
+    });
+    this.filteredLanguages = [];
+    this.selectedLanguage = null;
+  }
+
+  removeLanguage(index: number): void {
+    this.selectedLanguages.splice(index, 1);
+    this.profileForm.patchValue({ languageIds: this.selectedLanguages.map(language => language.languageId) });
+  }
+
+  private findLanguageByName(name: string): LanguageMaster | null {
+    const lower = name?.trim().toLowerCase();
+    if (!lower) {
+      return null;
+    }
+    return this.languages.find(lang => lang.languageName.toLowerCase() === lower) || null;
+  }
+
+  onLanguageEnter(event: Event): void {
+    event.preventDefault();
+    const currentValue = this.profileForm.get('languageName')?.value?.toString().trim();
+    if (!currentValue) {
+      return;
+    }
+    const language = this.findLanguageByName(currentValue);
+    if (language) {
+      this.addLanguageFromSuggestion(language);
+    }
   }
 
   onSkillSearch(): void {
@@ -497,7 +573,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
       this.profileForm.get('registeredNumber')?.enable();
       this.profileForm.get('calendar')?.enable();
       this.profileForm.get('city')?.enable();
-      this.profileForm.get('language')?.enable();
+      this.profileForm.get('languageName')?.enable();
+      this.profileForm.get('languageIds')?.enable();
     }
   }
 
@@ -535,7 +612,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
 
     if (!this.isAdminRole) {
-      if (!this.profileForm.get('calendar')?.value || !this.profileForm.get('language')?.value) {
+      if (!this.profileForm.get('calendar')?.value || this.selectedLanguages.length === 0) {
+        if (this.selectedLanguages.length === 0) {
+          this.profileForm.get('languageIds')?.setErrors({ minLengthArray: true });
+        }
         return false;
       }
     }
@@ -553,8 +633,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
       if (!state) return false;
     } else {
       const calendar = this.profileForm.get('calendar')?.value;
-      const language = this.profileForm.get('language')?.value;
-      if (!calendar || !language) return false;
+      const languageSelected = this.selectedLanguages.length > 0;
+      if (!calendar || !languageSelected) return false;
     }
 
     const regCtrl = this.profileForm.get('registeredNumber');
@@ -606,7 +686,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         phoneCode: this.extractPhoneCode(formValue.registeredNumber),
         phoneNumber: this.extractPhoneNumber(formValue.registeredNumber),
         cityId: formValue.city,
-        languageId: formValue.language,
+        languageIds: this.selectedLanguages.map(lang => lang.languageId),
         calendarId: Number(formValue.calendar),
         createdBy: Number(localStorage.getItem('userId')),
         updatedBy: Number(localStorage.getItem('userId')),

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { PageEvent } from '@angular/material/paginator';
@@ -34,6 +34,9 @@ export class AgentComponent implements OnInit {
   suggestedSkills: SkillMaster[] = [];
   filteredSkills: SkillMaster[] = [];
   selectedSkill: SkillMaster | null = null;
+  selectedLanguage: LanguageMaster | null = null;
+  selectedLanguages: LanguageMaster[] = [];
+  filteredLanguages: LanguageMaster[] = [];
   selectedCountry: CountryMaster | null = null;
   selectedCity: CityMaster | null = null;
   selectedTimezone: string | null = null;
@@ -48,6 +51,7 @@ export class AgentComponent implements OnInit {
   searchValue = '';
   userOrgId: string = '';
   hoveredSkillAgentId: number | null = null;
+  hoveredLanguageAgentId: number | null = null;
 
   loading = false;
   formError: any = {};
@@ -79,7 +83,8 @@ export class AgentComponent implements OnInit {
       calendarId: [null, Validators.required],
       countryId: [null, Validators.required],
       cityId: [null, Validators.required],
-      languageId: [null, Validators.required],
+      languageName: [''],
+      languageIds: [[], this.minArrayLengthValidator(1)],
       skillName: ['', Validators.pattern('^[a-zA-Z0-9 ]+$')],
       experienceYears: [0, [Validators.min(0)]],
       experienceMonths: [0, [Validators.min(0), Validators.max(11)]]
@@ -265,7 +270,7 @@ export class AgentComponent implements OnInit {
         this.agents = (result as any).attributes || [];
         // Calculate local time for each agent
         this.agents.forEach(agent => {
-          agent.phone = (agent.phoneCode || '') + (agent.phoneNumber || '')
+          agent.phone = (agent.phoneCode || '') + (agent.phoneNumber || '');
           if (agent.city?.timezone) {
             agent.localTime = this.getLocalTime(agent.city.timezone);
           } else {
@@ -344,15 +349,19 @@ export class AgentComponent implements OnInit {
     this.agentForm.reset();
     this.skillsList = [];
     this.filteredSkills = [];
+    this.selectedLanguages = [];
+    this.filteredLanguages = [];
     this.originalFormValue = null;
     this.submitError = '';
     this.submitSuccess = '';
     this.selectedSkill = null;
+    this.selectedLanguage = null;
     this.cities = [];
     this.selectedCity = null;
     this.localTime = '';
     this.setDefaultOrganizationAndCalendar();
     this.setDefaultCountry();
+    this.agentForm.patchValue({ languageIds: [], languageName: '' });
   }
 
   addSkill(): void {
@@ -425,6 +434,71 @@ export class AgentComponent implements OnInit {
     this.agentForm.patchValue({ skillName: skill.skillName });
     this.filteredSkills = [];
     this.formError.skillName = null;
+  }
+
+  onLanguageSearch(): void {
+    const term = (this.agentForm.get('languageName')?.value || '').trim().toLowerCase();
+    if (!term) {
+      this.filteredLanguages = [];
+      this.selectedLanguage = null;
+      return;
+    }
+
+    const currentValue = this.agentForm.get('languageName')?.value || '';
+    if (!this.selectedLanguage || this.selectedLanguage.languageName.toLowerCase() !== currentValue.toLowerCase()) {
+      this.selectedLanguage = null;
+    }
+
+    this.filteredLanguages = this.languages.filter(lang =>
+      lang.languageName.toLowerCase().includes(term) &&
+      !this.selectedLanguages.some(selected => selected.languageId === lang.languageId)
+    );
+  }
+
+  addLanguageFromSuggestion(lang: LanguageMaster): void {
+    if (!lang) { return; }
+    if (!this.selectedLanguages.some(selected => selected.languageId === lang.languageId)) {
+      this.selectedLanguages.push(lang);
+      this.agentForm.patchValue({
+        languageIds: this.selectedLanguages.map(language => language.languageId),
+        languageName: ''
+      });
+    }
+    this.selectedLanguage = lang;
+    this.filteredLanguages = [];
+    this.formError.languageIds = null;
+  }
+
+  onLanguageEnter(event: Event): void {
+    event.preventDefault();
+    if (this.selectedLanguage) {
+      this.addLanguageFromSuggestion(this.selectedLanguage);
+    }
+  }
+
+  clearFormError(key: string): void {
+    this.formError[key] = null;
+  }
+
+  getAgentLanguageList(agent: AgentMaster): string[] {
+    return agent.languages?.map(lang => lang.language?.languageName).filter((name): name is string => !!name) || [];
+  }
+
+  removeLanguage(index: number): void {
+    this.selectedLanguages.splice(index, 1);
+    this.agentForm.patchValue({
+      languageIds: this.selectedLanguages.map(language => language.languageId)
+    });
+  }
+
+  getAgentLanguageNames(agent: AgentMaster): string {
+    if (agent.languages && agent.languages.length > 0) {
+      return agent.languages
+        .map(lang => lang.language?.languageName)
+        .filter((name): name is string => !!name)
+        .join(', ');
+    }
+    return '';
   }
 
   editSkill(index: number): void {
@@ -511,13 +585,14 @@ export class AgentComponent implements OnInit {
       accessId: this.agentForm.value.accessId,
       phoneCode: this.selectedCountry ? this.selectedCountry.phoneCode : '',
       phoneNumber: this.agentForm.value.phoneNumber,
-      // phone: this.selectedCountry ? `${this.selectedCountry.phoneCode}${this.agentForm.value.phoneNumber}` : this.agentForm.value.phoneNumber,
       orgId: Number(this.userOrgId),
       skills,
       calendarId: Number(this.agentForm.value.calendarId),
       countryId: Number(this.agentForm.value.countryId),
       cityId: Number(this.agentForm.value.cityId),
-      languageId: Number(this.agentForm.value.languageId),
+      languageIds: Array.isArray(this.agentForm.value.languageIds)
+        ? this.agentForm.value.languageIds.map((langId: any) => Number(langId))
+        : [],
       createdBy: Number(currentUser),
       updatedBy: Number(currentUser),
       isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
@@ -587,7 +662,7 @@ export class AgentComponent implements OnInit {
         currentValue.calendarId !== this.originalFormValue.calendarId ||
         currentValue.countryId !== this.originalFormValue.countryId ||
         currentValue.cityId !== this.originalFormValue.cityId ||
-        currentValue.languageId !== this.originalFormValue.languageId) {
+        !this.areArraysEqual(currentValue.languageIds, this.originalFormValue.languageIds)) {
       return true;
     }
     
@@ -616,7 +691,7 @@ export class AgentComponent implements OnInit {
       calendarId: formValue.calendarId,
       countryId: formValue.countryId,
       cityId: formValue.cityId,
-      languageId: formValue.languageId,
+      languageIds: Array.isArray(formValue.languageIds) ? formValue.languageIds : [],
       skills: JSON.parse(JSON.stringify(this.skillsList))
     };
   }
@@ -647,8 +722,10 @@ export class AgentComponent implements OnInit {
           calendarId: agent.calendar?.calendarId || null,
           countryId: agent.country?.countryId || null,
           cityId: agent.city?.cityId || null,
-          languageId: agent.language?.languageId || null
+          languageIds: agent.languages?.map(l => l.language?.languageId).filter((id): id is number => id !== undefined) || [],
+          languageName: ''
         });
+        this.selectedLanguages = agent.languages?.map(l => l.language).filter((lang): lang is LanguageMaster => !!lang) || [];
 
         // Load cities if country is selected, then restore city/time
         if (agent.country?.countryId) {
@@ -719,14 +796,15 @@ export class AgentComponent implements OnInit {
     if (!term) {
       this.filteredAgents = this.agents;
     } else {
-      this.filteredAgents = this.agents.filter(agent =>
-        agent.agentName.toLowerCase().includes(term) ||
-        (agent.mailId && agent.mailId.toLowerCase().includes(term)) ||
-        (agent.phone && agent.phone.toLowerCase().includes(term)) ||
-        (agent.country?.countryName && agent.country.countryName.toLowerCase().includes(term)) ||
-        (agent.city?.cityName && agent.city.cityName.toLowerCase().includes(term)) ||
-        (agent.language?.languageName && agent.language.languageName.toLowerCase().includes(term))
-      );
+      this.filteredAgents = this.agents.filter(agent => {
+        const languageText = this.getAgentLanguageNames(agent).toLowerCase();
+        return agent.agentName.toLowerCase().includes(term) ||
+          (agent.mailId && agent.mailId.toLowerCase().includes(term)) ||
+          (agent.phone && agent.phone.toLowerCase().includes(term)) ||
+          (agent.country?.countryName && agent.country.countryName.toLowerCase().includes(term)) ||
+          (agent.city?.cityName && agent.city.cityName.toLowerCase().includes(term)) ||
+          languageText.includes(term);
+      });
     }
     this.totalRecords = this.filteredAgents.length;
     this.currentPage = 0;
@@ -735,6 +813,23 @@ export class AgentComponent implements OnInit {
   onPageChange(event: PageEvent): void {
     this.currentPage = event.pageIndex;
     this.pageSize = event.pageSize;
+  }
+
+  private minArrayLengthValidator(min: number) {
+    return (control: AbstractControl) => {
+      const value = control.value;
+      return Array.isArray(value) && value.length >= min ? null : { minArrayLength: { requiredLength: min, actualLength: Array.isArray(value) ? value.length : 0 } };
+    };
+  }
+
+  private areArraysEqual(arr1: any[], arr2: any[]): boolean {
+    if (!Array.isArray(arr1) || !Array.isArray(arr2)) {
+      return false;
+    }
+    if (arr1.length !== arr2.length) {
+      return false;
+    }
+    return arr1.every((value, index) => value === arr2[index]);
   }
 
   setDefaultOrganizationAndCalendar(): void {
@@ -758,7 +853,7 @@ export class AgentComponent implements OnInit {
       this.agentForm.patchValue({ countryCode: defaultCountry.isoCode });
       this.updatePhoneValidators();
     }
-    this.agentForm.patchValue({ countryId: '' , cityId: '', languageId: ''});
+    this.agentForm.patchValue({ countryId: '' , cityId: '', languageIds: []});
   }
 
   onCountrySelect(country: CountryMaster | undefined): void {

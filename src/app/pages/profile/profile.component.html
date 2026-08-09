@@ -16,8 +16,6 @@
     <div *ngIf="isEditing" class="edit-actions">
       <button class="edit-btn" (click)="saveProfile()" [disabled]="!canSave()">
         <span class="icon" *ngIf="!isSaving">💾</span>
-        <!-- <span *ngIf="isSaving">Saving...</span>
-        <span *ngIf="!isSaving">Save</span> -->
       </button>
       <button class="cancel-btn" (click)="cancelEditing()" [disabled]="isSaving">
         <span class="icon">✕</span>
@@ -241,20 +239,36 @@
           </div>
 
           <div class="form-group" *ngIf="!isAdminRole">
-            <label for="language">{{ getFieldLabel('language') }} *</label>
-            <select
-              id="language"
-              formControlName="language"
-              [disabled]="!isEditing"
-              [class.readonly]="!isEditing">
-              <option value="">Select Language</option>
-              <option *ngFor="let language of languages" [value]="language.languageId">{{ language.languageName }}</option>
-            </select>
-            <span *ngIf="profileForm.get('language')?.hasError('required') && isEditing && (profileForm.get('language')?.touched || profileForm.get('language')?.dirty)" class="error-text">
-              Language selection is required.
-            </span>
+            <label for="languageName">{{ getFieldLabel('language') }} *</label>
+            <div class="language-select-container">
+              <input
+                id="languageName"
+                type="text"
+                formControlName="languageName"
+                [readonly]="!isEditing"
+                [class.readonly]="!isEditing"
+                placeholder="Start typing to pick language"
+                (input)="onLanguageSearch()"
+                (keydown.enter)="onLanguageEnter($event)"
+                autocomplete="off" />
+              <div class="suggestions" *ngIf="filteredLanguages.length > 0 && isEditing">
+                <div class="suggestion-items">
+                  <span class="suggestion" *ngFor="let lang of filteredLanguages" (click)="addLanguageFromSuggestion(lang)">{{ lang.languageName }}</span>
+                </div>
+              </div>
             </div>
-          </div>        
+            <span *ngIf="profileForm.get('languageIds')?.hasError('minLengthArray') && isEditing" class="error-text">
+              Please select at least one language.
+            </span>
+
+            <div class="selected-skills selected-languages" *ngIf="selectedLanguages.length > 0">
+              <span class="chip" *ngFor="let lang of selectedLanguages; let i = index">
+                {{ lang.languageName }}
+                <button type="button" class="remove-chip" (click)="removeLanguage(i); $event.stopPropagation()">×</button>
+              </span>
+            </div>
+          </div>
+        </div>        
         </div>
 
             <!-- Skills Section -->

@@ -431,9 +431,11 @@
     }
   }
 
+  .language-cell,
   .skill-cell {
     position: relative;
 
+    .language-view-btn,
     .skill-view-btn {
       border: none;
       background: transparent;
@@ -462,6 +464,20 @@
         font-size: 20px;
         line-height: 20px;
       }
+    }
+
+    .language-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 4px;
+      min-width: 20px;
+      height: 20px;
+      background: #e9f7ef;
+      color: #084d8f;
+      border-radius: 10px;
+      font-size: 12px;
+      padding: 0 6px;
     }
 
     .skill-tooltip {
