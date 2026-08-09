@@ -430,7 +430,8 @@ export class PlantComponent implements OnInit {
   addMappingRow(): void {
     this.mappingRows.push(this.createMappingRow());
     const rowIndex = this.mappingRows.length - 1;
-    this.mappingPlantSuggestions[rowIndex] = this.filterMappingPlants(this.activePlants);
+    // For newly added rows ignore the mappingFilter so users can pick any plant
+    this.mappingPlantSuggestions[rowIndex] = this.activePlants || [];
     this.mappingAgentSuggestions[rowIndex] = this.filterMappingAgents(this.getAvailableAgentsForMappingRow(rowIndex));
     this.agentSkillsByRow[rowIndex] = [];
     this.mappingRowVisibility[rowIndex] = true;
@@ -498,8 +499,11 @@ export class PlantComponent implements OnInit {
   onMappingPlantSearch(index: number): void {
     const row = this.mappingRows.at(index);
     const searchTerm = (row.get('plantQuery')?.value || '').trim();
+    const isExisting = !!row.get('isExisting')?.value;
+
     if (!searchTerm) {
-      this.mappingPlantSuggestions[index] = this.filterMappingPlants(this.activePlants);
+      // show all active plants for new rows (ignore mapping filter), otherwise respect mappingFilter
+      this.mappingPlantSuggestions[index] = isExisting ? this.filterMappingPlants(this.activePlants) : (this.activePlants || []);
       return;
     }
 
@@ -510,7 +514,8 @@ export class PlantComponent implements OnInit {
       return plantName.includes(lowerTerm) || regionName.includes(lowerTerm);
     });
 
-    this.mappingPlantSuggestions[index] = this.filterMappingPlants(matchingPlants);
+    // for existing rows, also apply mappingFilter; for new rows, show direct matches
+    this.mappingPlantSuggestions[index] = isExisting ? this.filterMappingPlants(matchingPlants) : matchingPlants;
   }
 
   selectMappingPlant(index: number, plant: PlantMaster): void {
