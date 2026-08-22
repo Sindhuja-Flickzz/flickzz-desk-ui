@@ -3,7 +3,6 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { PageEvent } from '@angular/material/paginator';
 import { ImpactService } from '../../service/impact.service';
-import { CompanyMaster } from '../../models/company-master';
 import { ImpactMasterVO, ImpactRequest } from '../../models/impact-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { USER_ROLES } from 'src/app/data/app_constants';
@@ -21,7 +20,6 @@ export class ImpactComponent implements OnInit {
   isEditMode = false;
   originalFormValue: any = null;
 
-  companies: CompanyMaster[] = [];
   impacts: ImpactMasterVO[] = [];
   filteredImpacts: ImpactMasterVO[] = [];
   searchValue = '';
@@ -48,8 +46,6 @@ export class ImpactComponent implements OnInit {
       impactId: [null],
       impactCode: ['', [Validators.required, Validators.pattern(this.alphanumericPattern)]],
       rank: [null, [Validators.required, Validators.min(1)]],
-      slaMultiplier: [0.00, [Validators.required, Validators.min(0)]],
-      orgId: [null, Validators.required],
       createdBy: [''],
       updatedBy: ['']
     });
@@ -65,19 +61,15 @@ export class ImpactComponent implements OnInit {
       this.submitError = '';
       this.submitSuccess = '';
     });
+
+    this.impactForm.get('impactCode')?.valueChanges.subscribe(() => {
+      delete this.formError.impactCode;
+      this.submitError = '';
+    });
   }
 
   loadAllData(): void {
     this.loading = true;
-    this.impactService.getCompanyList().subscribe({
-      next: (response) => { this.companies = (response as any).attributes || response || []; },
-      error: () => { this.companies = []; }
-    });
-
-    this.impactForm.patchValue({
-      slaMultiplier: 0.00,
-      orgId: ''
-    });
     this.loadImpactList();
     this.loading = false;
   }
@@ -85,12 +77,7 @@ export class ImpactComponent implements OnInit {
   loadImpactList(): void {
     let orgId = this.getUserOrganizationId();
     if (orgId === null) {
-    //   this.impacts = [];
-    //   this.filteredImpacts = [];
-    //   this.totalRecords = 0;
-    //   this.submitError = 'Organization context not available. Cannot load impact list.';
-    //   return;
-    orgId = 0; // Fallback to 0 if organization ID is not available
+      orgId = 0; // Fallback to 0 if organization ID is not available
     }
 
     this.impactService.getImpactList(orgId).subscribe({
@@ -114,7 +101,6 @@ export class ImpactComponent implements OnInit {
       this.resetForm();
       this.pageTitle = this.isEditMode ? 'Edit Impact' : 'Create Impact';
       this.impactForm.get('impactCode')?.enable();
-      this.impactForm.get('orgId')?.enable();
     }
     if (tab === 'list') {
       this.isEditMode = false;
@@ -136,12 +122,7 @@ export class ImpactComponent implements OnInit {
     this.originalFormValue = null;
     this.submitError = '';
     this.submitSuccess = '';
-    this.impactForm.patchValue({
-      slaMultiplier: 0.00,
-      orgId: ''
-    });
     this.impactForm.get('impactCode')?.enable();
-    this.impactForm.get('orgId')?.enable();
   }
 
   onSave(): void {
@@ -158,9 +139,6 @@ export class ImpactComponent implements OnInit {
       if (key === 'impactCode' && field?.hasError('pattern')) {
         this.formError[key] = 'Impact Code can contain only letters and numbers';
       }
-      if ((key === 'rank' || key === 'slaMultiplier') && field?.hasError('min')) {
-        this.formError[key] = `${key} must be a positive number`;
-      }
     });
 
     if (Object.keys(this.formError).length > 0) {
@@ -168,12 +146,11 @@ export class ImpactComponent implements OnInit {
       return;
     }
 
-    const payload: ImpactRequest = {
+    const requestPayload: ImpactRequest = {
       impactId: formValue.impactId,
       impactCode: formValue.impactCode,
       impactLevel: Number(formValue.rank),
-      slaMultiplier: Number(formValue.slaMultiplier),
-      orgId: Number(formValue.orgId),
+      orgId: Number(localStorage.getItem('userOrgId') || 0),
       createdBy: Number(localStorage.getItem('userId')),
       updatedBy: Number(localStorage.getItem('userId')),
       isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
@@ -187,7 +164,7 @@ export class ImpactComponent implements OnInit {
         return;
       }
 
-      this.impactService.updateImpact(payload).subscribe({
+      this.impactService.updateImpact(requestPayload).subscribe({
         next: () => {
           this.isSubmitting = false;
           this.submitSuccess = 'Impact updated successfully.';
@@ -202,11 +179,11 @@ export class ImpactComponent implements OnInit {
         error: (err) => {
           this.isSubmitting = false;
           console.error('Update impact error', err);
-          this.submitError = err.error?.message || 'Failed to update impact.';
+          this.submitError = err.error?.description || 'Failed to update impact.';
         }
       });
     } else {
-      this.impactService.createImpact(payload).subscribe({
+      this.impactService.createImpact(requestPayload).subscribe({
         next: () => {
           this.isSubmitting = false;
           this.submitSuccess = 'Impact created successfully.';
@@ -219,7 +196,7 @@ export class ImpactComponent implements OnInit {
         error: (err) => {
           this.isSubmitting = false;
           console.error('Create impact error', err);
-          this.submitError = err.error?.message || 'Failed to create impact.';
+          this.submitError = err.error?.description || 'Failed to create impact.';
         }
       });
     }
@@ -245,13 +222,10 @@ export class ImpactComponent implements OnInit {
           impactId: impactData.impactId,
           impactCode: impactData.impactCode,
           rank: impactData.impactLevel,
-          slaMultiplier: impactData.slaMultiplier,
-          orgId: impactData.organization?.companyId || null,
           createdBy: impactData.createdBy,
           updatedBy: impactData.updatedBy || impactData.createdBy
         });
         this.impactForm.get('impactCode')?.disable();
-        this.impactForm.get('orgId')?.disable();
         this.originalFormValue = this.impactForm.getRawValue();
       },
       error: (err) => {
@@ -303,12 +277,19 @@ export class ImpactComponent implements OnInit {
       this.filteredImpacts = [...this.impacts];
     } else {
       this.filteredImpacts = this.impacts.filter((impact) =>
-        impact.impactCode?.toLowerCase().includes(term) ||
-        impact.organization?.companyName?.toLowerCase().includes(term)
+        impact.impactCode?.toLowerCase().includes(term)
       );
     }
     this.totalRecords = this.filteredImpacts.length;
     this.currentPage = 0;
+  }
+
+  getImpactStatus(impact: ImpactMasterVO): string {
+    return impact.isActive === true ? 'Active' : 'Inactive';
+  }
+
+  getImpactStatusClass(impact: ImpactMasterVO): string {
+    return impact.isActive === true ? 'status-pill active' : 'status-pill inactive';
   }
 
   getPaginatedImpacts(): ImpactMasterVO[] {

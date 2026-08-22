@@ -4,7 +4,7 @@ export interface ImpactMasterVO {
   impactId: number;
   impactCode: string;
   impactLevel: number;
-  slaMultiplier: number;
+  isActive?: boolean;
   organization: CompanyMaster;
   createdBy?: string;
   updatedBy?: string;
@@ -14,7 +14,6 @@ export interface ImpactRequest {
   impactId?: number;
   impactCode: string;
   impactLevel: number;
-  slaMultiplier: number;
   orgId: number;
   createdBy: number;
   updatedBy: number;
