@@ -12,8 +12,8 @@ export class NumberRangeService {
 
   constructor(private http: HttpClient) { }
 
-  getAllConfigs(): Observable<RequestConfigVO[]> {
-    return this.http.get<RequestConfigVO[]>(`${this.baseUrl}/request/config/list`);
+  getAllConfigs(orgId: number): Observable<RequestConfigVO[]> {
+    return this.http.get<RequestConfigVO[]>(`${this.baseUrl}/request/config/list/${orgId}`);
   }
 
   getConfigByTypeAndPlant(requestType: string, plantId: number): Observable<RequestConfigVO> {

@@ -7,6 +7,7 @@ import { CompanyMaster } from '../../models/company-master';
 import { ImpactMasterVO, ImpactRequest } from '../../models/impact-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { USER_ROLES } from 'src/app/data/app_constants';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-impact',
@@ -40,7 +41,8 @@ export class ImpactComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private impactService: ImpactService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private router: Router
   ) {
     this.impactForm = this.fb.group({
       impactId: [null],
@@ -257,6 +259,10 @@ export class ImpactComponent implements OnInit {
         this.submitError = 'Failed to load impact details.';
       }
     });
+  }
+
+  backToHome(): void {
+    this.router.navigate(['/settings']);
   }
 
   onDeleteImpact(impact: ImpactMasterVO): void {

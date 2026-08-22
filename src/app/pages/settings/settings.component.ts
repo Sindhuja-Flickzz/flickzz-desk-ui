@@ -12,14 +12,10 @@ export class SettingsComponent {
     { title: 'Plant', route: '/plant' },
     { title: 'Calendar', route: '/calendar' },
     { title: 'Skills', route: '/skill' },
-    { title: 'Agent', route: '/agent' }
-    // { title: 'Support Calendar', route: '/calendar/create-calendar', queryParams: { type: 'support' } },
-    // { title: 'Requestor Calendar', route: '/calendar/create-calendar', queryParams: { type: 'requestor' } },
-    // { title: 'Calendar List', route: '/calendar/list' },
-    // { title: 'Priority', route: '/priority' },
-    // { title: 'Business Offering', route: '/business-offering' },
-    // { title: 'Number Range', route: '/number-range' },
-    // { title: 'Impact', route: '/impact' }
+    { title: 'Agent', route: '/agent' },
+    { title: 'Number Range', route: '/number-range' },
+    { title: 'Impact', route: '/impact' },
+    {title: 'RITM', route: '/ritm'}
   ];
 
   constructor(private router: Router) {}

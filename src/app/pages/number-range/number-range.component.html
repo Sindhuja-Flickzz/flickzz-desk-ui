@@ -1,5 +1,6 @@
 <div class="number-range-page">
   <div class="tabs">
+    <button type="button" class="save-btn header-back" (click)="backToHome()"><mat-icon>chevron_left</mat-icon></button>
     <button class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ isEditMode ? 'Edit' : 'Create' }}</button>
     <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
   </div>
@@ -14,7 +15,8 @@
       <div class="field-row">
         <div class="field">
           <label>Request Type</label>
-          <select formControlName="requestType" [disabled]="isEditMode" title="Request Type">
+          <input *ngIf="isEditMode" type="text" formControlName="requestType" readonly title="Request Type" />
+          <select *ngIf="!isEditMode" formControlName="requestType" title="Request Type">
             <option value="" disabled>Select request type</option>
             <option *ngFor="let type of requestTypes" [value]="type">{{ type }}</option>
           </select>
@@ -30,37 +32,34 @@
 
       <div class="field-row">
         <div class="field">
-          <label>Revision</label>
-          <input type="number" formControlName="revision" readonly title="Revision" />
-        </div>
-
-        <div class="field">
-          <label>Plant</label>
-          <select formControlName="plant" [disabled]="isEditMode"  title="Plant">
-            <option [ngValue]="null" disabled>Select plant</option>
-            <option *ngFor="let plant of plants" [ngValue]="plant">{{ plant.plantName }}</option>
-          </select>
-          <span *ngIf="formError.plant" class="error-text">{{ formError.plant }}</span>
-        </div>
-      </div>
-
-      <div class="field-row">
-        <div class="field">
           <label>Range From</label>
-          <input type="number" formControlName="rangeFrom" placeholder="Enter start range" />
+          <input type="number" formControlName="rangeFrom" placeholder="Enter start range" [readonly]="!canEditRangeFrom()" />
           <span *ngIf="formError.rangeFrom" class="error-text">{{ formError.rangeFrom }}</span>
         </div>
 
         <div class="field">
           <label>Range To</label>
-          <input type="number" formControlName="rangeTo" placeholder="Enter end range" />
+          <input type="number" formControlName="rangeTo" placeholder="Enter end range" [readonly]="!canEditRangeTo()" />
           <span *ngIf="formError.rangeTo" class="error-text">{{ formError.rangeTo }}</span>
+        </div>
+
+        <div class="field switch-field">
+          <label>Calculate Backward</label>
+          <mat-slide-toggle formControlName="calculateBackward" [disabled]="!canEditCalculateBackward()"
+            (change)="calculateCallHorizonPercentage()">Enabled</mat-slide-toggle>
         </div>
       </div>
 
-      <div class="field switch-field">
-        <label>Calculate Backward</label>
-        <mat-slide-toggle formControlName="calculateBackward">Enabled</mat-slide-toggle>
+      <div class="field-row">
+        <div class="field">
+          <label>Call Horizon %</label>
+          <input type="number" formControlName="callHorizon" placeholder="Enter call horizon %" />
+          <span *ngIf="formError.callHorizon" class="error-text">{{ formError.callHorizon }}</span>
+        </div>
+        <div class="field">
+          <label>Call Horizon Days</label>
+          <input type="text" formControlName="callHorizonPercentage" readonly title="Auto-calculated Call Horizon Days" />
+        </div>
       </div>
 
       <div class="actions">
@@ -78,7 +77,7 @@
     <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
 
     <div class="search-container">
-      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by type, prefix, or plant..." class="search-input" />
+      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by type or prefix..." class="search-input" />
     </div>
 
     <div class="table-wrapper">
@@ -87,26 +86,30 @@
           <tr>
             <th>Request Type</th>
             <th>Prefix</th>
-            <th>Revision</th>
             <th>Range From</th>
             <th>Range To</th>
             <th>Backward</th>
-            <th>Plant</th>
+            <th>Status</th>
+            <th>Call Horizon</th>
+            <th>Call Horizon %</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let config of getPaginatedConfigs()">
+          <tr *ngFor="let config of getPaginatedConfigs()" [class.enabled-config]="config.isEnabled">
             <td>{{ config.requestType }}</td>
             <td>{{ config.requestPrefix }}</td>
-            <td>{{ config.revision }}</td>
             <td>{{ config.rangeFrom }}</td>
             <td>{{ config.rangeTo }}</td>
             <td>{{ config.calculateBackward ? 'Yes' : 'No' }}</td>
-            <td>{{ config.plant?.plantName }}</td>
-            <td class="action-buttons">
+            <td>
+              <span [class]="getConfigStatusClass(config)">{{ getConfigStatus(config) }}</span>
+            </td>
+            <td>{{ config.callHorizonDays }}</td>
+            <td>{{ config.callHorizonPercentage?.toFixed(2) || 0 }}%</td>
+            <td class="action-buttons" *ngIf="config.isActive">
               <button type="button" (click)="onViewConfig(config)"><mat-icon>edit</mat-icon></button>
-              <button type="button" (click)="onDeleteConfig(config)"><mat-icon>delete</mat-icon></button>
+              <button type="button" (click)="onDeleteConfig(config)" *ngIf="!config.isEnabled"><mat-icon>delete</mat-icon></button>
             </td>
           </tr>
         </tbody>

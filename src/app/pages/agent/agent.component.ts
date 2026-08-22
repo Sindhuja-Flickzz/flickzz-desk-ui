@@ -96,8 +96,8 @@ export class AgentComponent implements OnInit {
     this.loadAllData();
 
     this.agentForm.valueChanges.subscribe(() => {
-      if (!this.isEditMode) {
-        return;
+      if (Object.keys(this.formError).length > 0) {
+        this.formError = {};
       }
       this.submitError = '';
       this.submitSuccess = '';

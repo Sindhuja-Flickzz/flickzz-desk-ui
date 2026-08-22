@@ -14,7 +14,6 @@ import {AgentComponent} from "./pages/agent/agent.component";
 import {PriorityComponent} from "./pages/priority/priority.component";
 import {ImpactComponent} from "./pages/impact/impact.component";
 import {RitmComponent} from "./pages/ritm/ritm.component";
-import {BusinessOfferingComponent} from "./pages/business-offering/business-offering.component";
 import {NumberRangeComponent} from "./pages/number-range/number-range.component";
 import {VerifyComponent} from './pages/verify/verify.component';
 import {EnquiryRegistrationComponent} from './pages/enquiry-registration/enquiry-registration.component';
@@ -134,11 +133,6 @@ const routes: Routes = [
   {
     path: 'number-range',
     component: NumberRangeComponent,
-    canActivate: [authGuard]
-  },
-  {
-    path: 'business-offering',
-    component: BusinessOfferingComponent,
     canActivate: [authGuard]
   },
   {
