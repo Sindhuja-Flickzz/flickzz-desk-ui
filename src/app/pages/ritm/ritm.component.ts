@@ -2,8 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RitmService } from '../../service/ritm.service';
+import { CompanyService } from '../../service/company.service';
 import { PriorityMaster } from '../../models/priority-master';
 import { ApproverItem, CatalogTask, ChangeRequestItem, LogEntry, NoteItem, TaskSlaItem, UserProfile, WorkflowStage } from '../../models/ritm.model';
+import { AgentMaster } from 'src/app/models/agent-master';
+import { CompanyRole } from 'src/app/models/company-master';
 
 @Component({
   selector: 'app-ritm',
@@ -13,7 +16,7 @@ import { ApproverItem, CatalogTask, ChangeRequestItem, LogEntry, NoteItem, TaskS
 export class RitmComponent implements OnInit {
   ritmForm!: FormGroup;
   taskForm!: FormGroup;
-  users: UserProfile[] = [];
+  users: AgentMaster[] = [];
   priorities: PriorityMaster[] = [];
   notes: NoteItem[] = [];
   logs: LogEntry[] = [];
@@ -26,18 +29,24 @@ export class RitmComponent implements OnInit {
   loading = false;
   submitError = '';
   submitSuccess = '';
-  currentUser?: UserProfile;
+  currentUser?: AgentMaster;
   selectedPriority?: PriorityMaster;
   isEditMode = false;
   ritmId = '';
+  businessPartnerId: number | null = null;
   role = localStorage.getItem('userRole') || '';
+  orgId = localStorage.getItem('userOrgId') || '';
+  bpOptions: CompanyRole[] = [];
 
   constructor(
     private fb: FormBuilder,
     private ritmService: RitmService,
+    private companyService: CompanyService,
     private route: ActivatedRoute,
     private router: Router
-  ) { }
+  ) {
+    this.orgId = localStorage.getItem('userOrgId') || '';
+   }
 
   ngOnInit(): void {
     this.initializeForms();
@@ -84,9 +93,23 @@ export class RitmComponent implements OnInit {
   private initializePage(): void {
     this.loading = true;
     this.loadUsers();
-    this.loadPriorities();
 
     const id = this.route.snapshot.queryParamMap.get('id');
+    this.companyService.getServiceProviderList(Number(this.orgId)).subscribe({
+        next: (response) => {
+          this.bpOptions = (response as any).attributes || response || [];
+          const matchingRole = this.bpOptions.find((bp) => {
+            return bp.company?.companyId != null && bp.mappedCompany?.companyId != null
+              && bp.company.companyId === bp.mappedCompany.companyId;
+          });
+          this.businessPartnerId = matchingRole?.businessPartnerId ?? null;
+          this.loadPriorities();
+          
+        },
+        error: () => {
+          console.error('Failed to load business partners');
+        }
+      });
     if (id) {
       this.isEditMode = true;
       this.ritmId = id;
@@ -95,8 +118,9 @@ export class RitmComponent implements OnInit {
   }
 
   private loadUsers(): void {
-    this.ritmService.getUsers().subscribe({
-      next: (users: UserProfile[] | any) => {
+    const orgId = localStorage.getItem('userOrgId') || '';
+    this.ritmService.getAgents(orgId).subscribe({
+      next: (users: AgentMaster[] | any) => {
         this.users = (users as any).attributes || [];
         this.setCurrentUser();
         this.setRequestedForDefault();
@@ -113,7 +137,7 @@ export class RitmComponent implements OnInit {
   }
 
   private loadPriorities(): void {
-    this.ritmService.getPriorities().subscribe({
+    this.ritmService.getPriorities(this.businessPartnerId).subscribe({
       next: (priorities: PriorityMaster[] | any) => {
         this.priorities = (priorities as any).attributes || [];
         this.selectedPriority = this.priorities.find(priority => priority.priorityId === this.ritmForm.get('priority')?.value);
@@ -131,20 +155,20 @@ export class RitmComponent implements OnInit {
 
   private setCurrentUser(): void {
     const currentUserId = localStorage.getItem('userId') || '';
-    const matchedUser = this.users.find(user => user.userId === currentUserId);
+    const matchedUser = this.users.find(user =>{user.agentId === Number(currentUserId)});
     this.currentUser = matchedUser || this.users[0];
   }
 
   private setRequestedForDefault(): void {
     if (!this.ritmForm.get('requestedFor')?.value && this.currentUser) {
-      this.ritmForm.get('requestedFor')?.setValue(this.currentUser.userId);
+      this.ritmForm.get('requestedFor')?.setValue(this.currentUser.agentId);
     }
   }
 
-  public setRequestedForLocation(requestedForId: string): void {
-    const user = this.users.find(item => item.userId === requestedForId);
+  public setRequestedForLocation(requestedForId: number): void {
+    const user = this.users.find(item => item.agentId === requestedForId);
     if (user) {
-      this.ritmForm.get('location')?.setValue(user.location || '');
+      // this.ritmForm.get('location')?.setValue(user.us.location || '');
     }
   }
 
@@ -155,19 +179,19 @@ export class RitmComponent implements OnInit {
   private applyFormDefaults(): void {
     const now = new Date();
     const formattedNow = this.formatAsDatetimeLocal(now);
-    const requestedForId = this.currentUser?.userId || '';
+    const requestedForId = this.currentUser?.agentId || '';
 
     this.ritmForm.patchValue({
-      ritmNumber: this.generateRitmNumber(),
       openedBy: this.getCurrentUserDisplayName(),
       requestedFor: requestedForId,
-      location: this.currentUser?.location || '',
+      // location: this.currentUser?.location || '',
       openedDate: formattedNow,
       workStart: now,
       workEnd: null,
       customerResolution: '',
       workDuration: ''
     });
+    this.generateRitmNumber();
     this.updateCustomerResolution();
 
     if (!this.ritmForm.get('requestedFor')?.value) {
@@ -181,10 +205,10 @@ export class RitmComponent implements OnInit {
       next: (response: any) => {
         const item = response?.attributes || response || {};
         this.ritmForm.patchValue({
-          ritmNumber: item.ritmNumber || this.generateRitmNumber(),
+          ritmNumber: item.ritmNumber || '',
           openedBy: item.openedBy || this.getCurrentUserDisplayName(),
-          requestedFor: item.requestedFor || this.currentUser?.userId,
-          location: item.location || this.currentUser?.location || '',
+          requestedFor: item.requestedFor || this.currentUser?.agentId,
+          // location: item.location || this.currentUser?.location || '',
           configurationItem: item.configurationItem || '',
           category: item.category || '',
           openedDate: item.openedDate ? this.formatAsDatetimeLocal(new Date(item.openedDate)) : this.formatAsDatetimeLocal(new Date()),
@@ -196,6 +220,9 @@ export class RitmComponent implements OnInit {
           customerResolution: item.customerResolution ? this.formatAsDatetimeLocal(new Date(item.customerResolution)) : '',
           workDuration: item.workDuration || ''
         });
+        if (!item.ritmNumber) {
+          this.generateRitmNumber();
+        }
         this.loadSupportTabs();
       },
       error: (err: unknown) => {
@@ -249,14 +276,19 @@ export class RitmComponent implements OnInit {
     this.ritmForm.get('workDuration')?.setValue('');
   }
 
-  private generateRitmNumber(): string {
-    const randomCode = Math.floor(100000 + Math.random() * 900000);
-    return `RITM${randomCode}`;
+  private generateRitmNumber(): void {
+    this.ritmService.getRequestNumber('RITM').subscribe({
+      next: response => this.ritmForm.get('ritmNumber')?.setValue(response.attributes),
+      error: (err: unknown) => {
+        this.submitError = 'Unable to generate RITM number.';
+        console.error(err);
+      }
+    });
   }
 
   private getCurrentUserDisplayName(): string {
     if (this.currentUser) {
-      return `${this.currentUser.firstName || ''} ${this.currentUser.lastName || ''}`.trim() || this.currentUser.userId;
+      return `${this.currentUser.agentName || ''}`.trim() || String(this.currentUser.agentId);
     }
     return localStorage.getItem('userId') || 'Unknown User';
   }
@@ -339,8 +371,8 @@ export class RitmComponent implements OnInit {
 
   private getRequestedForDisplayName(): string {
     const requestedForId = this.ritmForm.get('requestedFor')?.value;
-    const user = this.users.find(item => item.userId === requestedForId);
-    return user ? `${user.firstName} ${user.lastName}`.trim() : requestedForId;
+    const user = this.users.find(item => item.agentId === requestedForId);
+    return user ? `${user.agentName}`.trim() : requestedForId;
   }
 
   addCatalogTask(): void {

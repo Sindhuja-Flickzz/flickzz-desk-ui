@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
 import { UserProfile, NoteItem, ApproverItem, LogEntry, WorkflowStage, CatalogTask, TaskSlaItem, ChangeRequestItem } from '../models/ritm.model';
 import { PriorityMaster } from '../models/priority-master';
+import { AgentMaster } from '../models/agent-master';
 
 @Injectable({
   providedIn: 'root'
@@ -13,12 +14,16 @@ export class RitmService {
 
   constructor(private http: HttpClient) { }
 
-  getUsers(): Observable<UserProfile[]> {
-    return this.http.get<UserProfile[]>(`${this.baseUrl}/user/list`);
+  getAgents(orgId: string): Observable<AgentMaster[]> {
+    return this.http.get<AgentMaster[]>(`${this.baseUrl}/agent/list/${orgId}`);
   }
 
-  getPriorities(): Observable<PriorityMaster[]> {
-    return this.http.get<PriorityMaster[]>(`${this.baseUrl}/priority/list`);
+  getPriorities(businessPartnerId?: number | null): Observable<PriorityMaster[]> {
+    return this.http.get<PriorityMaster[]>(`${this.baseUrl}/bp/config/priority/${businessPartnerId}`);
+  }
+
+  getRequestNumber(requestType: string): Observable<{ attributes: string }> {
+    return this.http.get<{ attributes: string }>(`${this.baseUrl}/request/number/${requestType}`);
   }
 
   createRitm(payload: any): Observable<any> {
