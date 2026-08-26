@@ -1,14 +1,15 @@
-import { PlantMaster } from './plant-master';
+import { CompanyMaster } from "./company-master";
 
 export interface RequestConfigRequest {
   configId?: number;
   requestType: string;
   requestPrefix: string;
-  revision: number;
   rangeFrom: number;
   rangeTo: number;
   calculateBackward: boolean;
-  plantId: number;
+  callHorizonDays: number;
+  callHorizonPercentage: number;
+  orgId: number;
   createdBy: number;
   updatedBy: number;
   isCreatedByAdmin: boolean;
@@ -23,5 +24,9 @@ export interface RequestConfigVO {
   rangeFrom: number;
   rangeTo: number;
   calculateBackward: boolean;
-  plant?: PlantMaster;
+  isActive: boolean;
+  isEnabled: boolean;
+  callHorizonDays: number;
+  callHorizonPercentage: number;
+  company?: CompanyMaster;
 }

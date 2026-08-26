@@ -34,6 +34,12 @@
     background: #fff;
   }
 
+  .impact-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
   .field {
     display: flex;
     flex-direction: column;
@@ -130,6 +136,25 @@
         border-bottom: 1px solid #e4eaf2;
       }
       tbody tr:hover { background: #f5f8ff; }
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+      .status-pill.active {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+      .status-pill.inactive {
+        background: #fdecea;
+        color: #c62828;
+      }
       .action-buttons {
         button {
           width: 45px;
@@ -147,6 +172,25 @@
           gap: 5px;
         }
       }
+    }
+  }
+
+  .save-btn.header-back {
+    padding: 8px 5px;
+    border-radius: 8px 8px 0 0;
+    background: #f4f4f4;
+    color: #00246b;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    cursor: pointer;
+  }
+
+  @media (max-width: 640px) {
+    .impact-fields {
+      grid-template-columns: 1fr;
     }
   }
 }

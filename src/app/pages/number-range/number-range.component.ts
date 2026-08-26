@@ -3,11 +3,10 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { PageEvent } from '@angular/material/paginator';
 import { NumberRangeService } from '../../service/number-range.service';
-import { PlantService } from '../../service/plant.service';
 import { RequestConfigRequest, RequestConfigVO } from '../../models/number-range';
-import { PlantMaster } from '../../models/plant-master';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { USER_ROLES } from 'src/app/data/app_constants';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-number-range',
@@ -19,9 +18,9 @@ export class NumberRangeComponent implements OnInit {
   activeTab: 'create' | 'list' = 'create';
   pageTitle = 'Create Number Range';
   isEditMode = false;
+  editingConfig: RequestConfigVO | null = null;
   originalFormValue: any = null;
 
-  plants: PlantMaster[] = [];
   configs: RequestConfigVO[] = [];
   filteredConfigs: RequestConfigVO[] = [];
   searchValue = '';
@@ -42,18 +41,18 @@ export class NumberRangeComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private numberRangeService: NumberRangeService,
-    private plantService: PlantService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private router: Router
   ) {
     this.numberRangeForm = this.fb.group({
       configId: [null],
       requestType: ['', Validators.required],
       requestPrefix: ['', [Validators.required, Validators.pattern(this.alphanumericPattern)]],
-      revision: [{ value: 1, disabled: true }, Validators.required],
       rangeFrom: [null, Validators.required],
-      rangeTo: [null, Validators.required],
+      rangeTo: [null, [Validators.required, this.rangeToValidator.bind(this)]],
       calculateBackward: [false],
-      plant: [null, Validators.required]
+      callHorizon: [null, Validators.required],
+      callHorizonPercentage: [{ value: '', disabled: true }]
     });
   }
 
@@ -61,36 +60,76 @@ export class NumberRangeComponent implements OnInit {
     this.loadAllData();
 
     this.numberRangeForm.valueChanges.subscribe(() => {
+      this.calculateCallHorizonPercentage();
       if (!this.isEditMode) {
         return;
       }
       this.submitError = '';
       this.submitSuccess = '';
     });
+
+    // Listen for rangeFrom changes and clear rangeTo if it's now invalid
+    this.numberRangeForm.get('rangeFrom')?.valueChanges.subscribe((rangeFromValue) => {
+      const rangeToControl = this.numberRangeForm.get('rangeTo');
+      const rangeToValue = rangeToControl?.value;
+      
+      if (rangeFromValue !== null && rangeToValue !== null && rangeToValue <= rangeFromValue) {
+        rangeToControl?.setValue(null, { emitEvent: false });
+      }
+      
+      // Trigger validation on rangeTo control
+      rangeToControl?.updateValueAndValidity({ emitEvent: false });
+    });
+  }
+
+  rangeToValidator(control: any): { [key: string]: any } | null {
+    const rangeFrom = this.numberRangeForm?.get('rangeFrom')?.value;
+    const rangeTo = control.value;
+
+    if (rangeTo === null || rangeTo === undefined || rangeFrom === null || rangeFrom === undefined) {
+      return null;
+    }
+
+    if (rangeTo <= rangeFrom) {
+      return { 'rangeToInvalid': { value: control.value } };
+    }
+
+    return null;
+  }
+
+  calculateCallHorizonPercentage(): void {
+    const rangeFrom = this.numberRangeForm.get('rangeFrom')?.value;
+    const rangeTo = this.numberRangeForm.get('rangeTo')?.value;
+    const callHorizon = this.numberRangeForm.get('callHorizon')?.value;
+    const calculateBackward = this.numberRangeForm.get('calculateBackward')?.value;
+
+    if(rangeFrom === null || rangeTo === null || callHorizon === null || callHorizon === undefined) {
+      this.numberRangeForm.get('callHorizonPercentage')?.setValue('', { emitEvent: false });
+      return;
+    }
+
+    const percentage = Math.min(100, Math.max(0, callHorizon));
+
+    var callHorizonPercentage = 0;
+
+    if (calculateBackward) {
+    callHorizonPercentage = Math.round(rangeTo - ((rangeTo - rangeFrom) * percentage / 100));
+  } else {
+    callHorizonPercentage = Math.round(rangeFrom + ((rangeTo - rangeFrom) * percentage / 100));
+  }
+
+    this.numberRangeForm.get('callHorizonPercentage')?.setValue(callHorizonPercentage, { emitEvent: false });
   }
 
   loadAllData(): void {
     this.loading = true;
-    this.loadPlantList();
     this.loadConfigList();
-    this.numberRangeForm.patchValue({ revision: 1 });
     this.loading = false;
   }
 
-  loadPlantList(): void {
-    const userOrgId = localStorage.getItem('userOrgId') || '';
-    this.plantService.getAllPlants(userOrgId).subscribe({
-      next: (result) => {
-        this.plants = (result as any).attributes || result || [];
-      },
-      error: () => {
-        this.plants = [];
-      }
-    });
-  }
-
   loadConfigList(): void {
-    this.numberRangeService.getAllConfigs().subscribe({
+    const orgId = localStorage.getItem('userOrgId') ? Number(localStorage.getItem('userOrgId')) : 0;
+    this.numberRangeService.getAllConfigs(orgId).subscribe({
       next: (result) => {
         this.configs = (result as any).attributes || result || [];
         this.searchValue = '';
@@ -120,9 +159,9 @@ export class NumberRangeComponent implements OnInit {
 
   resetForm(): void {
     this.isEditMode = false;
+    this.editingConfig = null;
     this.pageTitle = 'Create Number Range';
     this.numberRangeForm.reset({
-      revision: 1,
       calculateBackward: false
     });
     this.originalFormValue = null;
@@ -132,15 +171,18 @@ export class NumberRangeComponent implements OnInit {
 
   onSave(): void {
     this.formError = {};
-
+    this.submitError = '';
     Object.keys(this.numberRangeForm.controls).forEach(key => {
       const field = this.numberRangeForm.get(key);
       if (field?.hasError('required')) {
-        const label = key === 'requestType' ? 'Request Type' : key === 'requestPrefix' ? 'Request Prefix' : key === 'plant' ? 'Plant' : key;
+        const label = key === 'requestType' ? 'Request Type' : key === 'requestPrefix' ? 'Request Prefix' : key;
         this.formError[key] = `${label} is required`;
       }
       if (key === 'requestPrefix' && field?.hasError('pattern')) {
         this.formError[key] = 'Request Prefix can contain only letters and numbers';
+      }
+      if (key === 'rangeTo' && field?.hasError('rangeToInvalid')) {
+        this.formError[key] = 'Range To must be greater than Range From';
       }
     });
 
@@ -148,16 +190,20 @@ export class NumberRangeComponent implements OnInit {
       return;
     }
 
-    const selectedPlant = this.numberRangeForm.value.plant as PlantMaster;
+    const callHorizonPercentageStr = this.numberRangeForm.get('callHorizonPercentage')?.value || '0%';
+    const callHorizonPercentage = parseFloat(callHorizonPercentageStr.toString().replace('%', '')) || 0;
+
+    const formValue = this.numberRangeForm.getRawValue();
     const payload: RequestConfigRequest = {
-      configId: this.numberRangeForm.value.configId,
-      requestType: this.numberRangeForm.value.requestType,
-      requestPrefix: this.numberRangeForm.value.requestPrefix,
-      revision: this.numberRangeForm.get('revision')?.value || 1,
-      rangeFrom: Number(this.numberRangeForm.value.rangeFrom),
-      rangeTo: Number(this.numberRangeForm.value.rangeTo),
-      calculateBackward: this.numberRangeForm.value.calculateBackward,
-      plantId: selectedPlant?.plantId,
+      configId: formValue.configId,
+      requestType: formValue.requestType,
+      requestPrefix: formValue.requestPrefix,
+      rangeFrom: Number(formValue.rangeFrom),
+      rangeTo: Number(formValue.rangeTo),
+      calculateBackward: formValue.calculateBackward,
+      callHorizonPercentage: Number(formValue.callHorizon),
+      callHorizonDays: callHorizonPercentage,
+      orgId: localStorage.getItem('userOrgId') ? Number(localStorage.getItem('userOrgId')) : 0,
       createdBy: Number(localStorage.getItem('userId')),
       updatedBy: Number(localStorage.getItem('userId')),
       isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
@@ -185,7 +231,7 @@ export class NumberRangeComponent implements OnInit {
         error: (err) => {
           this.isSubmitting = false;
           console.error('Update config error', err);
-          this.submitError = err.error?.message || 'Failed to update number range.';
+          this.submitError = err.error?.description || 'Failed to update number range.';
         }
       });
     } else {
@@ -202,7 +248,7 @@ export class NumberRangeComponent implements OnInit {
         error: (err) => {
           this.isSubmitting = false;
           console.error('Create config error', err);
-          this.submitError = err.error?.message || 'Failed to create number range.';
+          this.submitError = err.error?.description || 'Failed to create number range.';
         }
       });
     }
@@ -216,42 +262,45 @@ export class NumberRangeComponent implements OnInit {
     return JSON.stringify(current) !== JSON.stringify(this.originalFormValue);
   }
 
+  backToHome(): void {
+    this.router.navigate(['/settings']);
+  }
+
   onViewConfig(config: RequestConfigVO): void {
     this.formError = {};
-    if (!config.plant?.plantId) {
-      this.submitError = 'Unable to load the selected configuration because plant information is missing.';
-      return;
-    }
-
-    this.numberRangeService.getConfigByTypeAndPlant(config.requestType, config.plant.plantId).subscribe({
-      next: (result) => {
-        result = (result as any).attributes || result;
-        this.activeTab = 'create';
-        this.isEditMode = true;
-        this.pageTitle = 'Edit Number Range';
-        this.numberRangeForm.patchValue({
-          configId: result.configId,
-          requestType: result.requestType,
-          requestPrefix: result.requestPrefix,
-          revision: result.revision ?? 1,
-          rangeFrom: result.rangeFrom,
-          rangeTo: result.rangeTo,
-          calculateBackward: result.calculateBackward,
-          plant: result.plant?.plantId ? this.plants.find(p => p.plantId === result.plant?.plantId) : null
-        });
-        this.originalFormValue = this.numberRangeForm.getRawValue();
-      },
-      error: (err) => {
-        console.error('Get config error', err);
-        this.submitError = err.error?.message || 'Failed to load number range details.';
-      }
+    this.activeTab = 'create';
+    this.isEditMode = true;
+    this.editingConfig = config;
+    this.pageTitle = 'Edit Number Range';
+    this.numberRangeForm.patchValue({
+      configId: config.configId,
+      requestType: config.requestType,
+      requestPrefix: config.requestPrefix,
+      rangeFrom: config.rangeFrom,
+      rangeTo: config.rangeTo,
+      calculateBackward: config.calculateBackward,
+      callHorizon: config.callHorizonPercentage,
+      callHorizonPercentage: config.callHorizonPercentage.toFixed(2) + '%'
     });
+    this.originalFormValue = this.numberRangeForm.getRawValue();
+  }
+
+  canEditRangeFrom(): boolean {
+    return !this.isEditMode || !this.editingConfig?.isEnabled || this.editingConfig.calculateBackward === true;
+  }
+
+  canEditRangeTo(): boolean {
+    return !this.isEditMode || !this.editingConfig?.isEnabled || this.editingConfig.calculateBackward === false;
+  }
+
+  canEditCalculateBackward(): boolean {
+    return !this.isEditMode || !this.editingConfig?.isEnabled;
   }
 
   onDeleteConfig(config: RequestConfigVO): void {
     const dialogData: ConfirmationDialogData = {
       title: 'Delete Number Range',
-      message: `Are you sure you want to delete configuration for ${config.requestType} / ${config.plant?.plantName || 'selected plant'}?`,
+      message: `Are you sure you want to delete configuration for ${config.requestType}?`,
       confirmText: 'Delete',
       cancelText: 'Cancel',
       showCancel: true,
@@ -289,17 +338,20 @@ export class NumberRangeComponent implements OnInit {
     return this.filteredConfigs.slice(startIndex, endIndex);
   }
 
+  getConfigStatus(config: RequestConfigVO): string {
+    return config.isActive === true ? 'Active' : 'Inactive';
+  }
+
+  getConfigStatusClass(config: RequestConfigVO): string {
+    return config.isActive === true ? 'status-pill active' : 'status-pill inactive';
+  }
+
   filterBySearch(): void {
     const term = (this.searchValue || '').trim().toLowerCase();
-    if (!term) {
-      this.filteredConfigs = this.configs;
-    } else {
-      this.filteredConfigs = this.configs.filter(config =>
-        config.requestType.toLowerCase().includes(term) ||
-        config.requestPrefix.toLowerCase().includes(term) ||
-        config.plant?.plantName.toLowerCase().includes(term)
-      );
-    }
+    this.filteredConfigs = !term ? this.configs : this.configs.filter(config =>
+      config.requestType.toLowerCase().includes(term) ||
+      config.requestPrefix.toLowerCase().includes(term)
+    );
     this.totalRecords = this.filteredConfigs.length;
     this.currentPage = 0;
   }

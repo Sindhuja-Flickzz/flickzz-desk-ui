@@ -21,15 +21,15 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Opened By</mat-label>
+          <mat-label>Requested By</mat-label>
           <input matInput formControlName="openedBy" readonly />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Requested For</mat-label>
           <mat-select formControlName="requestedFor" (selectionChange)="setRequestedForLocation($event.value)">
-            <mat-option *ngFor="let user of users" [value]="user.userId">
-              {{ user.firstName }} {{ user.lastName }}
+            <mat-option *ngFor="let user of users" [value]="user.agentId">
+              {{ user.agentName }} ({{ user.agentId }})
             </mat-option>
           </mat-select>
         </mat-form-field>
