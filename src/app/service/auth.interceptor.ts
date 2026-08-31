@@ -1,18 +1,24 @@
 import { Injectable } from '@angular/core';
 import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError, BehaviorSubject } from 'rxjs';
+import { Observable, throwError, BehaviorSubject, EMPTY } from 'rxjs';
 import { catchError, switchMap, filter, take } from 'rxjs/operators';
+import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { AuthenticationService } from './authentication.service';
+import { ConfirmationDialogComponent, ConfirmationDialogData } from '../shared/confirmation-dialog/confirmation-dialog.component';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
   private isRefreshing = false;
   private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
 
-  constructor(private authService: AuthenticationService) {}
+  constructor(
+    private authService: AuthenticationService,
+    private dialog: MatDialog,
+    private router: Router
+  ) {}
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // Add auth headers to request
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId') ?? '';
     const userEmail = localStorage.getItem('userEmail') ?? '';
@@ -24,10 +30,17 @@ export class AuthInterceptor implements HttpInterceptor {
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
         console.error('HTTP Error:', error);
+
+        if (error.status === 403 && !request.url.includes('/login') && !request.url.includes('/refresh')) {
+          this.handleForbiddenError(error);
+          return EMPTY;
+        }
+
         if (error.status === 401 && !request.url.includes('/login') && !request.url.includes('/refresh')) {
           return this.handle401Error(request, next);
         }
-        return throwError(error);
+
+        return throwError(() => error);
       })
     );
   }
@@ -47,6 +60,26 @@ export class AuthInterceptor implements HttpInterceptor {
 
     return request.clone({
       setHeaders: headers
+    });
+  }
+
+  private handleForbiddenError(error: HttpErrorResponse): void {
+    const message = error.error?.message || error.error?.description || 'Your session has expired or you are not authorized to access this page.';
+
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '420px',
+      disableClose: true,
+      data: {
+        title: 'Unauthorized',
+        message,
+        confirmText: 'OK',
+        showCancel: false,
+        type: 'error'
+      } as ConfirmationDialogData
+    });
+
+    dialogRef.afterClosed().subscribe(() => {
+      this.logout();
     });
   }
 
@@ -70,14 +103,12 @@ export class AuthInterceptor implements HttpInterceptor {
               }
               this.refreshTokenSubject.next(newToken);
 
-              // Retry the original request with new token
               const userEmail = localStorage.getItem('userEmail') ?? '';
               const userId = localStorage.getItem('userId') ?? '';
               return next.handle(this.addAuthHeaders(request, newToken, userEmail, userId));
             } else {
-              // Refresh failed, logout
               this.logout();
-              return throwError('Token refresh failed');
+              return throwError(() => new Error('Token refresh failed'));
             }
           }),
           catchError((error) => {
@@ -90,7 +121,6 @@ export class AuthInterceptor implements HttpInterceptor {
         return throwError(() => new Error('No refresh token available'));
       }
     } else {
-      // If refreshing, wait for new token
       return this.refreshTokenSubject.pipe(
         filter(token => token != null),
         take(1),
@@ -105,6 +135,6 @@ export class AuthInterceptor implements HttpInterceptor {
 
   private logout(): void {
     localStorage.clear();
-    // You might want to navigate to login, but since this is an interceptor, better to handle in a service or component
+    this.router.navigateByUrl('/login');
   }
 }

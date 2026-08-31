@@ -49,6 +49,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   showNewPassword = false;
   showConfirmPassword = false;
   isVerifying = false;
+  isSubmitting = false;
   isLoginMode = true;
   isResetPasswordMode = false;
   isMfaSetupMode = false;
@@ -83,6 +84,10 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   login() {
+    if (this.isSubmitting) {
+      return;
+    }
+
     this.formError = {};
     this.submitError = '';
 
@@ -103,9 +108,12 @@ export class LoginComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.isSubmitting = true;
+
     this.authService.login(this.registerLoginRequest)
       .subscribe({
         next: (response) => {
+          this.isSubmitting = false;
           this.commonResponse = response;
           if(response.attributes.enquiryUser) {
             this.isLoginMode = false;
@@ -128,6 +136,7 @@ export class LoginComponent implements OnInit, OnDestroy {
           }
         },
         error: (err) => {
+          this.isSubmitting = false;
           console.error('Login error', err);
           this.submitError = err.error?.description || 'Failed to Login.';
         }

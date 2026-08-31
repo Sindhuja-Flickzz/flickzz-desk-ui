@@ -5,24 +5,6 @@
       <p class="page-subtitle">Raise a request to get the support you need</p>
     </div>
 
-    <div class="success-banner" *ngIf="showSuccessScreen">
-      <div class="success-check" aria-hidden="true">✓</div>
-      <div>
-        <h2>RITM Created Successfully!</h2>
-        <p>Your request has been submitted and is now being processed.</p>
-      </div>
-    </div>
-
-    <!-- <div class="help-panel" aria-label="Need help">
-      <div class="help-icon-wrap">
-        <mat-icon>support_agent</mat-icon>
-      </div>
-      <div class="help-text">
-        <div class="help-title">Need Help?</div>
-        <div class="help-desc">Fill in the details to create a new RITM</div>
-      </div>
-    </div> -->
-
     <div *ngIf="loading" class="loading-panel">
       <mat-spinner diameter="36"></mat-spinner>
     </div>
@@ -272,71 +254,86 @@
 
   <ng-template #ritmSuccessScreen>
     <div class="success-screen-shell">
-      <div class="success-banner-row">
-        <div class="success-banner">
-          <div class="success-check" aria-hidden="true">✓</div>
-          <div class="success-banner-copy">
-            <h2>RITM Created Successfully!</h2>
-            <p>Your request has been submitted and is now being processed.</p>
+      <header class="success-hero">
+        <div class="success-badge" aria-hidden="true">✓</div>
+        <div class="success-hero-copy">
+          <span class="success-overline">Request submitted</span>
+          <h2>RITM Created Successfully</h2>
+          <p>Your request is now in progress and the details below were captured for processing.</p>
+        </div>
+        <div class="success-pill">{{ successRitmDetails?.status || 'Open' }}</div>
+      </header>
+
+      <section class="success-summary-strip">
+        <div class="summary-item">
+          <span class="summary-label">RITM Number</span>
+          <strong>{{ successRitmDetails?.ritmNumber || '—' }}</strong>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Created On</span>
+          <strong>{{ successCreatedOnLabel }}</strong>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Priority</span>
+          <strong>{{ successRitmDetails?.priorityName || successRitmDetails?.priority || '—' }}</strong>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Requested For</span>
+          <strong>{{ successRitmDetails?.requestedForName || '—' }}</strong>
+        </div>
+      </section>
+
+      <section class="detail-section">
+        <div class="section-heading">Request Details</div>
+        <div class="detail-grid">
+          <div class="detail-field" *ngFor="let field of successRequestFields">
+            <span class="field-label">{{ field.label }}</span>
+            <span class="field-value" [ngClass]="field.className || ''">{{ field.value || '—' }}</span>
           </div>
         </div>
+      </section>
 
-        <div class="success-summary-card">
-          <div class="summary-label">RITM Number</div>
-          <div class="summary-number-row">
-            <strong class="summary-number">{{ successRitmDetails?.ritmNumber || '—' }}</strong>
-            <span class="summary-icon" aria-hidden="true">◌</span>
-          </div>
-          <div class="summary-created">
-            Created on {{ successCreatedOnLabel }}
+      <section class="detail-section" *ngIf="successLongTextBlocks.length">
+        <div class="section-heading">Description & Notes</div>
+        <div class="text-block-list">
+          <div class="text-block" *ngFor="let item of successLongTextBlocks">
+            <h3>{{ item.label }}</h3>
+            <p>{{ item.value }}</p>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="success-request-card">
-        <div class="success-card-header">REQUEST DETAILS</div>
-
-        <div class="success-request-grid">
-          <div class="success-detail-item" *ngFor="let field of successRequestFields; let i = index">
-            <div class="success-item-icon" [ngClass]="field.iconClass" aria-hidden="true">{{ field.icon }}</div>
-            <div class="success-item-copy">
-              <span>{{ field.label }}</span>
-              <strong [ngClass]="field.className || ''">{{ field.value || '—' }}</strong>
+      <section class="detail-section" *ngIf="(successRitmDetails?.ritmAttachments || attachmentFiles || []).length">
+        <div class="section-heading">Attachments</div>
+        <div class="attachment-list">
+          <div class="attachment-row" *ngFor="let attachment of (successRitmDetails?.ritmAttachments || attachmentFiles || [])">
+            <div class="attachment-main">
+              <span class="file-chip" [class.pdf]="(attachment?.mimeType || attachment?.type || '').toLowerCase().includes('pdf')">
+                {{ (attachment?.mimeType || attachment?.type || 'FILE').toString().toUpperCase().slice(0, 3) }}
+              </span>
+              <span>{{ attachment?.originalFileName || attachment?.fileName || attachment?.name || 'Attachment' }}</span>
             </div>
+            <span class="attachment-meta">{{ (attachment?.mimeType || attachment?.type || 'FILE').toString().toUpperCase() }}</span>
+            <span class="attachment-meta">{{ attachment?.fileSize || attachment?.size ? (((attachment?.fileSize || attachment?.size) / 1024) | number:'1.0-0') + ' KB' : '—' }}</span>
           </div>
         </div>
-      </div>
-
-      <div class="success-attachments-card">
-        <div class="success-card-header attachments-header">ATTACHMENTS ({{ attachmentFiles.length || successRitmDetails?.ritmAttachments?.length || 0 }})</div>
-
-        <div class="attachment-table-header">
-          <span>File Name</span>
-          <span>File Type</span>
-          <span>File Size</span>
-        </div>
-
-        <div class="attachment-table-body">
-          <div class="attachment-table-row" *ngFor="let attachment of (successRitmDetails?.ritmAttachments || attachmentFiles || [])">
-            <span class="attachment-name">
-              <span class="file-badge" [class.pdf]="(attachment?.mimeType || attachment?.type || '').toLowerCase().includes('pdf')">{{ (attachment?.mimeType || attachment?.type || 'FILE').toString().toUpperCase().slice(0, 3) }}</span>
-              {{ attachment?.originalFileName || attachment?.fileName || attachment?.name || 'Attachment' }}
-            </span>
-            <span>{{ (attachment?.mimeType || attachment?.type || 'FILE').toString().toUpperCase() }}</span>
-            <span>{{ attachment?.fileSize || attachment?.size ? (((attachment?.fileSize || attachment?.size) / 1024) | number:'1.0-0') + ' KB' : '—' }}</span>
-          </div>
-        </div>
-      </div>
+      </section>
 
       <div class="success-action-row">
-        <button mat-stroked-button type="button" (click)="showSuccessScreen = false; submitSuccess = ''; ritmForm.reset()">
+        <button mat-stroked-button type="button" class="secondary-action" (click)="showSuccessScreen = false; submitSuccess = ''; ritmForm.reset()">
           <mat-icon>add</mat-icon>
           Create Another RITM
         </button>
-        <button mat-flat-button color="primary" type="button" (click)="onCancel()">
-          <mat-icon>arrow_back</mat-icon>
-          Back to RITMs
-        </button>
+
+        <div class="success-action-group">
+          <button mat-button type="button" class="back-action" (click)="onCancel()">
+            <mat-icon>arrow_back</mat-icon>
+            Back to RITMs
+          </button>
+          <button mat-flat-button color="primary" type="button" class="primary-action" (click)="onCancel()">
+            View RITM Details
+          </button>
+        </div>
       </div>
     </div>
   </ng-template>

@@ -25,7 +25,9 @@
       <span *ngIf="formError.password" class="error-text">{{ 'password' | fieldLabel }} is required</span>
     </div>
 
-    <button type="submit">Login</button>
+    <button type="submit" [disabled]="isSubmitting" [class.button-disabled]="isSubmitting">
+      {{ isSubmitting ? 'Logging in...' : 'Login' }}
+    </button>
     <p class="secondary-action">
       <a href="#" (click)="showForgotPassword(); $event.preventDefault()">Forgot Password?</a>
     </p>

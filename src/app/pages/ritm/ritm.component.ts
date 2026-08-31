@@ -683,6 +683,17 @@ export class RitmComponent implements OnInit, OnDestroy {
     return this.formatSuccessDate(source) || '—';
   }
 
+  get successLongTextBlocks(): Array<{ label: string; value: string }> {
+    const data = this.successRitmDetails || {};
+    const blocks = [
+      { label: 'Description', value: this.normalizeSuccessValue(data.description || data.shortDescription) },
+      { label: 'Steps to Reproduce', value: this.normalizeSuccessValue(data.stepsToReproduce) },
+      { label: 'Other Notes', value: this.normalizeSuccessValue(data.otherNotes) }
+    ];
+
+    return blocks.filter(block => !!block.value);
+  }
+
   get successRequestFields(): Array<{ label: string; value: string; icon: string; iconClass: string; className?: string }> {
     const data = this.successRitmDetails || {};
     const requestedFor = this.normalizeSuccessValue(data.requestedForName || data.requestedFor || this.getRequestedForDisplayName());
@@ -691,24 +702,23 @@ export class RitmComponent implements OnInit, OnDestroy {
     const priority = this.normalizeSuccessValue(data.priorityName || data.priority);
     const supportGroup = this.normalizeSuccessValue(data.assignmentGroupName || data.assignmentGroup);
     const requestedBy = this.normalizeSuccessValue(data.requestedByName || data.requestedBy || this.currentUser?.agentName);
-    const description = this.normalizeSuccessValue(data.description);
-    const steps = this.normalizeSuccessValue(data.stepsToReproduce);
-    const notes = this.normalizeSuccessValue(data.otherNotes);
+    const assignedTo = this.normalizeSuccessValue(data.assignedToName || data.assignedTo || data.requestedForName || data.requestedFor || this.getRequestedForDisplayName());
     const shortDescription = this.normalizeSuccessValue(data.shortDescription);
+    const expectedResolution = this.normalizeSuccessValue(data.expectedResolution);
 
     return [
-      { label: 'Requested For', value: requestedFor, icon: '◔', iconClass: 'primary', className: '' },
-      { label: 'Category', value: category, icon: '▣', iconClass: 'muted', className: '' },
-      { label: 'Support Group', value: supportGroup, icon: '◍', iconClass: 'soft', className: '' },
-      { label: 'Description', value: description || shortDescription, icon: '☰', iconClass: 'muted', className: 'multiline-value' },
-      { label: 'Status', value: this.normalizeSuccessValue(data.status || 'OPEN'), icon: '◉', iconClass: 'success', className: 'status-pill success-state-pill' },
+      { label: 'Requested For', value: requestedFor || '—', icon: '◔', iconClass: 'primary', className: '' },
+      { label: 'Status', value: this.normalizeSuccessValue(data.status || 'OPEN'), icon: '◉', iconClass: 'success', className: 'status-pill' },
       { label: 'Priority', value: priority || '—', icon: '◢', iconClass: 'warning', className: 'priority-pill' },
-      { label: 'Requested At', value: this.formatSuccessDate(data.requestedAt || data.createdAt) || '—', icon: '◫', iconClass: 'soft', className: '' },
       { label: 'Created On', value: this.successCreatedOnLabel, icon: '◧', iconClass: 'primary', className: '' },
       { label: 'Requested By', value: requestedBy || '—', icon: '◐', iconClass: 'muted', className: '' },
-      { label: 'Sub category', value: subCategory || '—', icon: '◎', iconClass: 'soft', className: '' },
-      { label: 'Steps to Reproduce', value: steps || '—', icon: '⇢', iconClass: 'muted', className: 'multiline-value' },
-      { label: 'Other Notes', value: notes || '—', icon: '✎', iconClass: 'soft', className: 'multiline-value' }
+      { label: 'Assigned To', value: assignedTo || '—', icon: '◍', iconClass: 'soft', className: '' },
+      { label: 'Category', value: category || '—', icon: '▣', iconClass: 'muted', className: '' },
+      { label: 'Sub Category', value: subCategory || '—', icon: '◎', iconClass: 'soft', className: '' },
+      { label: 'Support Group', value: supportGroup || '—', icon: '◍', iconClass: 'soft', className: '' },
+      { label: 'Requested At', value: this.formatSuccessDate(data.requestedAt || data.createdAt) || '—', icon: '◫', iconClass: 'soft', className: '' },
+      { label: 'Expected Resolution', value: expectedResolution || '—', icon: '◐', iconClass: 'muted', className: '' },
+      { label: 'Short Description', value: shortDescription || '—', icon: '☰', iconClass: 'muted', className: '' }
     ];
   }
 
