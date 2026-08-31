@@ -1,108 +1,263 @@
-<div class="ritm-page">
+<div class="ritm-page" [class.success-state]="showSuccessScreen">
   <div class="page-header">
-    <div>
+    <div class="page-title-group" *ngIf="!showSuccessScreen">
       <h1>RITM Request</h1>
-      <p class="subtitle">Create and review request item details with notes, workflow and approvals.</p>
+      <p class="page-subtitle">Raise a request to get the support you need</p>
     </div>
+
+    <div class="success-banner" *ngIf="showSuccessScreen">
+      <div class="success-check" aria-hidden="true">✓</div>
+      <div>
+        <h2>RITM Created Successfully!</h2>
+        <p>Your request has been submitted and is now being processed.</p>
+      </div>
+    </div>
+
+    <!-- <div class="help-panel" aria-label="Need help">
+      <div class="help-icon-wrap">
+        <mat-icon>support_agent</mat-icon>
+      </div>
+      <div class="help-text">
+        <div class="help-title">Need Help?</div>
+        <div class="help-desc">Fill in the details to create a new RITM</div>
+      </div>
+    </div> -->
+
     <div *ngIf="loading" class="loading-panel">
       <mat-spinner diameter="36"></mat-spinner>
     </div>
   </div>
 
-  <div *ngIf="submitSuccess" class="alert alert-success">{{ submitSuccess }}</div>
+  <div *ngIf="submitSuccess && !showSuccessScreen" class="alert alert-success">{{ submitSuccess }}</div>
   <div *ngIf="submitError" class="alert alert-error">{{ submitError }}</div>
 
+  <ng-container *ngIf="!showSuccessScreen; else ritmSuccessScreen">
   <mat-card class="form-card">
     <form [formGroup]="ritmForm" (ngSubmit)="onSubmit()" aria-label="RITM form">
-      <div class="grid-container">
-        <mat-form-field appearance="outline">
-          <mat-label>RITM Number</mat-label>
-          <input matInput formControlName="ritmNumber" readonly />
-        </mat-form-field>
+      <div class="section-block request-info-block">
+        <div class="section-header">
+          <span class="section-header-icon">✎</span>
+          <span>Request Information</span>
+        </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Requested By</mat-label>
-          <input matInput formControlName="openedBy" readonly />
-        </mat-form-field>
+        <div class="field-grid">
+          <div class="field field-ritm">
+            <label>RITM Number</label>
+            <input formControlName="ritmNumber" readonly />
+          </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Requested For</mat-label>
-          <mat-select formControlName="requestedFor" (selectionChange)="setRequestedForLocation($event.value)">
-            <mat-option *ngFor="let user of users" [value]="user.agentId">
-              {{ user.agentName }} ({{ user.agentId }})
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
+          <div class="field field-opened-by">
+            <label>Opened By</label>
+            <input formControlName="openedBy" readonly />
+          </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Location</mat-label>
-          <input matInput formControlName="location" readonly />
-        </mat-form-field>
+          <div class="field field-requested-for">
+            <label>Requested For</label>
+            <select formControlName="requestedFor" (change)="setRequestedForLocation($any($event.target).value)">
+              <option value="" disabled>Select requester</option>
+              <option *ngFor="let user of users" [value]="user.agentId">
+                {{ user.agentName }} ({{ user.accessId }})
+              </option>
+            </select>
+            <span *ngIf="showRequiredError('requestedFor')" class="error-text">Requested For is required</span>
+          </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Configuration Item</mat-label>
-          <input matInput formControlName="configurationItem" placeholder="Enter configuration item" />
-          <mat-error *ngIf="ritmForm.get('configurationItem')?.hasError('required')">Configuration Item is required</mat-error>
-        </mat-form-field>
+          <div class="field field-location">
+            <label>Location</label>
+            <input formControlName="location" readonly />
+          </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Category</mat-label>
-          <input matInput formControlName="category" placeholder="Enter category" />
-          <mat-error *ngIf="ritmForm.get('category')?.hasError('required')">Category is required</mat-error>
-        </mat-form-field>
+          <div class="field field-availability">
+            <label>Availability Time</label>
+            <input formControlName="availabilityTime" readonly />
+          </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Opened</mat-label>
-          <input matInput type="datetime-local" formControlName="openedDate" readonly />
-        </mat-form-field>
+          <div class="field field-current-time">
+            <label>Current Time</label>
+            <input formControlName="currentTime" readonly />
+          </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>State</mat-label>
-          <input matInput formControlName="state" [readonly]="isFieldDisabled('state')" placeholder="New / In Progress / Closed" />
-          <mat-error *ngIf="ritmForm.get('state')?.hasError('required')">State is required</mat-error>
-        </mat-form-field>
+          <div class="field field-category">
+            <label>Category</label>
+            <select formControlName="category">
+              <option value="" selected disabled>Select category</option>
+              <option *ngFor="let category of categories" [value]="category.categoryId">
+                {{ category.categoryName }}
+              </option>
+            </select>
+            <span *ngIf="showRequiredError('category')" class="error-text">Category is required</span>
+          </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Assignment Group</mat-label>
-          <input matInput formControlName="assignmentGroup" [readonly]="isFieldDisabled('assignmentGroup')" placeholder="Enter assignment group" />
-          <mat-error *ngIf="ritmForm.get('assignmentGroup')?.hasError('required')">Assignment Group is required</mat-error>
-        </mat-form-field>
+          <div class="field field-sub-category">
+            <label>Sub category</label>
+            <select formControlName="subCategory">
+              <option value="" selected disabled>Select sub category</option>
+              <option *ngFor="let subCategory of subCategories" [value]="subCategory.subCategoryId">
+                {{ subCategory.subCategoryName }}
+              </option>
+            </select>
+            <span *ngIf="showRequiredError('subCategory')" class="error-text">Sub category is required</span>
+          </div>
+        </div>
+      </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Priority</mat-label>
-          <mat-select formControlName="priority">
-            <mat-option *ngFor="let priority of priorities" [value]="priority.priorityId">
-              {{ priority.code }}
-            </mat-option>
-          </mat-select>
-          <mat-error *ngIf="ritmForm.get('priority')?.hasError('required')">Priority is required</mat-error>
-        </mat-form-field>
+      <div class="section-block assignment-block">
+        <div class="section-header green-header">
+          <span class="section-header-icon">⚑</span>
+          <span>Assignment &amp; Priority</span>
+        </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Work Start</mat-label>
-          <input matInput [matDatepicker]="workStartPicker" formControlName="workStart" placeholder="Select work start" />
-          <mat-datepicker-toggle matSuffix [for]="workStartPicker"></mat-datepicker-toggle>
-          <mat-datepicker #workStartPicker></mat-datepicker>
-          <mat-error *ngIf="ritmForm.get('workStart')?.hasError('required')">Work start is required</mat-error>
-        </mat-form-field>
+        <div class="field-grid assignment-grid">
+          <div class="field assignment-field">
+            <label>Assignment Group</label>
+            <input formControlName="assignmentGroup" readonly />
+            <span *ngIf="showRequiredError('assignmentGroup')" class="error-text">Assignment Group is required</span>
+          </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Work End</mat-label>
-          <input matInput [matDatepicker]="workEndPicker" formControlName="workEnd" placeholder="Select work end" />
-          <mat-datepicker-toggle matSuffix [for]="workEndPicker"></mat-datepicker-toggle>
-          <mat-datepicker #workEndPicker></mat-datepicker>
-          <mat-error *ngIf="ritmForm.get('workEnd')?.hasError('required')">Work end is required</mat-error>
-        </mat-form-field>
+          <div class="field priority-field">
+            <label>Priority</label>
+            <select formControlName="priority">
+              <option value="" selected disabled>Select priority</option>
+              <option *ngFor="let priority of priorities" [value]="priority.priorityId">
+                {{ priority.code }}
+              </option>
+            </select>
+            <span *ngIf="showRequiredError('priority')" class="error-text">Priority is required</span>
+          </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Customer Resolution</mat-label>
-          <input matInput formControlName="customerResolution" readonly />
-        </mat-form-field>
+          <div class="field watch-list-field">
+            <label>Watch List</label>
+            <div #watchListDropdown class="watch-list-dropdown" [class.open]="watchListOpen">
+              <button type="button" class="watch-list-trigger" (click)="watchListOpen = !watchListOpen">
+                <span>{{ selectedWatchers.length ? selectedWatchers.length + ' selected' : 'Select watcher(s)' }}</span>
+                <mat-icon>expand_more</mat-icon>
+              </button>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Work Duration</mat-label>
-          <input matInput formControlName="workDuration" readonly />
-        </mat-form-field>
+              <div class="watch-list-panel" *ngIf="watchListOpen">
+                <div class="watch-list-search">
+                  <mat-icon>search</mat-icon>
+                  <input
+                    type="text"
+                    [(ngModel)]="watchListSearch"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="Search watchers"
+                  />
+                </div>
+
+                <div class="watch-list-options">
+                  <button type="button" class="watch-option" *ngFor="let user of filteredWatchListUsers" (click)="toggleWatchListUser(user.agentId)">
+                    <span>{{ user.agentName }} ({{ user.accessId }})</span>
+                    <mat-icon *ngIf="isWatchSelected(user.agentId)">check</mat-icon>
+                  </button>
+                  <div class="watch-option empty" *ngIf="filteredWatchListUsers.length === 0">No watchers found</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="watch-list-selected assignment-watchers-row" *ngIf="selectedWatchers.length">
+          <table class="watch-list-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Access ID</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let watcher of selectedWatchers">
+                <td>{{ watcher.agentName }}</td>
+                <td>{{ watcher.accessId }}</td>
+                <td>
+                  <button type="button" class="remove-watcher-btn" (click)="toggleWatchListUser(watcher.agentId)">Remove</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-block request-details-block">
+        <div class="section-header amber-header">
+          <span class="section-header-icon">▣</span>
+          <span>Request Details</span>
+          <button
+            type="button"
+            class="section-toggle"
+            [attr.aria-expanded]="requestDetailsExpanded"
+            [attr.aria-label]="requestDetailsExpanded ? 'Collapse request details' : 'Expand request details'"
+            [title]="requestDetailsExpanded ? 'Collapse request details' : 'Expand request details'"
+            (click)="toggleRequestDetails()"
+          >
+            <span class="section-toggle-label">{{ requestDetailsExpanded ? 'Collapse' : 'Expand' }}</span>
+            <span class="section-toggle-icon" aria-hidden="true">{{ requestDetailsExpanded ? '⌃' : '⌄' }}</span>
+          </button>
+        </div>
+
+        <div class="field-grid detail-grid">
+          <div class="field full-width-field short-description-field">
+            <div class="field-label-row">
+              <span class="field-badge">✦</span>
+              <label>Short Description</label>
+            </div>
+            <input formControlName="shortDescription" maxlength="160" required placeholder="Enter short description" />
+            <small>{{ ritmForm.get('shortDescription')?.value?.length || 0 }} / 160</small>
+            <span *ngIf="showRequiredError('shortDescription')" class="error-text">Short Description is required</span>
+          </div>
+
+          <div
+            class="optional-details"
+            [class.expanded]="requestDetailsExpanded"
+            [attr.aria-hidden]="!requestDetailsExpanded"
+          >
+            <div class="field full-width-field textarea-field details-area">
+              <div class="field-label-row">
+                <span class="field-badge">☰</span>
+                <label>Description</label>
+              </div>
+              <textarea formControlName="description" maxlength="4000" rows="4" placeholder="Enter description"></textarea>
+              <small>{{ ritmForm.get('description')?.value?.length || 0 }} / 4000</small>
+            </div>
+
+            <div class="field full-width-field textarea-field details-area">
+              <div class="field-label-row">
+                <span class="field-badge">⇢</span>
+                <label>Steps to reproduce</label>
+              </div>
+              <textarea formControlName="stepsToReproduce" maxlength="4000" rows="4" placeholder="Enter steps to reproduce"></textarea>
+              <small>{{ ritmForm.get('stepsToReproduce')?.value?.length || 0 }} / 4000</small>
+            </div>
+
+            <div class="field full-width-field textarea-field details-area">
+              <div class="field-label-row">
+                <span class="field-badge">✎</span>
+                <label>Other notes</label>
+              </div>
+              <textarea formControlName="otherNotes" maxlength="4000" rows="4" placeholder="Enter other notes"></textarea>
+              <small>{{ ritmForm.get('otherNotes')?.value?.length || 0 }} / 4000</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-block attachment-block">
+        <div class="section-header amber-header">
+          <span class="section-header-icon">📎</span>
+          <span>Attachments</span>
+        </div>
+
+        <div class="field-grid detail-grid">
+          <div class="field full-width-field attachment-field">
+            <div class="field-label-row">
+              <span class="field-badge">📎</span>
+              <label>Upload Attachment(s)</label>
+            </div>
+            <input type="file" multiple (change)="onFilesSelected($event)" />
+            <small *ngIf="attachmentFiles.length">{{ attachmentFiles.length }} file(s) selected</small>
+            <span *ngIf="showRequiredError('attachments')" class="error-text">Attachment is required</span>
+          </div>
+        </div>
       </div>
 
       <div class="form-actions">
@@ -113,8 +268,80 @@
       </div>
     </form>
   </mat-card>
+  </ng-container>
 
-  <mat-card class="tab-card">
+  <ng-template #ritmSuccessScreen>
+    <div class="success-screen-shell">
+      <div class="success-banner-row">
+        <div class="success-banner">
+          <div class="success-check" aria-hidden="true">✓</div>
+          <div class="success-banner-copy">
+            <h2>RITM Created Successfully!</h2>
+            <p>Your request has been submitted and is now being processed.</p>
+          </div>
+        </div>
+
+        <div class="success-summary-card">
+          <div class="summary-label">RITM Number</div>
+          <div class="summary-number-row">
+            <strong class="summary-number">{{ successRitmDetails?.ritmNumber || '—' }}</strong>
+            <span class="summary-icon" aria-hidden="true">◌</span>
+          </div>
+          <div class="summary-created">
+            Created on {{ successCreatedOnLabel }}
+          </div>
+        </div>
+      </div>
+
+      <div class="success-request-card">
+        <div class="success-card-header">REQUEST DETAILS</div>
+
+        <div class="success-request-grid">
+          <div class="success-detail-item" *ngFor="let field of successRequestFields; let i = index">
+            <div class="success-item-icon" [ngClass]="field.iconClass" aria-hidden="true">{{ field.icon }}</div>
+            <div class="success-item-copy">
+              <span>{{ field.label }}</span>
+              <strong [ngClass]="field.className || ''">{{ field.value || '—' }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="success-attachments-card">
+        <div class="success-card-header attachments-header">ATTACHMENTS ({{ attachmentFiles.length || successRitmDetails?.ritmAttachments?.length || 0 }})</div>
+
+        <div class="attachment-table-header">
+          <span>File Name</span>
+          <span>File Type</span>
+          <span>File Size</span>
+        </div>
+
+        <div class="attachment-table-body">
+          <div class="attachment-table-row" *ngFor="let attachment of (successRitmDetails?.ritmAttachments || attachmentFiles || [])">
+            <span class="attachment-name">
+              <span class="file-badge" [class.pdf]="(attachment?.mimeType || attachment?.type || '').toLowerCase().includes('pdf')">{{ (attachment?.mimeType || attachment?.type || 'FILE').toString().toUpperCase().slice(0, 3) }}</span>
+              {{ attachment?.originalFileName || attachment?.fileName || attachment?.name || 'Attachment' }}
+            </span>
+            <span>{{ (attachment?.mimeType || attachment?.type || 'FILE').toString().toUpperCase() }}</span>
+            <span>{{ attachment?.fileSize || attachment?.size ? (((attachment?.fileSize || attachment?.size) / 1024) | number:'1.0-0') + ' KB' : '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="success-action-row">
+        <button mat-stroked-button type="button" (click)="showSuccessScreen = false; submitSuccess = ''; ritmForm.reset()">
+          <mat-icon>add</mat-icon>
+          Create Another RITM
+        </button>
+        <button mat-flat-button color="primary" type="button" (click)="onCancel()">
+          <mat-icon>arrow_back</mat-icon>
+          Back to RITMs
+        </button>
+      </div>
+    </div>
+  </ng-template>
+
+  <!-- <mat-card class="tab-card">
     <mat-tab-group class="tab-group" animationDuration="0ms">
       <mat-tab label="Work Notes">
         <div class="notes-list">
@@ -214,5 +441,5 @@
         </div>
       </mat-tab>
     </mat-tab-group>
-  </mat-card>
+  </mat-card> -->
 </div>

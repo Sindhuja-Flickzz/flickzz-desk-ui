@@ -15,11 +15,11 @@ export class RitmService {
   constructor(private http: HttpClient) { }
 
   getAgents(orgId: string): Observable<AgentMaster[]> {
-    return this.http.get<AgentMaster[]>(`${this.baseUrl}/agent/list/${orgId}`);
+    return this.http.get<AgentMaster[]>(`${this.baseUrl}/agent/list/active/${orgId}`);
   }
 
-  getPriorities(businessPartnerId?: number | null): Observable<PriorityMaster[]> {
-    return this.http.get<PriorityMaster[]>(`${this.baseUrl}/bp/config/priority/${businessPartnerId}`);
+  getAllActivePriorities(businessPartnerId?: number | null): Observable<PriorityMaster[]> {
+    return this.http.get<PriorityMaster[]>(`${this.baseUrl}/bp/config/priority/active/${businessPartnerId}`);
   }
 
   getRequestNumber(requestType: string): Observable<{ attributes: string }> {

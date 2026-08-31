@@ -136,7 +136,6 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
     const storyId = Number(this.route.snapshot.paramMap.get('storyId'));
     const taskId = Number(this.route.snapshot.paramMap.get('taskId'));
     const projectId = Number(this.route.snapshot.queryParamMap.get('projectId'));
-    console.log('Route params - projectId:', projectId, 'itemType:', itemType, 'itemId:', itemId, 'epicId:', epicId, 'storyId:', storyId, 'taskId:', taskId);
 
     if (itemType && itemId) {
       this.itemType = itemType;
@@ -739,7 +738,6 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
 
   getTemplateFieldControlType(detail: TemplateDetailField): string {
     const typeLabel = detail.fieldTypeLabel?.toUpperCase() || '';
-    console.log('Determining control type for field:', detail, 'with type label:', typeLabel);
     if (detail.options && detail.options.length) {
       if (typeLabel === 'CHECKBOX' || typeLabel === 'MULTISELECT') {
         return 'checkboxes';

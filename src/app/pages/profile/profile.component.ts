@@ -279,7 +279,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response) => {
-        console.log('Enquiry info loaded:', response);
           const enquiry = (response as any).attributes as EnquiryRegistrationVO;
           this.profileData = enquiry;
           this.populateFormFromEnquiry(enquiry);
@@ -329,7 +328,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   private populateFormFromEnquiry(enquiry: EnquiryRegistrationVO): void {
-    console.log('Populating form with enquiry data:', enquiry);
     const company = enquiry.company;
 
     this.profileForm.patchValue({

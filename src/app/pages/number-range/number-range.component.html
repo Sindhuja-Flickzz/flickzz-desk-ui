@@ -106,7 +106,7 @@
               <span [class]="getConfigStatusClass(config)">{{ getConfigStatus(config) }}</span>
             </td>
             <td>{{ config.callHorizonDays }}</td>
-            <td>{{ config.callHorizonPercentage?.toFixed(2) || 0 }}%</td>
+            <td>{{ config.callHorizonPercentage.toFixed(2) || 0 }}%</td>
             <td class="action-buttons" *ngIf="config.isActive">
               <button type="button" (click)="onViewConfig(config)"><mat-icon>edit</mat-icon></button>
               <button type="button" (click)="onDeleteConfig(config)" *ngIf="!config.isEnabled"><mat-icon>delete</mat-icon></button>

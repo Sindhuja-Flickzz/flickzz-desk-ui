@@ -12,14 +12,16 @@ export class CategoryService {
   constructor(private http: HttpClient) {}
 
   getAllCategories(businessPartnerId?: number | null): Observable<any> {
-    const url = businessPartnerId
-      ? `${this.baseUrl}/bp/config/category/${businessPartnerId}`
-      : `${this.baseUrl}/bp/category/list`;
+    const url = `${this.baseUrl}/bp/config/category/${businessPartnerId}`;
     return this.http.get(url);
   }
 
   getCategoryById(categoryId: number): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/bp/category/${categoryId}`);
+  }
+
+  getSubCategories(categoryId: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/bp/sub-category/${categoryId}`);
   }
 
   createCategory(request: any): Observable<any> {

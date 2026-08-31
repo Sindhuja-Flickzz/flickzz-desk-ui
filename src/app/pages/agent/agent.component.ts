@@ -228,7 +228,6 @@ export class AgentComponent implements OnInit {
           this.agentForm.patchValue({ mailId: email });
         }
         this.enquiryUser = false;
-        console.log(`No enquiry found for email ${email} - proceeding with blank form`);
         this.agentService.getAgentInfoByEmail(email).subscribe({
           next: (agentData) => {
             this.formError['mailId'] = 'An agent with this email already exists';
@@ -969,8 +968,8 @@ export class AgentComponent implements OnInit {
   onCitySelect(cityId: number): void {
     cityId = Number(cityId);
     this.selectedCity = this.cities.find(c => c.cityId === cityId) || null;
-    if (this.selectedCity && this.selectedCity.country.timezone) {
-      this.selectedTimezone = this.selectedCity.country.timezone;
+    if (this.selectedCity && this.selectedCity.timezone) {
+      this.selectedTimezone = this.selectedCity.timezone;
       this.updateLocalTime();
       this.startLocalTimeTicker();
     } else {

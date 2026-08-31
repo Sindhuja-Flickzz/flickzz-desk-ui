@@ -20,6 +20,10 @@ export class SupportGroupService {
     return this.http.get<any>(`${this.baseUrl}/bp/support-group/${supportGroupId}`);
   }
 
+  getSupportGroupBySubCategory(subCategoryId: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/bp/get/support-group/${subCategoryId}`);
+  }
+
   createSupportGroup(request: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/bp/support-group/create`, request);
   }

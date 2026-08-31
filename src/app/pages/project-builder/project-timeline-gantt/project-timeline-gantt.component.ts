@@ -63,10 +63,8 @@ export class ProjectTimelineGanttComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['project'] && this.project) {
-      console.log('Project input changed:', this.project);
       this.loadProjectData();
     } else if (changes['projectId'] && this.projectId && !this.project) {
-      console.log('Project ID changed:', this.projectId);
       this.loadProjectById(this.projectId);
     }
   }
