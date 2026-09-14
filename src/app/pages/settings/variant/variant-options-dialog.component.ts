@@ -2,28 +2,28 @@ import { Component, Inject, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { DropdownOption, FieldType } from '../../../models/details-template.model';
+import { DropdownOption, FieldType } from '../../../models/variant.model';
 
-export interface DetailsTemplateOptionsDialogData {
+export interface VariantOptionsDialogData {
   options: DropdownOption[];
   fieldType: FieldType;
   fieldTypeLabel: string;
 }
 
 @Component({
-  selector: 'app-details-template-options-dialog',
-  templateUrl: './details-template-options-dialog.component.html',
-  styleUrls: ['./details-template-options-dialog.component.scss']
+  selector: 'app-variant-options-dialog',
+  templateUrl: './variant-options-dialog.component.html',
+  styleUrls: ['./variant-options-dialog.component.scss']
 })
-export class DetailsTemplateOptionsDialogComponent implements OnInit {
+export class VariantOptionsDialogComponent implements OnInit {
   optionsForm: FormGroup;
   fieldType = FieldType;
   title: string;
 
   constructor(
     private fb: FormBuilder,
-    public dialogRef: MatDialogRef<DetailsTemplateOptionsDialogComponent, DropdownOption[]>,
-    @Inject(MAT_DIALOG_DATA) public data: DetailsTemplateOptionsDialogData
+    public dialogRef: MatDialogRef<VariantOptionsDialogComponent, DropdownOption[]>,
+    @Inject(MAT_DIALOG_DATA) public data: VariantOptionsDialogData
   ) {
     this.title = `Configure ${this.data.fieldTypeLabel}`;
     this.optionsForm = this.fb.group({

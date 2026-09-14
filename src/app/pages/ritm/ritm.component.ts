@@ -128,6 +128,9 @@ export class RitmComponent implements OnInit, OnDestroy {
     this.loadUsers();
 
     const id = this.route.snapshot.queryParamMap.get('id');
+    const navigationState = this.router.getCurrentNavigation()?.extras?.state as { ritmData?: any } | undefined;
+    const existingRitmData = navigationState?.ritmData || history.state?.ritmData;
+
     this.companyService.getServiceProviderList(Number(this.orgId)).subscribe({
         next: (response) => {
           this.bpOptions = (response as any).attributes || response || [];
@@ -138,7 +141,7 @@ export class RitmComponent implements OnInit, OnDestroy {
           this.businessPartnerId = matchingRole?.businessPartnerId ?? null;
           this.loadCategories();
           this.loadPriorities();
-          
+
         },
         error: () => {
           console.error('Failed to load business partners');
@@ -147,7 +150,11 @@ export class RitmComponent implements OnInit, OnDestroy {
     if (id) {
       this.isEditMode = true;
       this.ritmId = id;
-      this.loadRitmDetails(id);
+      if (existingRitmData) {
+        this.populateFormFromRitm(existingRitmData);
+      } else {
+        this.loadRitmDetails(id);
+      }
     }
   }
 
@@ -213,7 +220,7 @@ export class RitmComponent implements OnInit, OnDestroy {
         if (!this.isEditMode) {
           this.applyFormDefaults();
         }
-        this.loadSupportTabs();
+        // this.loadSupportTabs();
       },
       error: (err: unknown) => {
         this.submitError = 'Unable to load user list.';
@@ -295,16 +302,31 @@ export class RitmComponent implements OnInit, OnDestroy {
 
   private normalizeWatchListIds(value: unknown): number[] {
     const items = Array.isArray(value) ? value : [];
-
     return [...new Set(items
       .map(item => {
         if (typeof item === 'object' && item !== null) {
           const record = item as Record<string, unknown>;
+
           const nestedAgent = typeof record['agent'] === 'object' && record['agent'] !== null
             ? record['agent'] as Record<string, unknown>
             : null;
 
-          return record['agentId'] ?? record['id'] ?? nestedAgent?.['agentId'];
+          const watchedBy = typeof record['watchedBy'] === 'object' && record['watchedBy'] !== null
+            ? record['watchedBy'] as Record<string, unknown>
+            : null;
+
+          const watchedAgent = typeof record['watcher'] === 'object' && record['watcher'] !== null
+            ? record['watcher'] as Record<string, unknown>
+            : null;
+
+          return record['agentId']
+            ?? record['id']
+            ?? nestedAgent?.['agentId']
+            ?? nestedAgent?.['id']
+            ?? watchedBy?.['agentId']
+            ?? watchedBy?.['id']
+            ?? watchedAgent?.['agentId']
+            ?? watchedAgent?.['id'];
         }
         return item;
       })
@@ -377,38 +399,49 @@ export class RitmComponent implements OnInit, OnDestroy {
     }
   }
 
+  private populateFormFromRitm(item: any): void {
+    const ritm = item?.attributes || item || {};
+    console.log('Populating form with RITM data:', ritm);
+    this.ritmForm.patchValue({
+      ritmNumber: ritm.ritmNumber || '',
+      openedBy: ritm.openedBy || this.getCurrentUserDisplayName(),
+      requestedFor: ritm.requestedFor.agentId,
+      location: ritm.location || this.currentUser?.city?.cityName || this.currentUser?.country?.countryName || '',
+      availabilityTime: this.formatAvailabilityTime(this.currentUser?.calendar?.workFrom, this.currentUser?.calendar?.workTo),
+      currentTime: this.getLocalTime(this.currentUser?.city?.timezone),
+      category: ritm.categoryId ?? ritm.category?.categoryId ?? (ritm.category || ''),
+      subCategory: ritm.subCategoryId ?? ritm.subCategory?.subCategoryId ?? ritm.subCategory?.id ?? '',
+      assignmentGroup: ritm.assignmentGroup || '',
+      priority: ritm.priority.priorityId || '',
+      watchList: this.normalizeWatchListIds(ritm.watchlist || []),
+      shortDescription: ritm.shortDescription || '',
+      description: ritm.description || '',
+      stepsToReproduce: ritm.stepsToReproduce || '',
+      otherNotes: ritm.otherNotes || ''
+    });
+    this.assignmentGroupId = ritm.supportGroupId
+      ?? ritm.assignmentGroupId
+      ?? ritm.assignmentGroup?.supportGroupId
+      ?? ritm.assignmentGroup?.groupId
+      ?? ritm.assignmentGroup?.id
+      ?? (typeof ritm.assignmentGroup === 'number' ? ritm.assignmentGroup : null);
+
+    if (!ritm.ritmNumber) {
+      this.generateRitmNumber();
+    }
+
+    // if (!this.isEditMode) {
+    //   this.loadSupportTabs();
+    // }
+    this.loading = false;
+  }
+
   private loadRitmDetails(ritmId: string): void {
     this.loading = true;
     this.ritmService.getRitmById(ritmId).subscribe({
       next: (response: any) => {
         const item = response?.attributes || response || {};
-        this.ritmForm.patchValue({
-          ritmNumber: item.ritmNumber || '',
-          openedBy: item.openedBy || this.getCurrentUserDisplayName(),
-          requestedFor: item.requestedFor || this.currentUser?.agentId,
-          location: item.location || this.currentUser?.city?.cityName || this.currentUser?.country?.countryName || '',
-          availabilityTime: this.formatAvailabilityTime(this.currentUser?.calendar?.workFrom, this.currentUser?.calendar?.workTo),
-          currentTime: this.getLocalTime(this.currentUser?.city?.timezone),
-          category: item.categoryId ?? item.category?.categoryId ?? (item.category || ''),
-          subCategory: item.subCategoryId ?? item.subCategory?.subCategoryId ?? item.subCategory?.id ?? '',
-          assignmentGroup: item.assignmentGroup || '',
-          priority: item.priority || '',
-          watchList: this.normalizeWatchListIds(item.watchList || []),
-          shortDescription: item.shortDescription || '',
-          description: item.description || '',
-          stepsToReproduce: item.stepsToReproduce || '',
-          otherNotes: item.otherNotes || ''
-        });
-        this.assignmentGroupId = item.supportGroupId
-          ?? item.assignmentGroupId
-          ?? item.assignmentGroup?.supportGroupId
-          ?? item.assignmentGroup?.groupId
-          ?? item.assignmentGroup?.id
-          ?? (typeof item.assignmentGroup === 'number' ? item.assignmentGroup : null);
-        if (!item.ritmNumber) {
-          this.generateRitmNumber();
-        }
-        this.loadSupportTabs();
+        this.populateFormFromRitm(item);
       },
       error: (err: unknown) => {
         this.submitError = 'Unable to load RITM details for editing.';
@@ -557,7 +590,12 @@ export class RitmComponent implements OnInit, OnDestroy {
       payload.append('files', file, file.name);
     });
     console.log('Submitting RITM with payload:', payload);
-    this.ritmService.createRitm(payload).subscribe({
+
+    const saveRequest$ = this.isEditMode
+      ? this.ritmService.updateRitm(payload)
+      : this.ritmService.createRitm(payload);
+
+    saveRequest$.subscribe({
       next: (response: any) => {
         this.submitSuccess = this.isEditMode ? 'RITM updated successfully.' : 'RITM created successfully.';
         this.submitting = false;
@@ -573,7 +611,7 @@ export class RitmComponent implements OnInit, OnDestroy {
           this.ritmForm.get('watchList')?.reset([]);
           this.ritmForm.get('shortDescription')?.reset();
           this.ritmForm.get('description')?.reset();
-          this.ritmForm.get('stepsToReproduce')?.reset();
+          this.ritmForm.get('stepsToReProduce')?.reset();
           this.ritmForm.get('otherNotes')?.reset();
         }
       },

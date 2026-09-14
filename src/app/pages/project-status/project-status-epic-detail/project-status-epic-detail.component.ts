@@ -3,9 +3,9 @@ import { ActivatedRoute } from '@angular/router';
 import { Location } from '@angular/common';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ProjectService } from '../../../service/project.service';
+import { VariantService } from '../../../service/variant.service';
 import { EpicVO, ProgressStatusVO, UserStory, Task, SubTask } from '../../../models/project-builder';
-import { DetailsTemplateService } from '../../../service/details-template.service';
-import { FieldTypeItem, TemplateDetail, TemplateDetailField, TemplatesDetails } from '../../../models/details-template.model';
+import { FieldTypeItem, TemplateDetail, TemplateDetailField, TemplatesDetails } from '../../../models/variant.model';
 
 export interface EpicDetailDialogData {
   itemType?: 'epic' | 'story' | 'task' | 'subtask';
@@ -43,7 +43,7 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private location: Location,
     private projectService: ProjectService,
-    private templateService: DetailsTemplateService,
+    private templateService: VariantService,
     @Optional() public dialogRef: MatDialogRef<ProjectStatusEpicDetailComponent>,
     @Optional() @Inject(MAT_DIALOG_DATA) public data?: EpicDetailDialogData
   ) {}
@@ -544,10 +544,10 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
               : [];
             this.initializeSelectedTemplate();
           },
-          error: (err) => console.error('Failed to load templates', err)
+          error: (err: any) => console.error('Failed to load templates', err)
         });
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Failed to load field types for templates', err);
         this.templateService.getTemplateList(orgId).subscribe({
           next: (data: any) => {
@@ -555,7 +555,7 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
             this.templates = Array.isArray(templates) ? templates as TemplatesDetails[] : [];
             this.initializeSelectedTemplate();
           },
-          error: (tmplErr) => console.error('Failed to load templates', tmplErr)
+          error: (tmplErr: any) => console.error('Failed to load templates', tmplErr)
         });
       }
     });
@@ -634,7 +634,7 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
     }
 
     if (this.selectedTemplate) {
-      (item as any).templateDetails = this.selectedTemplate.templateDetails?.map((detail) => ({
+      (item as any).templateDetails = this.selectedTemplate.templateDetails?.map((detail: TemplateDetailField) => ({
         fieldName: detail.fieldName,
         fieldTypeId: detail.fieldTypeId,
         mandatory: detail.mandatory,
@@ -714,7 +714,7 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
         : this.epic;
     const existingDetails = Array.isArray((item as any)?.templateDetails) ? (item as any).templateDetails : [];
 
-    this.selectedTemplate?.templateDetails?.forEach((detail) => {
+    this.selectedTemplate?.templateDetails?.forEach((detail: TemplateDetailField) => {
       const existingDetail = existingDetails.find((item: any) => item.fieldName === detail.fieldName);
       if (existingDetail?.value !== undefined) {
         this.templateFieldValues[detail.fieldName] = existingDetail.value;
@@ -725,10 +725,10 @@ export class ProjectStatusEpicDetailComponent implements OnInit {
       if (detail.options && detail.options.length) {
         if (typeLabel === 'CHECKBOX' || typeLabel === 'MULTISELECT') {
           this.templateFieldValues[detail.fieldName] = detail.options
-            .filter((option) => option.defaultSelected)
-            .map((option) => option.value);
+            .filter((option: any) => option.defaultSelected)
+            .map((option: any) => option.value);
         } else {
-          this.templateFieldValues[detail.fieldName] = detail.options.find((option) => option.defaultSelected)?.value || '';
+          this.templateFieldValues[detail.fieldName] = detail.options.find((option: any) => option.defaultSelected)?.value || '';
         }
       } else {
         this.templateFieldValues[detail.fieldName] = '';

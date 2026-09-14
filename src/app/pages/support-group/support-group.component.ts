@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { PageEvent } from '@angular/material/paginator';
@@ -84,6 +84,7 @@ export class SupportGroupComponent implements OnInit {
     private dialog: MatDialog,
     private companyService: CompanyService,
     private route: ActivatedRoute,
+    private router: Router,
     private location: Location
   ) {
     this.supportGroupForm = this.fb.group({
@@ -110,6 +111,10 @@ export class SupportGroupComponent implements OnInit {
 
   backToPrevious(): void {
     this.location.back();
+  }
+
+  openGroupItemPage(): void {
+    this.router.navigate(['/group-ritm']);
   }
 
   selectTab(tab: 'create' | 'list'): void {

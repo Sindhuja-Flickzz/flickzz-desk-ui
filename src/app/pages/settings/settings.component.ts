@@ -15,7 +15,11 @@ export class SettingsComponent {
     { title: 'Agent', route: '/agent' },
     { title: 'Number Range', route: '/number-range' },
     { title: 'Impact', route: '/impact' },
-    {title: 'RITM', route: '/ritm'}
+    {title: 'RITM', route: '/ritm'},
+    {'title': 'My Tickets', 'route': '/my-tickets'},
+    {'title': 'Group RITM', 'route': '/group-ritm'},
+    {'title': 'Variant', 'route': '/variant'},
+    {'title': 'Template', 'route': '/templatecomponent'}
   ];
 
   constructor(private router: Router) {}

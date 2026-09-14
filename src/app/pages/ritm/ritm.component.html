@@ -172,7 +172,7 @@
             [title]="requestDetailsExpanded ? 'Collapse request details' : 'Expand request details'"
             (click)="toggleRequestDetails()"
           >
-            <span class="section-toggle-label">{{ requestDetailsExpanded ? 'Collapse' : 'Expand' }}</span>
+            <!-- <span class="section-toggle-label">{{ requestDetailsExpanded ? 'Collapse' : 'Expand' }}</span> -->
             <span class="section-toggle-icon" aria-hidden="true">{{ requestDetailsExpanded ? '⌃' : '⌄' }}</span>
           </button>
         </div>
@@ -257,14 +257,13 @@
       <header class="success-hero">
         <div class="success-badge" aria-hidden="true">✓</div>
         <div class="success-hero-copy">
-          <span class="success-overline">Request submitted</span>
-          <h2>RITM Created Successfully</h2>
+          <h2>{{ successRitmDetails?.ritmNumber || 'RITM' }} Created Successfully</h2>
           <p>Your request is now in progress and the details below were captured for processing.</p>
         </div>
         <div class="success-pill">{{ successRitmDetails?.status || 'Open' }}</div>
       </header>
 
-      <section class="success-summary-strip">
+      <!-- <section class="success-summary-strip">
         <div class="summary-item">
           <span class="summary-label">RITM Number</span>
           <strong>{{ successRitmDetails?.ritmNumber || '—' }}</strong>
@@ -281,7 +280,7 @@
           <span class="summary-label">Requested For</span>
           <strong>{{ successRitmDetails?.requestedForName || '—' }}</strong>
         </div>
-      </section>
+      </section> -->
 
       <section class="detail-section">
         <div class="section-heading">Request Details</div>
@@ -326,10 +325,6 @@
         </button>
 
         <div class="success-action-group">
-          <button mat-button type="button" class="back-action" (click)="onCancel()">
-            <mat-icon>arrow_back</mat-icon>
-            Back to RITMs
-          </button>
           <button mat-flat-button color="primary" type="button" class="primary-action" (click)="onCancel()">
             View RITM Details
           </button>

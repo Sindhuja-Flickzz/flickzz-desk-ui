@@ -1,0 +1,59 @@
+<div class="my-tickets-page">
+  <div class="page-header">
+    <h2>My Tickets</h2>
+  </div>
+
+  <div class="primary-tabs" role="tablist" aria-label="My tickets sections">
+    <button
+      type="button"
+      class="tab-button"
+      [class.active]="primaryTab === 'opened-by-me'"
+      (click)="setPrimaryTab('opened-by-me')"
+    >
+      Opened by me
+    </button>
+    <button
+      type="button"
+      class="tab-button"
+      [class.active]="primaryTab === 'assigned-to-me'"
+      (click)="setPrimaryTab('assigned-to-me')"
+    >
+      Assigned to me
+    </button>
+  </div>
+
+  <div class="sub-tabs" role="tablist" aria-label="Ticket categories">
+    <button type="button" class="sub-tab" [class.active]="subTab === 'ritm'" (click)="setSubTab('ritm')">RITM</button>
+    <button type="button" class="sub-tab" [class.active]="subTab === 'incident'" (click)="setSubTab('incident')">Incident</button>
+    <button type="button" class="sub-tab" [class.active]="subTab === 'others'" (click)="setSubTab('others')">User Stories</button>
+  </div>
+
+  <div class="ticket-panel">
+    <div *ngIf="loading" class="loading-state">Loading...</div>
+
+    <div *ngIf="!loading && !currentList.length" class="empty-state">
+      No {{ subTab }} tickets found for {{ getPrimaryLabel().toLowerCase() }}.
+    </div>
+
+    <div *ngIf="!loading && currentList.length" class="ticket-list">
+      <div class="ticket-row" *ngFor="let item of currentList" (click)="openTicket(item)" style="cursor: pointer;">
+        <div class="row-main">
+          <span class="ticket-number">{{ getRequestNumber(item) }}</span>
+          <span class="ticket-status" [ngClass]="getStatus(item).toLowerCase()">{{ getStatus(item) }}</span>
+        </div>
+
+        <div class="ticket-title">{{ getTitle(item) }}</div>
+
+        <div class="ticket-meta">
+          <span><strong>Priority:</strong> {{ getPriority(item) }}</span>
+          <span *ngIf="primaryTab === 'opened-by-me'">
+            <strong>Assigned to:</strong> {{ getAssignee(item) }}
+          </span>
+          <span *ngIf="primaryTab === 'assigned-to-me'">
+            <strong>Requested by:</strong> {{ getRequestedBy(item) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

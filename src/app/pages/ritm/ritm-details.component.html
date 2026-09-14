@@ -1,0 +1,241 @@
+<div class="ritm-details-page">
+  <div class="page-header">
+    <button type="button" class="header-back" (click)="back()">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <h1 class="ritm-number">{{ getNestedValue('ritmNumber', 'RITM') }}</h1>
+  </div>
+
+  <div *ngIf="loading" class="loading-panel">
+    <mat-spinner diameter="36"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading && !ritm" class="empty-state">Unable to load RITM details.</div>
+
+  <div *ngIf="!loading && ritm" class="details-shell">
+
+    <div class="tabs" role="tablist" aria-label="RITM tabs">
+      <button type="button" class="tab-btn" [class.active]="activeTab === 'details'" (click)="setActiveTab('details')">Details</button>
+      <button type="button" class="tab-btn" [class.active]="activeTab === 'work-notes'" (click)="setActiveTab('work-notes')">Work Notes</button>
+      <button type="button" class="tab-btn" [class.active]="activeTab === 'history'" (click)="setActiveTab('history')">History</button>
+    </div>
+
+    <div class="tab-panel" *ngIf="activeTab === 'details'">
+      <div *ngIf="templatesLoading" class="loading-panel small">
+        <mat-spinner diameter="28"></mat-spinner>
+      </div>
+
+      <div class="section-block template-section" *ngFor="let template of templates">
+        <div class="section-header">
+          <span class="section-header-icon">▣</span>
+          <span>{{ template.templateName }}</span>
+        </div>
+
+        <div class="template-field-grid">
+          <div class="template-field" *ngFor="let field of getTemplateFields(template)">
+            <div class="field-label-row">
+              <label [attr.for]="'ritm-field-' + field.fieldId">{{ field.fieldName }}</label>
+              <button *ngIf="hasDefaultValue(field)" type="button" class="default-value-button"
+                [matTooltip]="'Use default value: ' + field.defaultValue"
+                [attr.aria-label]="'Use default value for ' + field.fieldName"
+                (click)="applyDefaultValue(field)">
+                <mat-icon>info_outline</mat-icon>
+              </button>
+            </div>
+
+            <textarea *ngIf="getFieldType(field) === 'TEXTAREA'" [id]="'ritm-field-' + field.fieldId"
+              [(ngModel)]="field.value" [readonly]="isFieldLocked(field)" rows="3"></textarea>
+            <input *ngIf="getFieldType(field) !== 'TEXTAREA' && getFieldType(field) !== 'DROPDOWN' && getFieldType(field) !== 'CHECKBOX'"
+              [id]="'ritm-field-' + field.fieldId" [type]="getFieldType(field) === 'NUMBER' ? 'number' : getFieldType(field) === 'DATE_PICKER' ? 'date' : getFieldType(field) === 'EMAIL' ? 'email' : getFieldType(field) === 'URL' ? 'url' : 'text'"
+              [(ngModel)]="field.value" [readonly]="isFieldLocked(field)" />
+            <select *ngIf="getFieldType(field) === 'DROPDOWN'" [id]="'ritm-field-' + field.fieldId"
+              [(ngModel)]="field.value" [disabled]="isFieldLocked(field)">
+              <option value="">Select {{ field.fieldName }}</option>
+              <option *ngFor="let option of getFieldOptions(field)" [value]="option.value">{{ option.label }}</option>
+            </select>
+            <label *ngIf="getFieldType(field) === 'CHECKBOX'" class="checkbox-field">
+              <input [id]="'ritm-field-' + field.fieldId" type="checkbox" [(ngModel)]="field.value" [disabled]="isFieldLocked(field)" />
+              <span>{{ field.fieldName }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!templatesLoading && !templates.length" class="empty-state small">No request template available.</div>
+
+      <div class="section-block" *ngIf="getNestedValue('description', '') !== ''">
+        <div class="section-header amber-header">
+          <span class="section-header-icon">☰</span>
+          <span>Request Description</span>
+        </div>
+        <div class="description-block">
+          <p>{{ getNestedValue('description') }}</p>
+        </div>
+      </div>
+
+      <div class="section-block" *ngIf="getNestedValue('stepsToReproduce', '') !== ''">
+        <div class="section-header amber-header">
+          <span class="section-header-icon">⇢</span>
+          <span>Steps to Reproduce</span>
+        </div>
+        <div class="description-block">
+          <p>{{ getNestedValue('stepsToReproduce') }}</p>
+        </div>
+      </div>
+
+      <div class="section-block" *ngIf="getNestedValue('otherNotes', '') !== ''">
+        <div class="section-header amber-header">
+          <span class="section-header-icon">✎</span>
+          <span>Other Notes</span>
+        </div>
+        <div class="description-block">
+          <p>{{ getNestedValue('otherNotes') }}</p>
+        </div>
+      </div>
+
+      <div class="actions" *ngIf="canEdit()">
+        <button type="button" class="primary-action" (click)="editRitm()">Edit RITM</button>
+      </div>
+    </div>
+
+    <div class="tab-panel" *ngIf="activeTab === 'work-notes'">
+      <div class="comment-box">
+        <textarea [(ngModel)]="commentText" rows="4" placeholder="Add a comment for this RITM..."></textarea>
+        <div class="comment-actions">
+          <button type="button" class="primary-action" [disabled]="submittingComment || !commentText.trim()" (click)="addComment()">
+            {{ submittingComment ? 'Posting...' : 'Add Comment' }}
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="notesLoading" class="loading-panel small">
+        <mat-spinner diameter="28"></mat-spinner>
+      </div>
+
+      <div class="notes-list" *ngIf="paginatedWorkNotes.length; else noNotes">
+        <div class="note-item" *ngFor="let note of paginatedWorkNotes">
+          <div class="note-header">
+            <strong>{{ getCommentAuthor(note) }}</strong>
+            <span>{{ getFormattedCommentDate(note.createdAt || note.createdOn || note.createdDate) }}</span>
+          </div>
+          <p>{{ note.commentText || note.comment || 'No comment provided' }}</p>
+        </div>
+      </div>
+
+      <div class="pagination-bar" *ngIf="workNotes.length > pageSize">
+        <span>{{ getWorkNotesRangeLabel() }}</span>
+        <div class="pagination-controls">
+          <button type="button" class="page-btn" [disabled]="workNotesPage === 1" (click)="setWorkNotesPage(workNotesPage - 1)">‹</button>
+          <button type="button" class="page-btn active" [disabled]="true">{{ workNotesPage }}</button>
+          <button type="button" class="page-btn" [disabled]="workNotesPage >= workNotesPageCount" (click)="setWorkNotesPage(workNotesPage + 1)">›</button>
+        </div>
+      </div>
+      <ng-template #noNotes>
+        <div class="empty-state small">No work notes available.</div>
+      </ng-template>
+    </div>
+
+    <div class="tab-panel" *ngIf="activeTab === 'history'">
+      <div *ngIf="historyLoading" class="loading-panel small">
+        <mat-spinner diameter="28"></mat-spinner>
+      </div>
+
+      <div class="history-screen" *ngIf="!historyLoading">
+        <div class="history-toolbar">
+          <div class="history-search-wrap">
+            <input type="text" [(ngModel)]="historySearchTerm" placeholder="Search history..." />
+            <mat-icon>search</mat-icon>
+          </div>
+        </div>
+
+        <div class="history-list" *ngIf="paginatedHistory.length; else noHistory">
+          <div class="history-item" *ngFor="let entry of paginatedHistory">
+            <div class="history-date-col">
+              <span class="history-date">{{ getAuditTimestamp(entry) }}</span>
+              <span class="history-time">{{ getAuditTime(entry) }}</span>
+            </div>
+
+            <div class="history-content">
+              <div class="history-card-header">
+                <div class="history-icon-wrap" [ngClass]="getHistoryIconClass(entry)">
+                  <mat-icon>{{ getHistoryIcon(entry) }}</mat-icon>
+                </div>
+                <div class="history-title-wrap">
+                  <div class="history-title-row">
+                    <h4>{{ getAuditTitle(entry) }}</h4>
+                    <span class="history-change-count" *ngIf="getAuditDetails(entry).length > 1">{{ getAuditDetails(entry).length }} changes</span>
+                  </div>
+                  <div class="history-meta">Updated by {{ getAuditByLabel(entry) }}</div>
+                </div>
+              </div>
+
+              <div class="history-details-box" *ngIf="getAuditDetails(entry).length > 1">
+                <table class="history-table">
+                  <thead>
+                    <tr>
+                      <th>Field</th>
+                      <th>Old value</th>
+                      <th>New value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let detail of getAuditDetails(entry)">
+                      <td>{{ detail?.fieldName || 'Field' }}</td>
+                      <td>{{ formatAuditValue(detail?.oldValue) }}</td>
+                      <td>{{ formatAuditValue(detail?.newValue) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="history-single-change" *ngIf="getAuditDetails(entry).length === 1">
+                <div class="single-change-row" *ngFor="let detail of getAuditDetails(entry)">
+                  <span class="single-field-name">{{ detail?.fieldName || 'Field' }}</span>
+                  <span class="single-arrow">→</span>
+                  <span class="single-new-value">{{ formatAuditValue(detail?.newValue) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pagination-bar" *ngIf="filteredHistory.length > pageSize">
+          <span>{{ getHistoryRangeLabel() }}</span>
+          <div class="pagination-controls">
+            <button type="button" class="page-btn" [disabled]="historyPage === 1" (click)="setHistoryPage(historyPage - 1)">‹</button>
+            <button type="button" class="page-btn active" [disabled]="true">{{ historyPage }}</button>
+            <button type="button" class="page-btn" [disabled]="historyPage >= historyPageCount" (click)="setHistoryPage(historyPage + 1)">›</button>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noHistory>
+        <div class="empty-state small">No history available.</div>
+      </ng-template>
+    </div>
+
+    <div class="tab-panel" *ngIf="activeTab === 'sla'">
+      <div class="sla-card" *ngIf="slaInfo; else noSla">
+        <div class="sla-row">
+          <span class="label">Breach</span>
+          <strong>{{ slaInfo.breachStatus || slaInfo.breach || 'No breach' }}</strong>
+        </div>
+        <div class="sla-row">
+          <span class="label">SLA Target</span>
+          <strong>{{ slaInfo.target || slaInfo.slaTarget || 'N/A' }}</strong>
+        </div>
+        <div class="sla-row">
+          <span class="label">Escalation</span>
+          <strong>{{ slaInfo.escalationStatus || 'Not escalated' }}</strong>
+        </div>
+      </div>
+      <ng-template #noSla>
+        <div class="empty-state small">No SLA information available.</div>
+      </ng-template>
+
+      <div class="actions" *ngIf="ritmId">
+        <button type="button" class="secondary-action" (click)="escalate()">Escalate</button>
+      </div>
+    </div>
+  </div>
+</div>

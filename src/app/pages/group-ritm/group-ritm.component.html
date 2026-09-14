@@ -1,0 +1,36 @@
+<div class="group-ritm-page">
+  <header class="page-header">
+    <h1>Group RITM</h1>
+    <p>View and manage RITMs assigned to group agents.</p>
+  </header>
+
+  <div class="group-layout" [class.drawer-open]="selectedRequest">
+    <aside class="agent-sidebar">
+      <div class="sidebar-title"><mat-icon>group</mat-icon><strong>Agents</strong><mat-icon class="collapse-icon">expand_less</mat-icon></div>
+      <button type="button" class="agent-option" [class.active]="selectedAgentId === null" (click)="selectUnassigned()"><mat-icon>inbox</mat-icon><span>Not Assigned</span><b>{{ selectedAgentId === null ? requests.length : '' }}</b></button>
+      <button type="button" class="agent-option" *ngFor="let user of users" [class.active]="selectedAgentId === (user.agent?.agentId ?? user.userId)" (click)="selectAgent(user)"><span class="agent-avatar">{{ displayAgentName(user).charAt(0) }}</span><span class="agent-name">{{ displayAgentName(user) }}</span></button>
+      <div *ngIf="usersLoading" class="loading-state">Loading agents...</div>
+      <button type="button" class="invite-button"><mat-icon>person_add</mat-icon> Invite Agent</button>
+    </aside>
+
+    <section class="request-panel">
+      <div class="panel-header"><div><div class="heading-title"><h2>{{ selectedAgentId === null ? 'Not Assigned' : selectedAgentName }}</h2><span class="count-badge">{{ requests.length }}</span></div><p>RITMs that are not yet assigned to any agent.</p></div><div class="panel-actions"><button type="button" class="icon-button" title="Refresh" (click)="selectUnassigned()"><mat-icon>sync</mat-icon></button><button type="button" class="filter-button"><mat-icon>filter_alt</mat-icon> Filters</button><button type="button" class="assign-button"><mat-icon>person_add</mat-icon> Assign</button></div></div>
+      <div *ngIf="requestsLoading" class="loading-state">Loading requests...</div>
+      <div *ngIf="!requestsLoading && requests.length" class="request-list">
+        <div class="table-header"><span>RITM Number</span><span>Requested Item</span><span>Requested by</span><span>Priority</span><span>Requested on</span><span>Status</span></div>
+        <button type="button" class="request-row" *ngFor="let item of requests" [class.selected]="selectedRequest === item" (click)="selectRequest(item)"><span class="ritm-number">{{ item.ritmNumber || 'RITM' }}</span><span>{{ item.shortDescription || item.description || 'No description' }}</span><span>{{ item.requestedBy?.agentName || item.requestedByName || 'N/A' }}</span><span><em class="priority {{ (item.priority?.code || item.priorityName || 'medium').toLowerCase() }}">{{ item.priority?.code || item.priorityName || 'Medium' }}</em></span><span>{{ item.requestedOn || item.createdAt || 'N/A' }}</span><span><em class="status {{ (item.status || 'Open').toLowerCase() }}">{{ item.status || 'Open' }}</em></span></button>
+      </div>
+      <div *ngIf="!requestsLoading && !requests.length" class="empty-state"><mat-icon>inbox</mat-icon><h3>No RITMs to display</h3><p>There are no RITMs in this category.</p></div>
+      <div class="table-footer" *ngIf="!requestsLoading && requests.length"><span>Showing 1 to {{ requests.length }} of {{ requests.length }} RITMs</span><span>25 / page</span></div>
+    </section>
+
+    <aside class="details-drawer" *ngIf="selectedRequest">
+      <div class="drawer-header"><div><mat-icon>article</mat-icon><h2>RITM Details</h2></div><button type="button" class="close-button" title="Close" (click)="selectedRequest = null"><mat-icon>close</mat-icon></button></div>
+      <div class="drawer-number"><span>{{ selectedRequest.ritmNumber || 'RITM' }}</span><em class="status open">{{ selectedRequest.status || 'Open' }}</em></div>
+      <div class="detail-list"><div><label>Requested Item</label><strong>{{ selectedRequest.shortDescription || selectedRequest.description || 'N/A' }}</strong></div><div><label>Requested by</label><strong>{{ selectedRequest.requestedBy?.agentName || selectedRequest.requestedByName || 'N/A' }}</strong></div><div><label>Requested on</label><strong>{{ selectedRequest.requestedOn || selectedRequest.createdAt || 'N/A' }}</strong></div><div><label>Due date</label><strong>{{ selectedRequest.dueDate || selectedRequest.targetDate || 'N/A' }}</strong></div><div><label>Priority</label><em class="priority medium">{{ selectedRequest.priority?.code || selectedRequest.priorityName || 'Medium' }}</em></div><div><label>Assignment group</label><strong>{{ selectedRequest.supportGroup?.groupName || selectedRequest.assignmentGroup || 'N/A' }}</strong></div><div><label>Assigned to</label><strong>{{ getAssignedAgentName(selectedRequest) }}</strong></div></div>
+      <div class="assign-control"><label>Assign to agent</label><div class="assign-input-wrap"><input type="text" [(ngModel)]="assignSearch" placeholder="Search agent" /><div class="suggestions" *ngIf="filteredAssignmentSuggestions().length"><button type="button" *ngFor="let agent of filteredAssignmentSuggestions()" (click)="selectAssignmentSuggestion(agent)">{{ agent.agentName || agent.name || 'Agent' }}</button></div></div></div>
+      <div class="drawer-tabs"><button type="button" class="active">Details</button><button type="button">Comments</button><button type="button">History</button><button type="button">Attachments</button></div>
+      <div class="description-block"><label>Details</label><p>{{ selectedRequest.description || 'No description available.' }}</p></div>
+    </aside>
+  </div>
+</div>

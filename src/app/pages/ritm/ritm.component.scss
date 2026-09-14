@@ -205,13 +205,13 @@
 .summary-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  // gap: 6px;
   min-width: 0;
   padding: 14px 16px;
-  border: 1px solid #e7edf7;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  box-shadow: 0 8px 16px rgba(17, 52, 88, 0.02);
+  // border: 1px solid #e7edf7;
+  // border-radius: 14px;
+  // background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  // box-shadow: 0 8px 16px rgba(17, 52, 88, 0.02);
 }
 
 .summary-label {
@@ -231,7 +231,7 @@
 
 .detail-section {
   display: grid;
-  gap: 14px;
+  // gap: 14px;
   padding: 18px 20px;
   border: 1px solid #e7edf7;
   border-radius: 16px;
@@ -250,7 +250,7 @@
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  // gap: 12px;
 }
 
 .detail-field {
@@ -259,9 +259,9 @@
   gap: 8px;
   min-width: 0;
   padding: 12px 12px 10px;
-  border: 1px solid #edf2fa;
-  border-radius: 12px;
-  background: #f9fbff;
+  // border: 1px solid #edf2fa;
+  // border-radius: 12px;
+  // background: #f9fbff;
 }
 
 .field-label {
@@ -828,9 +828,9 @@ form {
   color: #5d778f;
 }
 
-.detail-grid {
-  padding-top: 12px;
-}
+// .detail-grid {
+//   padding-top: 12px;
+// }
 
 .optional-details {
   grid-column: 1 / -1;

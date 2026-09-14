@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject, EMPTY } from 'rxjs';
-import { catchError, switchMap, filter, take } from 'rxjs/operators';
+import { catchError, switchMap, filter, take, finalize } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { AuthenticationService } from './authentication.service';
+import { NotificationService } from './notification.service';
+import { LogoutRequest } from '../models/logout-request';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../shared/confirmation-dialog/confirmation-dialog.component';
 
 @Injectable()
@@ -15,7 +17,8 @@ export class AuthInterceptor implements HttpInterceptor {
   constructor(
     private authService: AuthenticationService,
     private dialog: MatDialog,
-    private router: Router
+    private router: Router,
+    private notificationService: NotificationService
   ) {}
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
@@ -31,12 +34,12 @@ export class AuthInterceptor implements HttpInterceptor {
       catchError((error: HttpErrorResponse) => {
         console.error('HTTP Error:', error);
 
-        if (error.status === 403 && !request.url.includes('/login') && !request.url.includes('/refresh')) {
+        if (error.status === 403 && !request.url.includes('/login') && !request.url.includes('/refresh') && !request.url.includes('/logout')) {
           this.handleForbiddenError(error);
           return EMPTY;
         }
 
-        if (error.status === 401 && !request.url.includes('/login') && !request.url.includes('/refresh')) {
+        if (error.status === 401 && !request.url.includes('/login') && !request.url.includes('/refresh') && !request.url.includes('/logout')) {
           return this.handle401Error(request, next);
         }
 
@@ -114,10 +117,12 @@ export class AuthInterceptor implements HttpInterceptor {
           catchError((error) => {
             this.isRefreshing = false;
             this.refreshTokenSubject.next(null);
+            this.logout();
             return throwError(() => error);
           })
         );
       } else {
+        this.logout();
         return throwError(() => new Error('No refresh token available'));
       }
     } else {
@@ -134,7 +139,24 @@ export class AuthInterceptor implements HttpInterceptor {
   }
 
   private logout(): void {
-    localStorage.clear();
-    this.router.navigateByUrl('/login');
+    const refreshToken = localStorage.getItem('refreshToken');
+    const username = localStorage.getItem('userEmail') ?? undefined;
+    const logoutRequest: LogoutRequest = {
+      username,
+      refreshToken
+    };
+
+    this.authService.logout(logoutRequest)
+      .pipe(finalize(() => {
+        this.notificationService.disconnect();
+        localStorage.clear();
+        this.isRefreshing = false;
+        this.refreshTokenSubject.next(null);
+        this.router.navigateByUrl('/login');
+      }))
+      .subscribe({
+        next: () => undefined,
+        error: () => undefined
+      });
   }
 }
