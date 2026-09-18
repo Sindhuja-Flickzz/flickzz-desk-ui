@@ -88,18 +88,18 @@ export class RitmComponent implements OnInit, OnDestroy {
 
   private initializeForms(): void {
     this.ritmForm = this.fb.group({
-      ritmNumber: [{ value: '', disabled: true }, Validators.required],
-      openedBy: [{ value: '', disabled: true }, Validators.required],
-      requestedFor: ['', Validators.required],
+      ritmNumber: [{ value: '', disabled: true }],
+      openedBy: [{ value: '', disabled: true }],
+      requestedFor: [''],
       location: [{ value: '', disabled: true }],
       availabilityTime: [{ value: '', disabled: true }],
       currentTime: [{ value: '', disabled: true }],
-      category: ['', Validators.required],
-      subCategory: ['', Validators.required],
-      assignmentGroup: ['', Validators.required],
-      priority: ['', Validators.required],
+      category: [''],
+      subCategory: [''],
+      assignmentGroup: [''],
+      priority: [''],
       watchList: [],
-      attachments: [[], Validators.required]
+      attachments: [[]]
     });
 
     this.taskForm = this.fb.group({
@@ -194,7 +194,7 @@ export class RitmComponent implements OnInit, OnDestroy {
       error: error => {
         this.templates = [];
         this.templatesLoading = false;
-        this.submitError = error?.error?.message || 'Unable to load RITM template details.';
+        this.submitError = 'Unable to load RITM template details.';
       }
     });
   }
@@ -269,21 +269,8 @@ export class RitmComponent implements OnInit, OnDestroy {
   }
 
   private validateTemplateFields(): boolean {
-    let isValid = true;
-    this.templates.forEach(template => this.getTemplateFields(template).forEach(field => {
-      field.templateError = '';
-      const mandatory = this.isMandatoryTemplateField(field);
-      const value = this.getUserTemplateValue(field);
-      const missing = value === null || value === undefined || value === ''
-        || (typeof value === 'string' && !value.trim())
-        || (this.getFieldType(field) === 'CHECKBOX' && value !== true);
-
-      if (mandatory && missing) {
-        field.templateError = `${field.fieldName} is required.`;
-        isValid = false;
-      }
-    }));
-    return isValid;
+    this.templates.forEach(template => this.getTemplateFields(template).forEach(field => field.templateError = ''));
+    return true;
   }
 
   private loadCategories(): void {
