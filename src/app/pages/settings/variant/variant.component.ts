@@ -21,7 +21,7 @@ export class VariantComponent implements OnInit, OnDestroy {
   isSaving = false;
   isSubmitting = false;
   activeTab: 'create' | 'list' = 'create';
-  pageTitle = 'Create Details Template';
+  pageTitle = 'Create Variant';
   submitError = '';
   submitSuccess = '';
   formError: any = {};
@@ -505,7 +505,7 @@ export class VariantComponent implements OnInit, OnDestroy {
     this.submitError = '';
     this.submitSuccess = '';
     if (tab === 'create') {
-      this.pageTitle = this.isEditMode ? 'Edit Details Template' : 'Create Details Template';
+      this.pageTitle = this.isEditMode ? 'Edit Variant' : 'Create Variant';
       if (!this.isEditMode) {
         this.resetForm();
       }

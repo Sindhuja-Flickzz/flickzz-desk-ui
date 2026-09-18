@@ -34,6 +34,10 @@ export class RitmService {
     return this.http.put(`${this.baseUrl}/ritm/update`, payload);
   }
 
+  assignRitm(payload: { ritmId: number; assignedTo: number; assignedBy: number }): Observable<any> {
+    return this.http.put(`${this.baseUrl}/ritm/assign`, payload);
+  }
+
   getNotes(userId: string): Observable<NoteItem[]> {
     return this.http.get<NoteItem[]>(`${this.baseUrl}/notes/get/${userId}`);
   }

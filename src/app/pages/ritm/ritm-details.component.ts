@@ -28,9 +28,11 @@ export class RitmDetailsComponent implements OnInit {
   templates: any[] = [];
   templatesLoading = false;
   private fieldTypeMap: Map<number, string> = new Map();
+  private ritmTemplateDetails: any[] = [];
   pageSize = 5;
   workNotesPage = 1;
   historyPage = 1;
+  orgId = localStorage.getItem('userOrgId') || '';
   private agentNameMap: Map<number, string> = new Map();
 
   constructor(
@@ -46,6 +48,7 @@ export class RitmDetailsComponent implements OnInit {
     this.route.paramMap.subscribe((params) => {
       const agentId = params.get('agentId');
       const requestType = params.get('requestType');
+    this.orgId = localStorage.getItem('userOrgId') || '';
       this.agentId = agentId ? Number(agentId) : null;
       this.requestType = requestType || 'requestedByMe';
       this.loadTemplates();
@@ -77,6 +80,13 @@ export class RitmDetailsComponent implements OnInit {
         const payload = response?.attributes ?? response ?? {};
         const detailPayload = Array.isArray(payload) ? payload[0] ?? {} : payload;
         this.ritm = detailPayload?.ritm ?? detailPayload;
+        this.ritmTemplateDetails = this.normalizeTemplateDetails(
+          this.ritm?.templateDetails
+            ?? this.ritm?.templateFields
+            ?? detailPayload?.templateDetails
+            ?? detailPayload?.templateFields
+            ?? []
+        );
         this.applyExistingTemplateValues();
 
         this.slaInfo =
@@ -110,17 +120,19 @@ export class RitmDetailsComponent implements OnInit {
       });
     }
 
-    this.variantService.getWorkItemTemplates('RITM').pipe(finalize(() => this.templatesLoading = false)).subscribe({
+    this.variantService.getRitmTemplateDetails(this.orgId).pipe(finalize(() => this.templatesLoading = false)).subscribe({
       next: (response) => {
         const templates = this.normalizeList(response?.attributes ?? response ?? {});
         this.templates = templates.map((template: any) => ({
           ...template,
           templateDetails: this.normalizeList(template?.templateDetails ?? template?.details ?? []).map((field: any) => ({
             ...field,
+            templateId: field?.templateId ?? template?.templateId,
             value: this.getExistingTemplateValue(field),
             defaultApplied: false
           }))
         }));
+        this.applyExistingTemplateValues();
       },
       error: () => {
         this.templates = [];
@@ -129,7 +141,43 @@ export class RitmDetailsComponent implements OnInit {
   }
 
   getTemplateFields(template: any): any[] {
+    const fields = this.getRawTemplateFields(template);
+    return fields.filter((field: any) => this.hasTemplateValue(field?.value));
+  }
+
+  private getRawTemplateFields(template: any): any[] {
     return Array.isArray(template?.templateDetails) ? template.templateDetails : [];
+  }
+
+  private normalizeTemplateDetails(details: any): any[] {
+    if (Array.isArray(details)) {
+      return details.flatMap((item: any) => this.normalizeTemplateDetails(item));
+    }
+
+    if (!details || typeof details !== 'object') {
+      return [];
+    }
+
+    const nestedDetails = details.templateDetails ?? details.templateFields ?? details.details;
+    if (nestedDetails !== undefined) {
+      return this.normalizeTemplateDetails(nestedDetails).map((field: any) => ({
+        ...field,
+        templateId: field?.templateId ?? details?.templateId,
+        templateName: field?.templateName || details?.templateName
+      }));
+    }
+
+    return details.fieldId != null || details.fieldName != null || details.value != null || details.fieldValue != null
+      ? [details]
+      : [];
+  }
+
+  getAvailableTemplates(): any[] {
+    return this.templates.filter((template: any) => this.getTemplateFields(template).length > 0);
+  }
+
+  private hasTemplateValue(value: any): boolean {
+    return value !== null && value !== undefined && !(typeof value === 'string' && value.trim() === '');
   }
 
   getFieldType(field: any): string {
@@ -159,18 +207,75 @@ export class RitmDetailsComponent implements OnInit {
   }
 
   private getExistingTemplateValue(field: any): any {
-    const details = this.ritm?.templateDetails ?? this.ritm?.templateFields ?? [];
-    const existing = Array.isArray(details)
-      ? details.find((item: any) => item?.fieldName === field?.fieldName)
-      : null;
-    return existing?.value ?? existing?.fieldValue ?? '';
+    const details = this.ritmTemplateDetails;
+    if (Array.isArray(details)) {
+      const fieldId = field?.fieldId == null ? null : Number(field.fieldId);
+      const templateId = field?.templateId == null ? null : Number(field.templateId);
+      const fieldName = this.normalizeFieldName(field?.fieldName);
+
+      const existing = details.find((item: any) =>
+        fieldId !== null && item?.fieldId != null && Number(item.fieldId) === fieldId
+      ) || details.find((item: any) =>
+        templateId !== null
+        && item?.templateId != null
+        && Number(item.templateId) === templateId
+        && fieldName !== ''
+        && this.normalizeFieldName(item?.fieldName) === fieldName
+      ) || details.find((item: any) =>
+        fieldId === null
+        && templateId === null
+        && fieldName !== ''
+        && this.normalizeFieldName(item?.fieldName) === fieldName
+      );
+
+      if (existing) {
+        return this.normalizeTemplateValue(
+          existing?.value
+          ?? existing?.fieldValue
+          ?? existing?.field_value
+          ?? existing?.userValue
+          ?? existing?.answer
+        , field);
+      }
+    }
+
+    return this.normalizeTemplateValue(field?.value ?? field?.fieldValue ?? '', field);
+  }
+
+  private normalizeFieldName(value: any): string {
+    return value == null ? '' : String(value).trim().toLowerCase();
+  }
+
+  private normalizeTemplateValue(value: any, field?: any): any {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    const normalizedValue = typeof value === 'object'
+      ? value.value
+        ?? value.optionValue
+        ?? value.selectedValue
+        ?? value.id
+        ?? value.code
+        ?? value.label
+        ?? ''
+      : value;
+
+    if (this.getFieldType(field) !== 'DROPDOWN') {
+      return normalizedValue;
+    }
+
+    const option = this.getFieldOptions(field).find((item: any) =>
+      String(item?.value) === String(normalizedValue)
+      || String(item?.label).trim().toLowerCase() === String(normalizedValue).trim().toLowerCase()
+    );
+    return option?.value ?? normalizedValue;
   }
 
   private applyExistingTemplateValues(): void {
     this.templates.forEach((template: any) => {
-      this.getTemplateFields(template).forEach((field: any) => {
+      this.getRawTemplateFields(template).forEach((field: any) => {
         const value = this.getExistingTemplateValue(field);
-        if (value !== '') {
+        if (this.hasTemplateValue(value)) {
           field.value = value;
         }
       });
@@ -199,7 +304,7 @@ export class RitmDetailsComponent implements OnInit {
     this.notesLoading = true;
     this.ritmService.getRitmWorkNotes(String(this.ritmId)).pipe(finalize(() => this.notesLoading = false)).subscribe({
       next: (response) => {
-        this.workNotes = this.normalizeList(response?.attributes ?? response ?? []);
+        this.workNotes = this.normalizeList(response?.attributes ?? response?.data ?? response ?? []);
         this.workNotesPage = 1;
       },
       error: () => {
@@ -601,17 +706,49 @@ export class RitmDetailsComponent implements OnInit {
 
   getDetailRows(): Array<{label: string, value: string}> {
     return [
-      { label: 'RITM Number', value: this.getFieldValue('ritmNumber') },
+      { label: 'Requested For', value: this.getNestedValue('requestedFor.agentName', this.getFieldValue('requestedForName', this.getFieldValue('requestedFor', 'N/A'))) },
       { label: 'Status', value: this.getFieldValue('status', 'Open') },
       { label: 'Priority', value: this.getNestedValue('priority.code', this.getFieldValue('priorityName', this.getFieldValue('priority', 'Normal'))) },
-      { label: 'Assignment Group', value: this.getNestedValue('supportGroup.groupName', this.getFieldValue('assignmentGroup', this.getFieldValue('supportGroupName', 'N/A'))) },
-      { label: 'Requested For', value: this.getNestedValue('requestedFor.agentName', this.getFieldValue('requestedForName', this.getFieldValue('requestedFor', 'N/A'))) },
-      { label: 'Opened By', value: this.getNestedValue('requestedBy.agentName', this.getFieldValue('openedByName', this.getFieldValue('openedBy', 'N/A'))) },
+      { label: 'Created On', value: this.getFieldValue('createdOn', this.getFieldValue('createdAt', this.getFieldValue('requestedAt', 'N/A'))) },
+      { label: 'Requested By', value: this.getNestedValue('requestedBy.agentName', this.getFieldValue('requestedByName', this.getFieldValue('openedByName', this.getFieldValue('openedBy', 'N/A')))) },
+      { label: 'Assigned To', value: this.getNestedValue('assignedTo.agentName', this.getFieldValue('assignedToName', 'N/A')) },
       { label: 'Category', value: this.getNestedValue('category.categoryName', this.getFieldValue('categoryName', this.getFieldValue('category', 'N/A'))) },
       { label: 'Sub Category', value: this.getNestedValue('subCategory.subCategoryName', this.getFieldValue('subCategoryName', this.getFieldValue('subCategory', 'N/A'))) },
-      { label: 'Created At', value: this.getFieldValue('createdAt', this.getFieldValue('createdOn', 'N/A')) },
-      { label: 'Updated At', value: this.getFieldValue('updatedAt', this.getFieldValue('modifiedOn', 'N/A')) }
+      { label: 'Support Group', value: this.getNestedValue('supportGroup.groupName', this.getFieldValue('assignmentGroupName', this.getFieldValue('assignmentGroup', this.getFieldValue('supportGroupName', 'N/A')))) },
+      { label: 'Requested At', value: this.getFieldValue('requestedAt', this.getFieldValue('requestedOn', this.getFieldValue('createdAt', 'N/A'))) }
     ];
+  }
+
+  getWatchlistItems(): any[] {
+    return this.normalizeList(this.ritm?.watchlist ?? this.ritm?.watchList ?? this.ritm?.watchers ?? []);
+  }
+
+  getWatchlistLabel(item: any): string {
+    const watcher = item?.watchedBy ?? item?.watcher ?? item;
+    if (watcher === null || watcher === undefined) {
+      return 'User';
+    }
+    if (typeof watcher !== 'object') {
+      return String(watcher);
+    }
+    return watcher.agentName || watcher.name || watcher.userName || watcher.fullName || watcher.accessId || watcher.agentId || 'User';
+  }
+
+  getAttachmentItems(): any[] {
+    return this.normalizeList(this.ritm?.ritmAttachments ?? this.ritm?.attachments ?? this.ritm?.files ?? []);
+  }
+
+  getAttachmentName(attachment: any): string {
+    return attachment?.originalFileName || attachment?.fileName || attachment?.name || 'Attachment';
+  }
+
+  getAttachmentType(attachment: any): string {
+    return String(attachment?.mimeType || attachment?.contentType || attachment?.type || 'FILE').toUpperCase();
+  }
+
+  getAttachmentSize(attachment: any): string {
+    const size = attachment?.fileSize ?? attachment?.size;
+    return size ? `${Math.round(Number(size) / 1024)} KB` : '—';
   }
 
   editRitm(): void {
@@ -624,6 +761,9 @@ export class RitmDetailsComponent implements OnInit {
   }
 
   back(): void {
-    this.router.navigate(['/my-tickets']);
+    const returnPath = this.route.snapshot.queryParamMap.get('from') === 'group-ritm'
+      ? '/group-ritm'
+      : '/my-tickets';
+    this.router.navigate([returnPath]);
   }
 }

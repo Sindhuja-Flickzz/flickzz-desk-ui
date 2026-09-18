@@ -14,6 +14,19 @@
 
   <div *ngIf="!loading && ritm" class="details-shell">
 
+    <section class="request-summary section-block">
+      <div class="section-header">
+        <span class="section-header-icon">▣</span>
+        <span>Request Details</span>
+      </div>
+      <div class="detail-grid request-detail-grid">
+        <div class="detail-item" *ngFor="let detail of getDetailRows()">
+          <span class="detail-label">{{ detail.label }}</span>
+          <strong>{{ detail.value }}</strong>
+        </div>
+      </div>
+    </section>
+
     <div class="tabs" role="tablist" aria-label="RITM tabs">
       <button type="button" class="tab-btn" [class.active]="activeTab === 'details'" (click)="setActiveTab('details')">Details</button>
       <button type="button" class="tab-btn" [class.active]="activeTab === 'work-notes'" (click)="setActiveTab('work-notes')">Work Notes</button>
@@ -25,7 +38,7 @@
         <mat-spinner diameter="28"></mat-spinner>
       </div>
 
-      <div class="section-block template-section" *ngFor="let template of templates">
+      <div class="section-block template-section" *ngFor="let template of getAvailableTemplates()">
         <div class="section-header">
           <span class="section-header-icon">▣</span>
           <span>{{ template.templateName }}</span>
@@ -35,33 +48,27 @@
           <div class="template-field" *ngFor="let field of getTemplateFields(template)">
             <div class="field-label-row">
               <label [attr.for]="'ritm-field-' + field.fieldId">{{ field.fieldName }}</label>
-              <button *ngIf="hasDefaultValue(field)" type="button" class="default-value-button"
-                [matTooltip]="'Use default value: ' + field.defaultValue"
-                [attr.aria-label]="'Use default value for ' + field.fieldName"
-                (click)="applyDefaultValue(field)">
-                <mat-icon>info_outline</mat-icon>
-              </button>
             </div>
 
             <textarea *ngIf="getFieldType(field) === 'TEXTAREA'" [id]="'ritm-field-' + field.fieldId"
-              [(ngModel)]="field.value" [readonly]="isFieldLocked(field)" rows="3"></textarea>
+              [value]="field.value" readonly rows="3"></textarea>
             <input *ngIf="getFieldType(field) !== 'TEXTAREA' && getFieldType(field) !== 'DROPDOWN' && getFieldType(field) !== 'CHECKBOX'"
               [id]="'ritm-field-' + field.fieldId" [type]="getFieldType(field) === 'NUMBER' ? 'number' : getFieldType(field) === 'DATE_PICKER' ? 'date' : getFieldType(field) === 'EMAIL' ? 'email' : getFieldType(field) === 'URL' ? 'url' : 'text'"
-              [(ngModel)]="field.value" [readonly]="isFieldLocked(field)" />
+              [value]="field.value" readonly />
             <select *ngIf="getFieldType(field) === 'DROPDOWN'" [id]="'ritm-field-' + field.fieldId"
-              [(ngModel)]="field.value" [disabled]="isFieldLocked(field)">
-              <option value="">Select {{ field.fieldName }}</option>
+              [value]="field.value" disabled>
+              <option value="">{{ field.value }}</option>
               <option *ngFor="let option of getFieldOptions(field)" [value]="option.value">{{ option.label }}</option>
             </select>
             <label *ngIf="getFieldType(field) === 'CHECKBOX'" class="checkbox-field">
-              <input [id]="'ritm-field-' + field.fieldId" type="checkbox" [(ngModel)]="field.value" [disabled]="isFieldLocked(field)" />
+              <input [id]="'ritm-field-' + field.fieldId" type="checkbox" [checked]="field.value === true || field.value === 'true'" disabled />
               <span>{{ field.fieldName }}</span>
             </label>
           </div>
         </div>
       </div>
 
-      <div *ngIf="!templatesLoading && !templates.length" class="empty-state small">No request template available.</div>
+      <div *ngIf="!templatesLoading && !getAvailableTemplates().length" class="empty-state small">No populated request template information available.</div>
 
       <div class="section-block" *ngIf="getNestedValue('description', '') !== ''">
         <div class="section-header amber-header">
@@ -92,6 +99,33 @@
           <p>{{ getNestedValue('otherNotes') }}</p>
         </div>
       </div>
+
+      <section class="section-block" *ngIf="getWatchlistItems().length">
+        <div class="section-header">
+          <span class="section-header-icon">◉</span>
+          <span>Watch List</span>
+        </div>
+        <div class="value-list">
+          <span class="value-chip" *ngFor="let watcher of getWatchlistItems()">{{ getWatchlistLabel(watcher) }}</span>
+        </div>
+      </section>
+
+      <section class="section-block" *ngIf="getAttachmentItems().length">
+        <div class="section-header">
+          <span class="section-header-icon">📎</span>
+          <span>Attachments</span>
+        </div>
+        <div class="attachment-list">
+          <div class="attachment-row" *ngFor="let attachment of getAttachmentItems()">
+            <div class="attachment-main">
+              <span class="file-chip">{{ getAttachmentType(attachment).slice(0, 3) }}</span>
+              <span>{{ getAttachmentName(attachment) }}</span>
+            </div>
+            <span class="attachment-meta">{{ getAttachmentType(attachment) }}</span>
+            <span class="attachment-meta">{{ getAttachmentSize(attachment) }}</span>
+          </div>
+        </div>
+      </section>
 
       <div class="actions" *ngIf="canEdit()">
         <button type="button" class="primary-action" (click)="editRitm()">Edit RITM</button>

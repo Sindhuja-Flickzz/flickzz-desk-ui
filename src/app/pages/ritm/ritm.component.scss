@@ -278,6 +278,7 @@
   font-weight: 700;
   line-height: 1.5;
   overflow-wrap: anywhere;
+  white-space: pre-line;
 }
 
 .field-value.status-pill,
@@ -594,8 +595,58 @@ form {
 .field-label-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   margin-bottom: 6px;
+}
+
+.mandatory-indicator {
+  margin-left: 3px;
+  color: #c62828;
+  font-weight: 800;
+}
+
+.default-value-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #5573a6;
+  cursor: pointer;
+}
+
+.default-value-button:hover {
+  color: #1b9f5d;
+}
+
+.default-value-button .mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.default-value-display {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f2;
+  border-radius: 8px;
+  background: #f7f9fc;
+  color: #53647c;
+  font-size: 0.82rem;
+}
+
+.default-value-label {
+  color: #7a8799;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .field-badge {

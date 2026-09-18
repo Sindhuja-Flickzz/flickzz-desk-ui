@@ -34,7 +34,7 @@
           </div>
 
           <div class="field field-requested-for">
-            <label>Requested For</label>
+            <label>Requested For <span class="mandatory-indicator" aria-label="Mandatory">*</span></label>
             <select formControlName="requestedFor" (change)="setRequestedForLocation($any($event.target).value)">
               <option value="" disabled>Select requester</option>
               <option *ngFor="let user of users" [value]="user.agentId">
@@ -60,7 +60,7 @@
           </div>
 
           <div class="field field-category">
-            <label>Category</label>
+            <label>Category <span class="mandatory-indicator" aria-label="Mandatory">*</span></label>
             <select formControlName="category">
               <option value="" selected disabled>Select category</option>
               <option *ngFor="let category of categories" [value]="category.categoryId">
@@ -71,7 +71,7 @@
           </div>
 
           <div class="field field-sub-category">
-            <label>Sub category</label>
+            <label>Sub category <span class="mandatory-indicator" aria-label="Mandatory">*</span></label>
             <select formControlName="subCategory">
               <option value="" selected disabled>Select sub category</option>
               <option *ngFor="let subCategory of subCategories" [value]="subCategory.subCategoryId">
@@ -91,7 +91,7 @@
 
         <div class="field-grid assignment-grid">
           <div class="field assignment-field">
-            <label>Assignment Group</label>
+            <label>Assignment Group <span class="mandatory-indicator" aria-label="Mandatory">*</span></label>
             <input formControlName="assignmentGroup" readonly />
             <span *ngIf="showRequiredError('assignmentGroup')" class="error-text">Assignment Group is required</span>
           </div>
@@ -160,68 +160,83 @@
         </div>
       </div>
 
-      <div class="section-block request-details-block">
+      <div *ngIf="templatesLoading" class="loading-panel small">
+        <mat-spinner diameter="28"></mat-spinner>
+      </div>
+
+      <div *ngFor="let template of templates" class="section-block request-details-block">
         <div class="section-header amber-header">
           <span class="section-header-icon">▣</span>
-          <span>Request Details</span>
-          <button
-            type="button"
-            class="section-toggle"
-            [attr.aria-expanded]="requestDetailsExpanded"
-            [attr.aria-label]="requestDetailsExpanded ? 'Collapse request details' : 'Expand request details'"
-            [title]="requestDetailsExpanded ? 'Collapse request details' : 'Expand request details'"
-            (click)="toggleRequestDetails()"
-          >
-            <!-- <span class="section-toggle-label">{{ requestDetailsExpanded ? 'Collapse' : 'Expand' }}</span> -->
-            <span class="section-toggle-icon" aria-hidden="true">{{ requestDetailsExpanded ? '⌃' : '⌄' }}</span>
-          </button>
+          <span>{{ template.templateName }}</span>
         </div>
 
-        <div class="field-grid detail-grid">
-          <div class="field full-width-field short-description-field">
-            <div class="field-label-row">
-              <span class="field-badge">✦</span>
-              <label>Short Description</label>
-            </div>
-            <input formControlName="shortDescription" maxlength="160" required placeholder="Enter short description" />
-            <small>{{ ritmForm.get('shortDescription')?.value?.length || 0 }} / 160</small>
-            <span *ngIf="showRequiredError('shortDescription')" class="error-text">Short Description is required</span>
-          </div>
-
-          <div
-            class="optional-details"
-            [class.expanded]="requestDetailsExpanded"
-            [attr.aria-hidden]="!requestDetailsExpanded"
-          >
-            <div class="field full-width-field textarea-field details-area">
+        <div class="template-group">
+          <div class="field-grid detail-grid">
+            <div class="field full-width-field" *ngFor="let field of getTemplateFields(template)">
               <div class="field-label-row">
-                <span class="field-badge">☰</span>
-                <label>Description</label>
+                <label [attr.for]="'ritm-field-' + field.fieldId">
+                  {{ field.fieldName }}
+                  <span *ngIf="isMandatoryTemplateField(field)" class="mandatory-indicator" aria-label="Mandatory">*</span>
+                </label>
+                <button *ngIf="hasDefaultValue(field)" type="button" class="default-value-button"
+                  [attr.aria-label]="'Use default value for ' + field.fieldName"
+                  [title]="'Use default value: ' + field.defaultValue" (click)="applyDefaultValue(field)">
+                  <mat-icon>info_outline</mat-icon>
+                </button>
               </div>
-              <textarea formControlName="description" maxlength="4000" rows="4" placeholder="Enter description"></textarea>
-              <small>{{ ritmForm.get('description')?.value?.length || 0 }} / 4000</small>
-            </div>
 
-            <div class="field full-width-field textarea-field details-area">
-              <div class="field-label-row">
-                <span class="field-badge">⇢</span>
-                <label>Steps to reproduce</label>
+              <div *ngIf="isFieldLocked(field)" class="default-value-display" aria-label="Default value">
+                <span class="default-value-label">Default</span>
+                <span>{{ field.defaultValue }}</span>
               </div>
-              <textarea formControlName="stepsToReproduce" maxlength="4000" rows="4" placeholder="Enter steps to reproduce"></textarea>
-              <small>{{ ritmForm.get('stepsToReproduce')?.value?.length || 0 }} / 4000</small>
-            </div>
 
-            <div class="field full-width-field textarea-field details-area">
-              <div class="field-label-row">
-                <span class="field-badge">✎</span>
-                <label>Other notes</label>
-              </div>
-              <textarea formControlName="otherNotes" maxlength="4000" rows="4" placeholder="Enter other notes"></textarea>
-              <small>{{ ritmForm.get('otherNotes')?.value?.length || 0 }} / 4000</small>
+              <textarea *ngIf="getFieldType(field) === 'TEXTAREA' && !isFieldLocked(field)" [id]="'ritm-field-' + field.fieldId"
+                [(ngModel)]="field.value" (ngModelChange)="onTemplateFieldChange(field, $event)"
+                [ngModelOptions]="{ standalone: true }" [readonly]="isFieldLocked(field)" rows="4"></textarea>
+              <input *ngIf="getFieldType(field) !== 'TEXTAREA' && getFieldType(field) !== 'DROPDOWN' && getFieldType(field) !== 'CHECKBOX' && !isFieldLocked(field)"
+                [id]="'ritm-field-' + field.fieldId" [type]="getFieldType(field) === 'NUMBER' ? 'number' : getFieldType(field) === 'DATE_PICKER' ? 'date' : getFieldType(field) === 'EMAIL' ? 'email' : getFieldType(field) === 'URL' ? 'url' : 'text'"
+                [(ngModel)]="field.value" (ngModelChange)="onTemplateFieldChange(field, $event)"
+                [ngModelOptions]="{ standalone: true }" [readonly]="isFieldLocked(field)" />
+              <select *ngIf="getFieldType(field) === 'DROPDOWN' && !isFieldLocked(field)" [id]="'ritm-field-' + field.fieldId"
+                [(ngModel)]="field.value" (ngModelChange)="onTemplateFieldChange(field, $event)"
+                [ngModelOptions]="{ standalone: true }" [disabled]="isFieldLocked(field)">
+                <option value="">Select {{ field.fieldName }}</option>
+                <option *ngFor="let option of getFieldOptions(field)" [value]="option.value">{{ option.label }}</option>
+              </select>
+              <label *ngIf="getFieldType(field) === 'CHECKBOX' && !isFieldLocked(field)" class="checkbox-field">
+                <input [id]="'ritm-field-' + field.fieldId" type="checkbox" [(ngModel)]="field.value"
+                  (ngModelChange)="onTemplateFieldChange(field, $event)"
+                  [ngModelOptions]="{ standalone: true }" [disabled]="isFieldLocked(field)" />
+                <span>{{ field.fieldName }}</span>
+              </label>
+
+              <textarea *ngIf="getFieldType(field) === 'TEXTAREA' && isFieldLocked(field)"
+                [id]="'ritm-field-input-' + field.fieldId" [(ngModel)]="field.userValue"
+                (ngModelChange)="onTemplateFieldChange(field, $event)"
+                [ngModelOptions]="{ standalone: true }" rows="4" placeholder="Enter your value"></textarea>
+              <input *ngIf="getFieldType(field) !== 'TEXTAREA' && getFieldType(field) !== 'DROPDOWN' && getFieldType(field) !== 'CHECKBOX' && isFieldLocked(field)"
+                [id]="'ritm-field-input-' + field.fieldId" [type]="getFieldType(field) === 'NUMBER' ? 'number' : getFieldType(field) === 'DATE_PICKER' ? 'date' : getFieldType(field) === 'EMAIL' ? 'email' : getFieldType(field) === 'URL' ? 'url' : 'text'"
+                [(ngModel)]="field.userValue" (ngModelChange)="onTemplateFieldChange(field, $event)"
+                [ngModelOptions]="{ standalone: true }" placeholder="Enter your value" />
+              <select *ngIf="getFieldType(field) === 'DROPDOWN' && isFieldLocked(field)"
+                [id]="'ritm-field-input-' + field.fieldId" [(ngModel)]="field.userValue"
+                (ngModelChange)="onTemplateFieldChange(field, $event)"
+                [ngModelOptions]="{ standalone: true }">
+                <option value="">Enter your value</option>
+                <option *ngFor="let option of getFieldOptions(field)" [value]="option.value">{{ option.label }}</option>
+              </select>
+              <label *ngIf="getFieldType(field) === 'CHECKBOX' && isFieldLocked(field)" class="checkbox-field">
+                <input [id]="'ritm-field-input-' + field.fieldId" type="checkbox" [(ngModel)]="field.userValue"
+                  (ngModelChange)="onTemplateFieldChange(field, $event)"
+                  [ngModelOptions]="{ standalone: true }" />
+                <span>Use your value</span>
+              </label>
+              <span *ngIf="field.templateError" class="error-text">{{ field.templateError }}</span>
             </div>
           </div>
         </div>
       </div>
+      <div *ngIf="!templatesLoading && !templates.length" class="empty-state small">No RITM template available.</div>
 
       <div class="section-block attachment-block">
         <div class="section-header amber-header">
@@ -232,7 +247,6 @@
         <div class="field-grid detail-grid">
           <div class="field full-width-field attachment-field">
             <div class="field-label-row">
-              <span class="field-badge">📎</span>
               <label>Upload Attachment(s)</label>
             </div>
             <input type="file" multiple (change)="onFilesSelected($event)" />
@@ -263,31 +277,31 @@
         <div class="success-pill">{{ successRitmDetails?.status || 'Open' }}</div>
       </header>
 
-      <!-- <section class="success-summary-strip">
-        <div class="summary-item">
-          <span class="summary-label">RITM Number</span>
-          <strong>{{ successRitmDetails?.ritmNumber || '—' }}</strong>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Created On</span>
-          <strong>{{ successCreatedOnLabel }}</strong>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Priority</span>
-          <strong>{{ successRitmDetails?.priorityName || successRitmDetails?.priority || '—' }}</strong>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Requested For</span>
-          <strong>{{ successRitmDetails?.requestedForName || '—' }}</strong>
-        </div>
-      </section> -->
-
       <section class="detail-section">
         <div class="section-heading">Request Details</div>
         <div class="detail-grid">
           <div class="detail-field" *ngFor="let field of successRequestFields">
             <span class="field-label">{{ field.label }}</span>
             <span class="field-value" [ngClass]="field.className || ''">{{ field.value || '—' }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" *ngFor="let template of successTemplateGroups">
+        <div class="section-heading">{{ template.templateName }}</div>
+        <div class="detail-grid">
+          <div class="detail-field" *ngFor="let field of template.fields">
+            <span class="field-label">{{ field.fieldName }}</span>
+            <span class="field-value">{{ field.value }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" *ngIf="successWatchlist.length">
+        <div class="section-heading">Watch List</div>
+        <div class="detail-grid">
+          <div class="detail-field" *ngFor="let watcher of successWatchlist">
+            <span class="field-value">{{ watcher }}</span>
           </div>
         </div>
       </section>
@@ -332,106 +346,4 @@
       </div>
     </div>
   </ng-template>
-
-  <!-- <mat-card class="tab-card">
-    <mat-tab-group class="tab-group" animationDuration="0ms">
-      <mat-tab label="Work Notes">
-        <div class="notes-list">
-          <div *ngFor="let note of notes" class="note-item" [class.current-user]="note.userId === currentUserId">
-            <div class="note-header">
-              <strong>{{ note.userId }}</strong>
-              <span>{{ note.createdAt | date:'medium' }}</span>
-            </div>
-            <p>{{ note.comment }}</p>
-          </div>
-          <p *ngIf="notes.length === 0" class="empty-state">No notes found.</p>
-        </div>
-      </mat-tab>
-      <mat-tab label="Log">
-        <div class="log-list">
-          <div *ngFor="let log of logs" class="log-entry">
-            <span class="log-time">{{ log.timestamp | date:'short' }}</span>
-            <span>{{ log.message }}</span>
-          </div>
-          <p *ngIf="logs.length === 0" class="empty-state">No logs available yet.</p>
-        </div>
-      </mat-tab>
-      <mat-tab label="Workflow">
-        <div class="workflow-list">
-          <div *ngFor="let stage of workflowStages" class="workflow-stage">
-            <div class="stage-header">
-              <span>{{ stage.step }}</span>
-              <span class="status">{{ stage.status }}</span>
-            </div>
-            <div class="stage-meta">Owned by {{ stage.owner }} • {{ stage.updatedAt | date:'short' }}</div>
-          </div>
-          <p *ngIf="workflowStages.length === 0" class="empty-state">Workflow details not available.</p>
-        </div>
-      </mat-tab>
-    </mat-tab-group>
-  </mat-card>
-
-  <mat-card class="tab-card">
-    <mat-tab-group class="tab-group" animationDuration="0ms">
-      <mat-tab label="Catalog Tasks">
-        <div class="task-panel">
-          <form [formGroup]="taskForm" class="task-form" (ngSubmit)="addCatalogTask()">
-            <mat-form-field appearance="outline">
-              <mat-label>Task Title</mat-label>
-              <input matInput formControlName="title" placeholder="Task title" />
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Assign To</mat-label>
-              <input matInput formControlName="assignedTo" placeholder="User or group" />
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Due Date</mat-label>
-              <input matInput type="date" formControlName="dueDate" />
-            </mat-form-field>
-            <button mat-flat-button color="primary" type="submit">Add Task</button>
-          </form>
-
-          <div class="catalog-task-list">
-            <div *ngFor="let task of catalogTasks" class="catalog-task-card">
-              <div class="task-title">{{ task.title }}</div>
-              <div>Assigned to {{ task.assignedTo }}</div>
-              <div>Due {{ task.dueDate }}</div>
-              <div class="task-status">{{ task.status }}</div>
-            </div>
-            <p *ngIf="catalogTasks.length === 0" class="empty-state">No catalog tasks created.</p>
-          </div>
-        </div>
-      </mat-tab>
-      <mat-tab label="Approvers">
-        <div class="approvers-list">
-          <div *ngFor="let approver of approvers" class="approver-row">
-            <span>{{ approver.name }}</span>
-            <span class="badge">{{ approver.status }}</span>
-            <div *ngIf="approver.comment" class="comment">{{ approver.comment }}</div>
-          </div>
-          <p *ngIf="approvers.length === 0" class="empty-state">No approver details found.</p>
-        </div>
-      </mat-tab>
-      <mat-tab label="Task SLA(s)">
-        <div class="task-sla-list">
-          <div *ngFor="let sla of taskSlas" class="task-sla-row">
-            <strong>{{ sla.metric }}</strong>
-            <span>{{ sla.threshold }}</span>
-            <span>{{ sla.status }}</span>
-          </div>
-          <p *ngIf="taskSlas.length === 0" class="empty-state">No task SLA details available.</p>
-        </div>
-      </mat-tab>
-      <mat-tab label="Change Request">
-        <div class="change-request-list">
-          <div *ngFor="let change of changeRequests" class="change-row">
-            <strong>{{ change.title }}</strong>
-            <span class="badge">{{ change.status }}</span>
-            <div>Requested by {{ change.requestedBy }}</div>
-          </div>
-          <p *ngIf="changeRequests.length === 0" class="empty-state">No change requests linked.</p>
-        </div>
-      </mat-tab>
-    </mat-tab-group>
-  </mat-card> -->
 </div>

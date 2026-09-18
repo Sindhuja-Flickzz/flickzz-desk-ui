@@ -10,6 +10,7 @@ import { CompanyRole } from 'src/app/models/company-master';
 import { CategoryMaster, CategorySubCategory } from '../../models/category-master';
 import { CategoryService } from '../../service/category.service';
 import { SupportGroupService } from '../../service/support-group.service';
+import { VariantService } from '../../service/variant.service';
 import { USER_ROLES } from '../../data/app_constants';  
 
 @Component({
@@ -53,6 +54,10 @@ export class RitmComponent implements OnInit, OnDestroy {
   assignmentGroupId: number | null = null;
   showSuccessScreen = false;
   successRitmDetails: any = null;
+  templates: any[] = [];
+  templatesLoading = false;
+  private fieldTypeMap = new Map<number, string>();
+  private existingTemplateDetails: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -60,6 +65,7 @@ export class RitmComponent implements OnInit, OnDestroy {
     private companyService: CompanyService,
     private categoryService: CategoryService,
     private supportGroupService: SupportGroupService,
+    private variantService: VariantService,
     private route: ActivatedRoute,
     private router: Router
   ) {
@@ -69,6 +75,7 @@ export class RitmComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.initializeForms();
     this.initializePage();
+    this.loadTemplateDetails();
   }
 
   @HostListener('document:click', ['$event'])
@@ -92,11 +99,7 @@ export class RitmComponent implements OnInit, OnDestroy {
       assignmentGroup: ['', Validators.required],
       priority: ['', Validators.required],
       watchList: [],
-      attachments: [[], Validators.required],
-      shortDescription: ['', Validators.required],
-      description: [''],
-      stepsToReproduce: [''],
-      otherNotes: ['']
+      attachments: [[], Validators.required]
     });
 
     this.taskForm = this.fb.group({
@@ -156,6 +159,131 @@ export class RitmComponent implements OnInit, OnDestroy {
         this.loadRitmDetails(id);
       }
     }
+  }
+
+  private loadTemplateDetails(): void {
+    this.templatesLoading = true;
+    this.variantService.getFieldTypeList(this.orgId).subscribe({
+      next: response => {
+        const fieldTypes = this.normalizeArray<any>(response?.attributes || response);
+        this.fieldTypeMap = new Map(fieldTypes.map(fieldType => [
+          Number(fieldType.typeId),
+          String(fieldType.code || fieldType.label || '')
+        ]));
+        this.fetchRitmTemplateDetails();
+      },
+      error: () => this.fetchRitmTemplateDetails()
+    });
+  }
+
+  private fetchRitmTemplateDetails(): void {
+    this.variantService.getRitmTemplateDetails(this.orgId).subscribe({
+      next: response => {
+        const templates = this.normalizeArray<any>(response?.attributes || response);
+        this.templates = templates.map(template => ({
+          ...template,
+          templateDetails: this.normalizeArray<any>(template?.templateDetails || template?.details).map(field => ({
+            ...field,
+            value: this.getExistingTemplateValue(field),
+            defaultApplied: false
+          }))
+        }));
+        this.applyExistingTemplateValues();
+        this.templatesLoading = false;
+      },
+      error: error => {
+        this.templates = [];
+        this.templatesLoading = false;
+        this.submitError = error?.error?.message || 'Unable to load RITM template details.';
+      }
+    });
+  }
+
+  getTemplateFields(template: any): any[] {
+    return Array.isArray(template?.templateDetails) ? template.templateDetails : [];
+  }
+
+  getFieldType(field: any): string {
+    const fieldType = field?.fieldTypeCode || field?.fieldTypeLabel || field?.fieldType
+      || this.fieldTypeMap.get(Number(field?.fieldTypeId)) || field?.fieldTypeId || 'TEXTBOX';
+    return String(fieldType).toUpperCase().replace(/[-\s]/g, '_');
+  }
+
+  getFieldOptions(field: any): any[] {
+    return Array.isArray(field?.options) ? field.options : [];
+  }
+
+  hasDefaultValue(field: any): boolean {
+    return field?.defaultValue !== null && field?.defaultValue !== undefined && String(field.defaultValue) !== '';
+  }
+
+  applyDefaultValue(field: any): void {
+    if (this.hasDefaultValue(field)) {
+      field.value = field.defaultValue;
+      field.defaultApplied = true;
+      field.userValue = '';
+      field.templateError = '';
+    }
+  }
+
+  isFieldLocked(field: any): boolean {
+    return field?.defaultApplied === true && field?.editable === false;
+  }
+
+  private getExistingTemplateValue(field: any): any {
+    const existingDetails = this.existingTemplateDetails;
+    if (Array.isArray(existingDetails)) {
+      const existing = existingDetails.find((item: any) => Number(item?.fieldId) === Number(field?.fieldId));
+      return existing?.value ?? existing?.fieldValue ?? '';
+    }
+    return '';
+  }
+
+  private applyExistingTemplateValues(): void {
+    this.templates.forEach(template => this.getTemplateFields(template).forEach(field => {
+      const value = this.getExistingTemplateValue(field);
+      if (value !== '') {
+        field.value = value;
+      }
+    }));
+  }
+
+  private getTemplatePayload(): any[] {
+    return this.templates.flatMap(template => this.getTemplateFields(template).map(field => ({
+      fieldId: field.fieldId,
+      value: this.getUserTemplateValue(field)
+    })));
+  }
+
+  private getUserTemplateValue(field: any): any {
+    return field.defaultApplied ? field.userValue : (field.userValue ?? field.value ?? '');
+  }
+
+  isMandatoryTemplateField(field: any): boolean {
+    return field?.mandatory === true || field?.mandatory === 'true' || field?.isMandatory === true;
+  }
+
+  onTemplateFieldChange(field: any, value: any): void {
+    field.userValue = value;
+    field.templateError = '';
+  }
+
+  private validateTemplateFields(): boolean {
+    let isValid = true;
+    this.templates.forEach(template => this.getTemplateFields(template).forEach(field => {
+      field.templateError = '';
+      const mandatory = this.isMandatoryTemplateField(field);
+      const value = this.getUserTemplateValue(field);
+      const missing = value === null || value === undefined || value === ''
+        || (typeof value === 'string' && !value.trim())
+        || (this.getFieldType(field) === 'CHECKBOX' && value !== true);
+
+      if (mandatory && missing) {
+        field.templateError = `${field.fieldName} is required.`;
+        isValid = false;
+      }
+    }));
+    return isValid;
   }
 
   private loadCategories(): void {
@@ -401,6 +529,8 @@ export class RitmComponent implements OnInit, OnDestroy {
 
   private populateFormFromRitm(item: any): void {
     const ritm = item?.attributes || item || {};
+    this.existingTemplateDetails = ritm.templateDetails || ritm.templateFields || [];
+    this.applyExistingTemplateValues();
     console.log('Populating form with RITM data:', ritm);
     this.ritmForm.patchValue({
       ritmNumber: ritm.ritmNumber || '',
@@ -556,6 +686,11 @@ export class RitmComponent implements OnInit, OnDestroy {
     this.submitError = '';
     this.submitSuccess = '';
 
+    if (!this.validateTemplateFields()) {
+      this.submitError = 'Please provide values for all mandatory template fields.';
+      return;
+    }
+
     if (this.ritmForm.invalid) {
       this.ritmForm.markAllAsTouched();
       this.submitError = 'Please correct the highlighted fields before saving.';
@@ -574,7 +709,8 @@ export class RitmComponent implements OnInit, OnDestroy {
       createdBy: Number(localStorage.getItem('userId') || 0),
       updatedBy: Number(localStorage.getItem('userId') || 0),
       isCreatorAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
-      isUpdaterAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
+      isUpdaterAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      templateDetails: this.getTemplatePayload()
     };
     const payload = new FormData();
 
@@ -602,6 +738,7 @@ export class RitmComponent implements OnInit, OnDestroy {
         if (!this.isEditMode) {
           const createdRitm = response?.attributes || response || {};
           this.successRitmDetails = this.buildSuccessRitmDetails(createdRitm, rawValues);
+          console.log('RITM created successfully:', this.successRitmDetails);
           this.showSuccessScreen = true;
           this.applyFormDefaults();
           this.ritmForm.get('category')?.reset();
@@ -732,6 +869,63 @@ export class RitmComponent implements OnInit, OnDestroy {
     return blocks.filter(block => !!block.value);
   }
 
+  get successTemplateGroups(): Array<{ templateName: string; fields: Array<{ fieldName: string; value: string }> }> {
+    const details = this.successRitmDetails?.templateDetails || this.successRitmDetails?.templateFields || [];
+    const flatDetails = this.normalizeTemplateDetails(details);
+    const groups = new Map<string, Array<{ fieldName: string; value: string }>>();
+
+    flatDetails.forEach((field: any) => {
+      const value = this.normalizeSuccessValue(field.value ?? field.fieldValue ?? field.defaultValue);
+      if (!value) {
+        return;
+      }
+
+      const templateName = field.templateName || field.template?.templateName || 'Request Details';
+      const fields = groups.get(templateName) || [];
+      fields.push({
+        fieldName: field.fieldName || field.label || `Field ${field.fieldId || ''}`,
+        value
+      });
+      groups.set(templateName, fields);
+    });
+
+    return Array.from(groups.entries()).map(([templateName, fields]) => ({ templateName, fields }));
+  }
+
+  get successWatchlist(): string[] {
+    const watchlist = this.successRitmDetails?.watchlist || this.successRitmDetails?.watchList || [];
+    return this.normalizeWatchlistDisplay(watchlist);
+  }
+
+  private normalizeWatchlistDisplay(watchlist: any): string[] {
+    return this.normalizeArray<any>(watchlist).map(watcher => {
+      if (watcher == null) {
+        return '';
+      }
+      watcher = watcher.watchedBy;
+      if (typeof watcher !== 'object') {
+        const user = this.users.find(item => Number(item.agentId) === Number(watcher));
+        return user ? `${user.agentName} (${user.accessId})` : String(watcher);
+      }
+      return watcher.agentName
+        ? `${watcher.agentName}${watcher.accessId ? ` (${watcher.accessId})` : ''}`
+        : watcher.name || watcher.watcherName || watcher.accessId || watcher.agentId || '';
+    }).filter(Boolean);
+  }
+
+  private normalizeTemplateDetails(details: any): any[] {
+    const items = this.normalizeArray<any>(details);
+    return items.flatMap(item => {
+      if (Array.isArray(item?.templateDetails) || Array.isArray(item?.details)) {
+        return this.normalizeArray<any>(item.templateDetails || item.details).map(field => ({
+          ...field,
+          templateName: field.templateName || item.templateName
+        }));
+      }
+      return [item];
+    });
+  }
+
   get successRequestFields(): Array<{ label: string; value: string; icon: string; iconClass: string; className?: string }> {
     const data = this.successRitmDetails || {};
     const requestedFor = this.normalizeSuccessValue(data.requestedForName || data.requestedFor || this.getRequestedForDisplayName());
@@ -740,9 +934,8 @@ export class RitmComponent implements OnInit, OnDestroy {
     const priority = this.normalizeSuccessValue(data.priorityName || data.priority);
     const supportGroup = this.normalizeSuccessValue(data.assignmentGroupName || data.assignmentGroup);
     const requestedBy = this.normalizeSuccessValue(data.requestedByName || data.requestedBy || this.currentUser?.agentName);
-    const assignedTo = this.normalizeSuccessValue(data.assignedToName || data.assignedTo || data.requestedForName || data.requestedFor || this.getRequestedForDisplayName());
-    const shortDescription = this.normalizeSuccessValue(data.shortDescription);
-    const expectedResolution = this.normalizeSuccessValue(data.expectedResolution);
+    const assignedTo = this.normalizeSuccessValue(data.assignedTo);
+    // const expectedResolution = this.normalizeSuccessValue(data.expectedResolution);
 
     return [
       { label: 'Requested For', value: requestedFor || '—', icon: '◔', iconClass: 'primary', className: '' },
@@ -755,8 +948,7 @@ export class RitmComponent implements OnInit, OnDestroy {
       { label: 'Sub Category', value: subCategory || '—', icon: '◎', iconClass: 'soft', className: '' },
       { label: 'Support Group', value: supportGroup || '—', icon: '◍', iconClass: 'soft', className: '' },
       { label: 'Requested At', value: this.formatSuccessDate(data.requestedAt || data.createdAt) || '—', icon: '◫', iconClass: 'soft', className: '' },
-      { label: 'Expected Resolution', value: expectedResolution || '—', icon: '◐', iconClass: 'muted', className: '' },
-      { label: 'Short Description', value: shortDescription || '—', icon: '☰', iconClass: 'muted', className: '' }
+      // { label: 'Expected Resolution', value: expectedResolution || '—', icon: '◐', iconClass: 'muted', className: '' },
     ];
   }
 

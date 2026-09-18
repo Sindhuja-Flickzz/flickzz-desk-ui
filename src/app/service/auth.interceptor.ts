@@ -81,9 +81,9 @@ export class AuthInterceptor implements HttpInterceptor {
       } as ConfirmationDialogData
     });
 
-    dialogRef.afterClosed().subscribe(() => {
-      this.logout();
-    });
+    // dialogRef.afterClosed().subscribe(() => {
+    //   this.logout();
+    // });
   }
 
   private handle401Error(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {

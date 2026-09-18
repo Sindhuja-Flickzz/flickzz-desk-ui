@@ -1,59 +1,51 @@
 <div class="my-tickets-page">
-  <div class="page-header">
-    <h2>My Tickets</h2>
-  </div>
+  <header class="page-header">
+    <h1>My Tickets</h1>
+    <p>Track requests opened by you or assigned to you.</p>
+  </header>
 
   <div class="primary-tabs" role="tablist" aria-label="My tickets sections">
-    <button
-      type="button"
-      class="tab-button"
-      [class.active]="primaryTab === 'opened-by-me'"
-      (click)="setPrimaryTab('opened-by-me')"
-    >
-      Opened by me
-    </button>
-    <button
-      type="button"
-      class="tab-button"
-      [class.active]="primaryTab === 'assigned-to-me'"
-      (click)="setPrimaryTab('assigned-to-me')"
-    >
-      Assigned to me
-    </button>
+    <button type="button" class="tab-button" [class.active]="primaryTab === 'opened-by-me'" (click)="setPrimaryTab('opened-by-me')">Opened by me</button>
+    <button type="button" class="tab-button" [class.active]="primaryTab === 'assigned-to-me'" (click)="setPrimaryTab('assigned-to-me')">Assigned to me</button>
   </div>
 
-  <div class="sub-tabs" role="tablist" aria-label="Ticket categories">
-    <button type="button" class="sub-tab" [class.active]="subTab === 'ritm'" (click)="setSubTab('ritm')">RITM</button>
-    <button type="button" class="sub-tab" [class.active]="subTab === 'incident'" (click)="setSubTab('incident')">Incident</button>
-    <button type="button" class="sub-tab" [class.active]="subTab === 'others'" (click)="setSubTab('others')">User Stories</button>
-  </div>
+  <div class="ticket-layout">
+    <aside class="category-sidebar">
+      <div class="sidebar-title"><span class="sidebar-icon">▦</span><strong>Ticket Types</strong><span class="sidebar-chevron">⌃</span></div>
+      <button type="button" class="category-option" [class.active]="subTab === 'ritm'" (click)="setSubTab('ritm')"><span class="category-icon">R</span><span>RITM</span><b *ngIf="subTab === 'ritm'">{{ currentList.length }}</b></button>
+      <button type="button" class="category-option" [class.active]="subTab === 'incident'" (click)="setSubTab('incident')"><span class="category-icon">I</span><span>Incident</span><b *ngIf="subTab === 'incident'">{{ currentList.length }}</b></button>
+      <button type="button" class="category-option" [class.active]="subTab === 'others'" (click)="setSubTab('others')"><span class="category-icon">U</span><span>User Stories</span><b *ngIf="subTab === 'others'">{{ currentList.length }}</b></button>
+    </aside>
 
-  <div class="ticket-panel">
-    <div *ngIf="loading" class="loading-state">Loading...</div>
-
-    <div *ngIf="!loading && !currentList.length" class="empty-state">
-      No {{ subTab }} tickets found for {{ getPrimaryLabel().toLowerCase() }}.
-    </div>
-
-    <div *ngIf="!loading && currentList.length" class="ticket-list">
-      <div class="ticket-row" *ngFor="let item of currentList" (click)="openTicket(item)" style="cursor: pointer;">
-        <div class="row-main">
-          <span class="ticket-number">{{ getRequestNumber(item) }}</span>
-          <span class="ticket-status" [ngClass]="getStatus(item).toLowerCase()">{{ getStatus(item) }}</span>
-        </div>
-
-        <div class="ticket-title">{{ getTitle(item) }}</div>
-
-        <div class="ticket-meta">
-          <span><strong>Priority:</strong> {{ getPriority(item) }}</span>
-          <span *ngIf="primaryTab === 'opened-by-me'">
-            <strong>Assigned to:</strong> {{ getAssignee(item) }}
-          </span>
-          <span *ngIf="primaryTab === 'assigned-to-me'">
-            <strong>Requested by:</strong> {{ getRequestedBy(item) }}
-          </span>
+    <section class="ticket-panel">
+      <div class="panel-header">
+        <div>
+          <div class="heading-title"><h2>{{ getPrimaryLabel() }}</h2><span class="count-badge">{{ currentList.length }}</span></div>
+          <p>{{ subTab === 'ritm' ? 'Requests in this category.' : subTab === 'incident' ? 'Incidents in this category.' : 'User stories in this category.' }}</p>
         </div>
       </div>
-    </div>
+
+      <div *ngIf="loading" class="loading-state">Loading tickets...</div>
+      <div *ngIf="!loading && currentList.length" class="ticket-list">
+        <div class="table-header"><span>Ticket</span><span>Requested by</span><span>Priority</span><span>Requested on</span><span>Status</span></div>
+        <button type="button" class="ticket-row" *ngFor="let item of getPaginatedTickets()" (click)="openTicket(item)">
+          <span class="ticket-number">{{ getRequestNumber(item) }}</span>
+          <span>{{ primaryTab === 'assigned-to-me' ? getRequestedBy(item) : getAssignee(item) }}</span>
+          <span><em class="ticket-priority" [ngClass]="(getPriority(item) || 'medium').toLowerCase()">{{ getPriority(item) || 'Medium' }}</em></span>
+          <span>{{ item.requestedOn || item.createdAt || item.createdOn || 'N/A' }}</span>
+          <span><em class="ticket-status" [ngClass]="getStatus(item).toLowerCase()">{{ getStatus(item) }}</em></span>
+        </button>
+      </div>
+      <div class="pagination-controls" *ngIf="!loading && currentList.length">
+        <mat-paginator
+          [length]="totalRecords"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPageChange($event)"
+          showFirstLastButtons>
+        </mat-paginator>
+      </div>
+      <div *ngIf="!loading && !currentList.length" class="empty-state"><span class="empty-icon">▦</span><h3>No tickets to display</h3><p>No {{ subTab }} tickets found for {{ getPrimaryLabel().toLowerCase() }}.</p></div>
+    </section>
   </div>
 </div>

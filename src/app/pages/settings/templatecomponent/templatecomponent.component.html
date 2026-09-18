@@ -37,14 +37,14 @@
         <span *ngIf="!formError.fieldVariant && fieldVariants.length === 0" class="field-hint">No fields with empty options are available.</span>
       </div>
 
-      <div *ngIf="selectedFieldVariant" class="field editable-field">
+      <!-- <div *ngIf="selectedFieldVariant" class="field editable-field">
         <label for="isEditable">Is editable</label>
         <label class="switch-label">
           <input id="isEditable" type="checkbox" formControlName="isEditable" [disabled]="isSubmitting" />
           <span class="switch-slider" aria-hidden="true"></span>
           <span>{{ templateForm.get('isEditable')?.value ? 'Yes' : 'No' }}</span>
         </label>
-      </div>
+      </div> -->
 
       <div *ngIf="selectedFieldVariant as selected" class="field default-value-field full-width-field">
         <label for="defaultValue">Default value</label>

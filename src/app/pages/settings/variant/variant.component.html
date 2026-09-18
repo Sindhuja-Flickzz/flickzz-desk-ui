@@ -14,8 +14,8 @@
 
       <div class="form-grid">
         <div class="field">
-          <label>Template Name</label>
-          <input type="text" formControlName="templateName" placeholder="Enter template name" [disabled]="isSubmitting" />
+          <label>Variant Name</label>
+          <input type="text" formControlName="templateName" placeholder="Enter variant name" [disabled]="isSubmitting" />
           <span *ngIf="formError.templateName" class="error-text">{{ formError.templateName }}</span>
         </div>
 
@@ -27,10 +27,9 @@
           </select>
           <span *ngIf="formError.workItem" class="error-text">{{ formError.workItem }}</span>
         </div>
-      </div>
-
-      <div class="table-actions">
-        <button type="button" class="save-btn" (click)="addRow()" [disabled]="isSubmitting">Add Field</button>
+        <div class="add-field-control">
+          <button type="button" class="save-btn" (click)="addRow()" [disabled]="isSubmitting">Add Field</button>
+        </div>
       </div>
 
       <div class="table-wrapper" formArrayName="templateDetails">

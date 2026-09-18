@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { AgentService } from '../../service/agent.service';
@@ -25,6 +26,10 @@ export class MyTicketsComponent implements OnInit {
   ritmList: any[] = [];
   incidentList: any[] = [];
   otherList: any[] = [];
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
+  totalRecords = 0;
+  currentPage = 0;
 
   constructor(
     private ritmService: RitmService,
@@ -75,11 +80,13 @@ export class MyTicketsComponent implements OnInit {
   setPrimaryTab(tab: PrimaryTab): void {
     this.primaryTab = tab;
     this.subTab = 'ritm';
+    this.resetPagination();
     this.loadRitmData();
   }
 
   setSubTab(tab: SubTab): void {
     this.subTab = tab;
+    this.resetPagination();
     if (tab !== 'ritm') {
       return;
     }
@@ -116,11 +123,30 @@ export class MyTicketsComponent implements OnInit {
     request$.pipe(finalize(() => this.loading = false)).subscribe({
       next: (items) => {
         this.ritmList = this.normalizeList(items);
+        this.totalRecords = this.ritmList.length;
+        this.currentPage = 0;
       },
       error: () => {
         this.ritmList = [];
+        this.totalRecords = 0;
+        this.currentPage = 0;
       }
     });
+  }
+
+  resetPagination(): void {
+    this.currentPage = 0;
+    this.totalRecords = this.currentList.length;
+  }
+
+  getPaginatedTickets(): any[] {
+    const startIndex = this.currentPage * this.pageSize;
+    return this.currentList.slice(startIndex, startIndex + this.pageSize);
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
   }
 
   normalizeList(items: any): any[] {
