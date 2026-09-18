@@ -34,14 +34,13 @@
           </div>
 
           <div class="field field-requested-for">
-            <label>Requested For <span class="mandatory-indicator" aria-label="Mandatory">*</span></label>
+            <label>Requested For</label>
             <select formControlName="requestedFor" (change)="setRequestedForLocation($any($event.target).value)">
               <option value="" disabled>Select requester</option>
               <option *ngFor="let user of users" [value]="user.agentId">
                 {{ user.agentName }} ({{ user.accessId }})
               </option>
             </select>
-            <span *ngIf="showRequiredError('requestedFor')" class="error-text">Requested For is required</span>
           </div>
 
           <div class="field field-location">
@@ -60,25 +59,23 @@
           </div>
 
           <div class="field field-category">
-            <label>Category <span class="mandatory-indicator" aria-label="Mandatory">*</span></label>
+            <label>Category</label>
             <select formControlName="category">
               <option value="" selected disabled>Select category</option>
               <option *ngFor="let category of categories" [value]="category.categoryId">
                 {{ category.categoryName }}
               </option>
             </select>
-            <span *ngIf="showRequiredError('category')" class="error-text">Category is required</span>
           </div>
 
           <div class="field field-sub-category">
-            <label>Sub category <span class="mandatory-indicator" aria-label="Mandatory">*</span></label>
+            <label>Sub category</label>
             <select formControlName="subCategory">
               <option value="" selected disabled>Select sub category</option>
               <option *ngFor="let subCategory of subCategories" [value]="subCategory.subCategoryId">
                 {{ subCategory.subCategoryName }}
               </option>
             </select>
-            <span *ngIf="showRequiredError('subCategory')" class="error-text">Sub category is required</span>
           </div>
         </div>
       </div>
@@ -91,9 +88,8 @@
 
         <div class="field-grid assignment-grid">
           <div class="field assignment-field">
-            <label>Assignment Group <span class="mandatory-indicator" aria-label="Mandatory">*</span></label>
+            <label>Assignment Group</label>
             <input formControlName="assignmentGroup" readonly />
-            <span *ngIf="showRequiredError('assignmentGroup')" class="error-text">Assignment Group is required</span>
           </div>
 
           <div class="field priority-field">
@@ -104,7 +100,6 @@
                 {{ priority.code }}
               </option>
             </select>
-            <span *ngIf="showRequiredError('priority')" class="error-text">Priority is required</span>
           </div>
 
           <div class="field watch-list-field">
@@ -176,7 +171,6 @@
               <div class="field-label-row">
                 <label [attr.for]="'ritm-field-' + field.fieldId">
                   {{ field.fieldName }}
-                  <span *ngIf="isMandatoryTemplateField(field)" class="mandatory-indicator" aria-label="Mandatory">*</span>
                 </label>
                 <button *ngIf="hasDefaultValue(field)" type="button" class="default-value-button"
                   [attr.aria-label]="'Use default value for ' + field.fieldName"
@@ -251,7 +245,6 @@
             </div>
             <input type="file" multiple (change)="onFilesSelected($event)" />
             <small *ngIf="attachmentFiles.length">{{ attachmentFiles.length }} file(s) selected</small>
-            <span *ngIf="showRequiredError('attachments')" class="error-text">Attachment is required</span>
           </div>
         </div>
       </div>
