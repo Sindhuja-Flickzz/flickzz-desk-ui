@@ -62,6 +62,7 @@ import { EnquiryRegistrationComponent } from './pages/enquiry-registration/enqui
 import { SettingsComponent } from './pages/settings/settings.component';
 import { CategoryComponent } from './pages/category/category.component';
 import { SupportGroupComponent } from './pages/support-group/support-group.component';
+import { GroupRitmComponent } from './pages/group-ritm/group-ritm.component';
 import { SupportCategoryComponent } from './pages/support-category/support-category.component';
 import { ConfigApprovalComponent } from './pages/config-approval/config-approval.component';
 import { ApprovalDialogComponent } from './pages/config-approval/approval-dialog/approval-dialog.component';
@@ -69,8 +70,7 @@ import { ProfileIconComponent } from './shared/profile-icon/profile-icon.compone
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
 import { ProjectTimelineGanttComponent } from './pages/project-builder/project-timeline-gantt/project-timeline-gantt.component';
-import { DetailsTemplateComponent } from './pages/settings/details-template/details-template.component';
-import { DetailsTemplateOptionsDialogComponent } from './pages/settings/details-template/details-template-options-dialog.component';
+import { VariantOptionsDialogComponent } from './pages/settings/variant/variant-options-dialog.component';
 import { ProjectStatusComponent } from './pages/project-status/project-status.component';
 import { ProjectStatusCreateDialogComponent } from './pages/project-status/project-status-create-dialog/project-status-create-dialog.component';
 import { ProjectStatusEpicDetailComponent } from './pages/project-status/project-status-epic-detail/project-status-epic-detail.component';
@@ -81,6 +81,10 @@ import { NotificationComponent } from './notification/notification.component';
 import { NotificationPopupComponent } from './shared/notification-popup/notification-popup.component';
 import { NotificationDropdownComponent } from './notification-dropdown/notification-dropdown.component';
 import { NotificationCenterComponent } from './pages/notification-center/notification-center.component';
+import { MyTicketsComponent } from './pages/my-tickets/my-tickets.component';
+import { RitmDetailsComponent } from './pages/ritm/ritm-details.component';
+import { VariantComponent } from './pages/settings/variant/variant.component';
+import { TemplatecomponentComponent } from './pages/settings/templatecomponent/templatecomponent.component';
 
 @NgModule({
   declarations: [
@@ -110,11 +114,13 @@ import { NotificationCenterComponent } from './pages/notification-center/notific
     SettingsComponent,
     CategoryComponent,
     SupportGroupComponent,
+    GroupRitmComponent,
     SupportCategoryComponent,
     ConfigApprovalComponent,
     ApprovalDialogComponent,
-    DetailsTemplateComponent,
-    DetailsTemplateOptionsDialogComponent,
+    VariantComponent,
+    TemplatecomponentComponent,
+    VariantOptionsDialogComponent,
     ProfileIconComponent,
     ProfileComponent,
     ProjectBuilderComponent,
@@ -127,7 +133,9 @@ import { NotificationCenterComponent } from './pages/notification-center/notific
     HomeComponent,
     NotificationComponent,
     NotificationDropdownComponent,
-    NotificationPopupComponent
+    NotificationPopupComponent,
+    MyTicketsComponent,
+    RitmDetailsComponent
   ],
   imports: [
     BrowserModule,

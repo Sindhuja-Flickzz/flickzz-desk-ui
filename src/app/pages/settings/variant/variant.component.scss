@@ -1,4 +1,4 @@
-.details-template-page {
+.vairant-page {
   max-width: 95%;
   margin: 20px auto;
   padding: 14px;
@@ -49,9 +49,15 @@
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
   gap: 16px;
   margin-bottom: 16px;
+}
+
+.add-field-control {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 14px;
 }
 
 .summary-row {
@@ -246,6 +252,14 @@
 }
 
 @media (max-width: 720px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .add-field-control {
+    padding-bottom: 0;
+  }
+
   .actions,
   .table-actions {
     flex-direction: column;

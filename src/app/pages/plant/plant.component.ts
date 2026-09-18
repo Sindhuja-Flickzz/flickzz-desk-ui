@@ -326,7 +326,6 @@ export class PlantComponent implements OnInit {
       createdBy: plant.createdBy,
       updatedBy: plant.updatedBy || plant.createdBy
     });
-    console.log('Plant object received for editing:', plant);
     // Prefill weekOff if available on the plant object (accept multiple property shapes)
     const rawWeekOff = (plant as any).weekOff || (plant as any).weekoff || (plant as any).weekOffs || (plant as any).week_off || [];
     if (Array.isArray(rawWeekOff) && rawWeekOff.length > 0) {
@@ -771,7 +770,6 @@ export class PlantComponent implements OnInit {
   }
 
   toggleWeekOffPopover(plantId: number | null): void {
-    console.log('Toggling week off popover for plantId:', plantId);
     if (this.openWeekOffPlantId === plantId) {
       this.openWeekOffPlantId = null;
       return;

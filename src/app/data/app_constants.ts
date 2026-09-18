@@ -30,6 +30,22 @@ export const MENU_INFO: MenuItem[] = [
                 "enableForRoles": [USER_ROLES.AGENT],
                 "route": "/welcome",
                 "childSubMenus": []
+            },
+            {
+                "subMenuId": 103,
+                "subMenuName": "My Tickets",
+                "isActive": true,
+                "enableForRoles": [USER_ROLES.AGENT],
+                "route": "/my-tickets",
+                "childSubMenus": []
+            },
+            {
+                "subMenuId": 104,
+                "subMenuName": "Group RITM",
+                "isActive": true,
+                "enableForRoles": [USER_ROLES.AGENT],
+                "route": "/group-ritm",
+                "childSubMenus": []
             }
         ]
     },
@@ -271,7 +287,7 @@ export const MENU_INFO: MenuItem[] = [
                         "subMenuName": "Details Template",
                         "isActive": true,
                         "enableForRoles": [USER_ROLES.ADMIN, USER_ROLES.ADMIN_AGENT],
-                        "route": "/details-template",
+                        "route": "/vairant",
                         "childSubMenus": []
                     }
                 ]

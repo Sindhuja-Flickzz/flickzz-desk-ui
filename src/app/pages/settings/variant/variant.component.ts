@@ -6,22 +6,22 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../../shared/confirmation-dialog/confirmation-dialog.component';
-import { DetailsTemplateOptionsDialogComponent } from './details-template-options-dialog.component';
-import { DetailsTemplateService } from '../../../service/details-template.service';
-import { DetailsTemplateRequest, DropdownOption, FieldType, WorkItemType, WorkItem, FieldTypeItem, TemplatesDetails } from '../../../models/details-template.model';
+import { VariantOptionsDialogComponent } from './variant-options-dialog.component';
+import { VariantService } from '../../../service/variant.service';
+import { VariantRequest, DropdownOption, FieldType, WorkItemType, WorkItem, FieldTypeItem, TemplatesDetails } from '../../../models/variant.model';
 import { USER_ROLES } from 'src/app/data/app_constants';
 
 @Component({
-  selector: 'app-details-template',
-  templateUrl: './details-template.component.html',
-  styleUrls: ['./details-template.component.scss']
+  selector: 'app-variant',
+  templateUrl: './variant.component.html',
+  styleUrls: ['./variant.component.scss']
 })
-export class DetailsTemplateComponent implements OnInit, OnDestroy {
+export class VariantComponent implements OnInit, OnDestroy {
   templateForm: FormGroup;
   isSaving = false;
   isSubmitting = false;
   activeTab: 'create' | 'list' = 'create';
-  pageTitle = 'Create Details Template';
+  pageTitle = 'Create Variant';
   submitError = '';
   submitSuccess = '';
   formError: any = {};
@@ -48,7 +48,7 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
     private router: Router,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private detailsTemplateService: DetailsTemplateService
+    private variantService: VariantService
   ) {
     this.orgId = localStorage.getItem('userOrgId') || '';
     this.dataLoadPromise = new Promise((resolve) => {
@@ -87,8 +87,8 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
 
     this.subscriptions.add(
       forkJoin({
-        workItems: this.detailsTemplateService.getWorkItemList(this.orgId),
-        fieldTypes: this.detailsTemplateService.getFieldTypeList(this.orgId)
+        workItems: this.variantService.getWorkItemList(this.orgId),
+        fieldTypes: this.variantService.getFieldTypeList(this.orgId)
       }).subscribe({
         next: ({ workItems, fieldTypes }) => {
           const workItemsData = (workItems as any).attributes || (Array.isArray(workItems) ? workItems : []);
@@ -102,6 +102,10 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
                 };
               })
             : [];
+
+          if (this.workItemOptions.length > 0 && !this.templateForm.get('workItem')?.value) {
+            this.templateForm.get('workItem')?.setValue('', { emitEvent: false });
+          }
 
           const fieldTypesData = (fieldTypes as any).attributes || (Array.isArray(fieldTypes) ? fieldTypes : []);
           this.fieldTypeMap.clear();
@@ -203,7 +207,7 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const dialogRef = this.dialog.open(DetailsTemplateOptionsDialogComponent, {
+    const dialogRef = this.dialog.open(VariantOptionsDialogComponent, {
       width: '60%',
       data: {
         options: row.get('options')?.value || [],
@@ -407,7 +411,7 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const basePayload: DetailsTemplateRequest = {
+    const basePayload: VariantRequest = {
       templateName: this.templateNameControl.value.trim(),
       workItemId: workItem.itemId,
       companyId: Number(this.orgId),
@@ -432,7 +436,7 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
     if (this.isEditMode && this.editingTemplateId) {
       const updatePayload = { ...basePayload, templateId: this.editingTemplateId };
       this.subscriptions.add(
-        this.detailsTemplateService.updateTemplate(updatePayload).subscribe({
+        this.variantService.updateTemplate(updatePayload).subscribe({
           next: () => {
             this.isSubmitting = false;
             this.submitSuccess = 'Template updated successfully.';
@@ -451,7 +455,7 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
       );
     } else {
       this.subscriptions.add(
-        this.detailsTemplateService.createTemplate(basePayload).subscribe({
+        this.variantService.createTemplate(basePayload).subscribe({
           next: () => {
             this.isSubmitting = false;
             this.submitSuccess = 'Template created successfully.';
@@ -501,7 +505,7 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
     this.submitError = '';
     this.submitSuccess = '';
     if (tab === 'create') {
-      this.pageTitle = this.isEditMode ? 'Edit Details Template' : 'Create Details Template';
+      this.pageTitle = this.isEditMode ? 'Edit Variant' : 'Create Variant';
       if (!this.isEditMode) {
         this.resetForm();
       }
@@ -519,7 +523,7 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
     }
     this.templateListLoading = true;
     this.subscriptions.add(
-      this.detailsTemplateService.getTemplateList(this.orgId).subscribe({
+      this.variantService.getTemplateList(this.orgId).subscribe({
         next: (result) => {
           const items = (result as any).attributes || [];
           const templates = Array.isArray(items) ? items as TemplatesDetails[] : [];
@@ -545,7 +549,7 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
   }
 
   onEditTemplate(template: TemplatesDetails): void {
-    this.detailsTemplateService.getTemplateById(template.templateId).subscribe({
+    this.variantService.getTemplateById(template.templateId).subscribe({
       next: (result) => {
         const templateDetail = (result as any).attributes || template;
         console.log('Loaded template details for editing:', templateDetail);
@@ -637,7 +641,7 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
         return;
       }
       this.subscriptions.add(
-        this.detailsTemplateService.deleteTemplate(template.templateId).subscribe({
+        this.variantService.deleteTemplate(template.templateId).subscribe({
           next: () => {
             this.submitSuccess = 'Template deleted successfully.';
             this.loadTemplateList();
@@ -696,6 +700,9 @@ export class DetailsTemplateComponent implements OnInit, OnDestroy {
     this.templateForm.reset();
     this.templateForm.get('templateName')?.enable({ emitEvent: false });
     this.templateForm.get('workItem')?.enable({ emitEvent: false });
+    if (this.workItemOptions.length > 0) {
+      this.templateForm.get('workItem')?.setValue('', { emitEvent: false });
+    }
     this.templateDetails.clear();
     this.templateDetails.push(this.createTemplateDetail());
     this.formError = {};

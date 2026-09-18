@@ -1,0 +1,131 @@
+<div class="vairant-page">
+  <div class="tabs">
+    <button type="button" class="save-btn header-back" (click)="backToSettings()" aria-label="Back to settings">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <button *ngIf="!isEditing" type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button *ngIf="isEditing" type="button" class="tab-btn" [class.active]="activeTab === 'edit'" (click)="selectTab('edit')">Edit</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <section *ngIf="activeTab === 'create' || activeTab === 'edit'" class="create-panel">
+    <div class="panel-heading">
+      <div>
+        <h2>{{ isEditing ? 'Edit field variant details' : 'Field variant details' }}</h2>
+      </div>
+      <span class="record-count">{{ fieldVariants.length }} available</span>
+    </div>
+
+    <div *ngIf="submitError" class="message error-text" role="alert">{{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="message success-text" role="status">{{ submitSuccess }}</div>
+    <div *ngIf="loading" class="loading-state">Loading field variants...</div>
+
+    <form *ngIf="!loading" [formGroup]="templateForm" (ngSubmit)="onSave()" novalidate>
+      <div class="form-grid">
+      <div class="field">
+        <label for="fieldVariant">Field variant</label>
+        <div *ngIf="isEditing && selectedFieldVariant" class="readonly-field" id="fieldVariant">
+          {{ selectedFieldVariant.fieldName }}_{{ selectedFieldVariant.templateName }}
+        </div>
+        <select *ngIf="!isEditing" id="fieldVariant" formControlName="fieldVariant" (change)="onFieldVariantChange()" [disabled]="isSubmitting">
+          <option value="">Select a field variant</option>
+          <option *ngFor="let variant of fieldVariants" [value]="variant.variantKey">
+            {{ variant.fieldName }}_{{ variant.templateName }}
+          </option>
+        </select>
+        <span *ngIf="formError.fieldVariant" class="field-error">{{ formError.fieldVariant }}</span>
+        <span *ngIf="!formError.fieldVariant && fieldVariants.length === 0" class="field-hint">No fields with empty options are available.</span>
+      </div>
+
+      <!-- <div *ngIf="selectedFieldVariant" class="field editable-field">
+        <label for="isEditable">Is editable</label>
+        <label class="switch-label">
+          <input id="isEditable" type="checkbox" formControlName="isEditable" [disabled]="isSubmitting" />
+          <span class="switch-slider" aria-hidden="true"></span>
+          <span>{{ templateForm.get('isEditable')?.value ? 'Yes' : 'No' }}</span>
+        </label>
+      </div> -->
+
+      <div *ngIf="selectedFieldVariant as selected" class="field default-value-field full-width-field">
+        <label for="defaultValue">Default value</label>
+        <textarea *ngIf="isTextareaField(selected.fieldTypeLabel)" id="defaultValue" formControlName="defaultValue"
+          rows="4" placeholder="Enter the default value" [disabled]="isSubmitting"></textarea>
+        <input *ngIf="isTextInputField(selected.fieldTypeLabel)" id="defaultValue" type="text" formControlName="defaultValue"
+          placeholder="Enter the default value" [disabled]="isSubmitting" />
+        <span *ngIf="formError.defaultValue" class="field-error">{{ formError.defaultValue }}</span>
+        <span class="field-hint">This value will be saved for the selected field.</span>
+      </div>
+      </div>
+
+      <div *ngIf="selectedFieldVariant as selected" class="selected-details">
+        <div class="detail-item">
+          <span class="detail-label">Field name</span>
+          <strong>{{ selected.fieldName }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Template name</span>
+          <strong>{{ selected.templateName }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Field type</span>
+          <strong>{{ selected.fieldTypeLabel }}</strong>
+        </div>
+      </div>
+
+      <div class="actions">
+        <ng-container *ngIf="isEditing; else createActions">
+          <button type="submit" class="save-btn" [disabled]="isSubmitting || !isDefaultValueChanged">
+            {{ isSubmitting ? 'Updating...' : 'Update' }}
+          </button>
+          <button type="button" class="reset-btn" (click)="cancelEdit()" [disabled]="isSubmitting">Cancel</button>
+        </ng-container>
+        <ng-template #createActions>
+          <button type="submit" class="save-btn" [disabled]="isSubmitting || fieldVariants.length === 0">
+            {{ isSubmitting ? 'Saving...' : 'Save' }}
+          </button>
+          <button type="button" class="reset-btn" (click)="resetForm()" [disabled]="isSubmitting">Reset</button>
+        </ng-template>
+      </div>
+    </form>
+  </section>
+
+  <section *ngIf="activeTab === 'list'" class="list-panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Template details</h2>
+      </div>
+      <button type="button" class="action-icon" (click)="loadTemplateList()" [disabled]="listLoading" aria-label="Refresh list">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+
+    <div *ngIf="submitError" class="message error-text" role="alert">{{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="message success-text" role="status">{{ submitSuccess }}</div>
+    <div *ngIf="listLoading" class="loading-state">Loading template details...</div>
+    <div *ngIf="!listLoading && !submitError && templates.length === 0" class="empty-state">No templates found.</div>
+
+    <div *ngIf="!listLoading && templates.length > 0" class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Field name</th>
+            <th>Default value</th>
+            <th>Editable</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let template of templates">
+            <td>{{ template.fieldName || '-' }}</td>
+            <td>{{ template.defaultValue || '-' }}</td>
+            <td>{{ (template.isEditable ?? template.editable) ? 'Yes' : 'No' }}</td>
+            <td class="action-buttons">
+              <button type="button" (click)="onEditTemplate(template)"><mat-icon>edit</mat-icon></button>
+              <button type="button" (click)="onDeleteTemplate(template)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { APP_CONSTANTS } from '../data/app_constants';
 import { AgentRequest, AgentMaster, AgentSkillsMapping, CountryMasterVO } from '../models/agent-master';
 import { CountryMaster, EnquiryRegistration } from '../models/company-master';
@@ -79,5 +80,11 @@ export class AgentService {
 
   getAgentInfoByEmail(userEmail: string): Observable<AgentMaster> {
     return this.http.get<AgentMaster>(`${this.baseUrl}/agent/email/${userEmail}`);
+  }
+
+  getAgentIdByUserId(userId: number): Observable<number> {
+    return this.http.get<any>(`${this.baseUrl}/agent/user/${userId}`).pipe(
+      map((response: any) => Number(response?.attributes ?? response ?? 0))
+    );
   }
 }

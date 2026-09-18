@@ -18,7 +18,8 @@ import {NumberRangeComponent} from "./pages/number-range/number-range.component"
 import {VerifyComponent} from './pages/verify/verify.component';
 import {EnquiryRegistrationComponent} from './pages/enquiry-registration/enquiry-registration.component';
 import { SettingsComponent } from './pages/settings/settings.component';
-import { DetailsTemplateComponent } from './pages/settings/details-template/details-template.component';
+import { VariantComponent } from './pages/settings/variant/variant.component';
+import { TemplatecomponentComponent } from './pages/settings/templatecomponent/templatecomponent.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ProjectStatusComponent } from './pages/project-status/project-status.component';
 import { ProjectStatusEpicDetailComponent } from './pages/project-status/project-status-epic-detail/project-status-epic-detail.component';
@@ -34,6 +35,9 @@ import { authGuard } from './service/auth/auth.guard';
 import { SystemAuditComponent } from './pages/system-audit/system-audit.component';
 import { HomeComponent } from './pages/home/home.component';
 import { NotificationCenterComponent } from './pages/notification-center/notification-center.component';
+import { MyTicketsComponent } from './pages/my-tickets/my-tickets.component';
+import { RitmDetailsComponent } from './pages/ritm/ritm-details.component';
+import { GroupRitmComponent } from './pages/group-ritm/group-ritm.component';
 
 const routes: Routes = [
   {
@@ -76,8 +80,13 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
-    path: 'details-template',
-    component: DetailsTemplateComponent,
+    path: 'variant',
+    component: VariantComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'templatecomponent',
+    component: TemplatecomponentComponent,
     canActivate: [authGuard]
   },
   {
@@ -215,6 +224,21 @@ const routes: Routes = [
   {
     path: 'notifications',
     component: NotificationCenterComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'my-tickets',
+    component: MyTicketsComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'group-ritm',
+    component: GroupRitmComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'agent/:agentId/:requestType',
+    component: RitmDetailsComponent,
     canActivate: [authGuard]
   },
   

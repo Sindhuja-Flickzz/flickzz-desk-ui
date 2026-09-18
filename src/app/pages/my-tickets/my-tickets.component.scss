@@ -1,0 +1,83 @@
+.my-tickets-page {
+  min-height: 100vh;
+  padding: 18px;
+  background: #fbfcfe;
+  color: #243044;
+  font-family: 'Nunito', sans-serif;
+}
+
+.page-header { margin: 0 0 18px; }
+.page-header h1 { margin: 0; color: #182235; font-size: 1.35rem; font-weight: 800; }
+.page-header p { margin: 3px 0 0; color: #788398; font-size: .72rem; }
+
+.primary-tabs {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.tab-button {
+  flex: 1;
+  border: 0;
+  background: #f4f4f4;
+  color: #00246b;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 12px 0;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+}
+
+.tab-button.active {
+  background: #00246b;
+  color: #fff;
+}
+
+.ticket-layout {
+  display: grid;
+  grid-template-columns: 174px minmax(0, 1fr);
+  min-height: calc(100vh - 150px);
+  overflow: hidden;
+  border: 1px solid #e8ebf1;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.category-sidebar { display: flex; flex-direction: column; padding: 14px 9px; border-right: 1px solid #edf0f4; }
+.sidebar-title { display: flex; align-items: center; gap: 7px; padding: 3px 8px 15px; color: #273142; font-size: .8rem; }
+.sidebar-icon { color: #7045ee; font-size: 17px; }
+.sidebar-chevron { margin-left: auto; color: #8791a5; }
+.category-option { display: flex; align-items: center; gap: 7px; width: 100%; min-height: 38px; margin-bottom: 4px; padding: 7px 8px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #354052; font: inherit; font-size: .7rem; text-align: left; cursor: pointer; }
+.category-option:hover, .category-option.active { border-color: #d9ccff; background: #f5f0ff; color: #6337db; }
+.category-option b { margin-left: auto; color: #7045ee; font-size: .64rem; }
+.category-icon { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #e8defe; color: #7045ee; font-size: .68rem; font-weight: 700; }
+
+.ticket-panel { min-width: 0; background: #fff; }
+.panel-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 16px 14px 13px; border-bottom: 1px solid #edf0f4; }
+.heading-title { display: flex; align-items: center; gap: 8px; }
+.panel-header h2 { margin: 0; color: #202938; font-size: .94rem; }
+.panel-header p { margin: 4px 0 0; color: #7b8496; font-size: .68rem; }
+.count-badge { padding: 2px 7px; border-radius: 10px; background: #eee8ff; color: #7045ee; font-size: .63rem; }
+.loading-state { padding: 14px; color: #667085; font-size: .72rem; }
+.ticket-list { padding: 0 12px; }
+.table-header, .ticket-row { display: grid; grid-template-columns: 1.05fr 1.25fr 1fr 1.65fr .95fr; align-items: center; gap: 7px; }
+.table-header { min-height: 40px; border-bottom: 1px solid #edf0f4; color: #697489; font-size: .62rem; }
+.ticket-row { width: 100%; min-height: 43px; padding: 0 4px; border: 0; border-bottom: 1px solid #edf0f4; background: #fff; color: #344054; font: inherit; font-size: .67rem; text-align: left; cursor: pointer; }
+.ticket-row:hover { background: #faf8ff; }
+.ticket-number { color: #6337db; font-weight: 700; }
+.ticket-priority, .ticket-status { width: fit-content; padding: 3px 7px; border-radius: 5px; font-size: .61rem; font-style: normal; font-weight: 700; }
+.ticket-priority.low { background: #e8f8ee; color: #2f9d60; }.ticket-priority.medium { background: #fff4c9; color: #ae7600; }.ticket-priority.high { background: #ffe4e4; color: #c33b42; }
+.ticket-status.open, .ticket-status.new { background: #e5f8ee; color: #258a59; }.ticket-status.pending, .ticket-status.in-progress { background: #fff1d1; color: #af7300; }.ticket-status.closed, .ticket-status.resolved { background: #e8f8ee; color: #258a59; }
+.pagination-controls { display: flex; justify-content: flex-end; padding: 8px 6px 0; border-top: 1px solid #edf0f4; }
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 310px; color: #667085; text-align: center; }
+.empty-icon { color: #7045ee; font-size: 24px; }.empty-state h3 { margin: 10px 0 4px; color: #273142; font-size: .9rem; }.empty-state p { margin: 0; font-size: .7rem; }
+
+@media (max-width: 640px) {
+  .my-tickets-page {
+    padding: 10px;
+  }
+  .ticket-layout { display: block; }
+  .category-sidebar { border-right: 0; border-bottom: 1px solid #edf0f4; }
+  .ticket-panel { overflow-x: auto; }
+  .ticket-list { min-width: 680px; }
+  .primary-tabs { margin-bottom: 12px; }
+}

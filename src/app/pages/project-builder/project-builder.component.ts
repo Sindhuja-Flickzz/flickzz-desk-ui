@@ -949,7 +949,6 @@ export class ProjectBuilderComponent implements OnInit {
         const storyArray = epicGroup.get('userStories') as FormArray;
         const sortedStories = [...(epic.userStories || [])].sort((a: any, b: any) => (a.storySequence ?? 0) - (b.storySequence ?? 0));
         sortedStories.forEach((story: any, storyIndex: number) => {
-          console.log('Processing story:', story);
           const storyCode = story.storyCode || String(story.mappingStoryId ?? `${epicIndex + 1}.${storyIndex + 1}`);
           const predecessorKey = story.mappingPredecessorId ?? story.predecessorId;
           const predecessorValue = predecessorKey != null ? storyCodeMap.get(String(predecessorKey)) || String(predecessorKey) : null;

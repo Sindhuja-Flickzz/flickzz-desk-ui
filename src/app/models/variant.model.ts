@@ -25,9 +25,11 @@ export interface DropdownOption {
 }
 
 export interface TemplateDetail {
+  fieldId?: number;
   fieldName: string;
   fieldTypeId: number;
   mandatory: boolean;
+  isEditable?: boolean;
   options?: DropdownOption[];
 }
 
@@ -49,7 +51,7 @@ export interface FieldTypeItem {
   updatedBy: string;
 }
 
-export interface DetailsTemplateRequest {
+export interface VariantRequest {
   templateName: string;
   workItemId: number;
   companyId: number;
