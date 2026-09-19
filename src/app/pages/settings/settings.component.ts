@@ -16,6 +16,7 @@ export class SettingsComponent {
     { title: 'Number Range', route: '/number-range' },
     { title: 'Impact', route: '/impact' },
     {title: 'RITM', route: '/ritm'},
+    {title: 'RITM Status', route: '/ritm-status'},
     {'title': 'My Tickets', 'route': '/my-tickets'},
     {'title': 'Group RITM', 'route': '/group-ritm'},
     {'title': 'Variant', 'route': '/variant'},

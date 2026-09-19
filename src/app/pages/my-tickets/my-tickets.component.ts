@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { AgentService } from '../../service/agent.service';
 import { RitmService } from '../../service/ritm.service';
 import { SupportGroupService } from '../../service/support-group.service';
+import { VariantService } from '../../service/variant.service';
 
 type PrimaryTab = 'opened-by-me' | 'assigned-to-me';
 type SubTab = 'ritm' | 'incident' | 'others';
@@ -30,17 +31,27 @@ export class MyTicketsComponent implements OnInit {
   pageSizeOptions = [5, 10, 25, 50];
   totalRecords = 0;
   currentPage = 0;
+  filterOpen = false;
+  filterText = '';
+  filterStatus = '';
+  ritmStatuses: any[] = [];
+  templateFields: any[] = [];
+  selectedTemplateFieldIds: string[] = [];
+  columnMenuOpen = false;
 
   constructor(
     private ritmService: RitmService,
     private supportGroupService: SupportGroupService,
     private agentService: AgentService,
+    private variantService: VariantService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
     const userId = Number(localStorage.getItem('userId') || 0);
     this.orgId = Number(localStorage.getItem('userOrgId') || 0) || null;
+    this.loadRitmStatuses();
+    this.loadTemplateFields();
 
     if (userId) {
       this.loadAgentId(userId);
@@ -67,14 +78,24 @@ export class MyTicketsComponent implements OnInit {
     });
   }
 
+  @HostListener('document:click', ['$event'])
+  closeColumnMenuOnOutsideClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (this.columnMenuOpen && !target?.closest('.column-picker')) {
+      this.columnMenuOpen = false;
+    }
+  }
+
   get currentList(): any[] {
+    let items: any[];
     if (this.subTab === 'incident') {
-      return this.incidentList;
+      items = this.incidentList;
+    } else if (this.subTab === 'others') {
+      items = this.otherList;
+    } else {
+      items = this.ritmList;
     }
-    if (this.subTab === 'others') {
-      return this.otherList;
-    }
-    return this.ritmList;
+    return this.applyFilters(items);
   }
 
   setPrimaryTab(tab: PrimaryTab): void {
@@ -82,6 +103,29 @@ export class MyTicketsComponent implements OnInit {
     this.subTab = 'ritm';
     this.resetPagination();
     this.loadRitmData();
+  }
+
+  toggleFilters(): void {
+    this.filterOpen = !this.filterOpen;
+  }
+
+  clearFilters(): void {
+    this.filterText = '';
+    this.filterStatus = '';
+    this.selectedTemplateFieldIds = [];
+    this.columnMenuOpen = false;
+    this.resetPagination();
+  }
+
+  toggleColumnMenu(): void {
+    this.columnMenuOpen = !this.columnMenuOpen;
+  }
+
+  toggleTemplateField(fieldId: string): void {
+    this.selectedTemplateFieldIds = this.selectedTemplateFieldIds.includes(fieldId)
+      ? this.selectedTemplateFieldIds.filter(id => id !== fieldId)
+      : [...this.selectedTemplateFieldIds, fieldId];
+    this.resetPagination();
   }
 
   setSubTab(tab: SubTab): void {
@@ -139,6 +183,87 @@ export class MyTicketsComponent implements OnInit {
     this.totalRecords = this.currentList.length;
   }
 
+  private loadRitmStatuses(): void {
+    this.ritmService.getRitmStatuses(String(this.orgId || 0)).subscribe({
+      next: response => this.ritmStatuses = this.normalizeList(response?.attributes ?? response),
+      error: () => this.ritmStatuses = []
+    });
+  }
+
+  private loadTemplateFields(): void {
+    this.variantService.getRitmTemplateDetails(String(this.orgId || 0)).subscribe({
+      next: response => {
+        const fields = this.flattenTemplateFields(response?.attributes ?? response ?? []);
+        const seen = new Set<string>();
+        this.templateFields = fields.filter(field => {
+          const key = this.getTemplateFieldKey(field);
+          if (!key || seen.has(key)) {
+            return false;
+          }
+          seen.add(key);
+          return true;
+        });
+      },
+      error: () => this.templateFields = []
+    });
+  }
+
+  private flattenTemplateFields(value: any): any[] {
+    if (Array.isArray(value)) {
+      return value.flatMap(item => this.flattenTemplateFields(item));
+    }
+    if (!value || typeof value !== 'object') {
+      return [];
+    }
+    const nested = value.templateDetails ?? value.templateFields ?? value.details;
+    return nested !== undefined
+      ? this.flattenTemplateFields(nested)
+      : (value.fieldId != null || value.fieldName != null || value.name != null ? [value] : []);
+  }
+
+  getTemplateFieldKey(field: any): string {
+    return String(field?.fieldId ?? field?.fieldName ?? field?.name ?? '').trim();
+  }
+
+  getSelectedTemplateFields(): any[] {
+    return this.selectedTemplateFieldIds
+      .map(fieldId => this.templateFields.find(field => this.getTemplateFieldKey(field) === fieldId))
+      .filter(Boolean);
+  }
+
+  getDynamicFieldValue(item: any, fieldId: string): string {
+    const selectedField = this.templateFields.find(field => this.getTemplateFieldKey(field) === fieldId);
+    const fields = this.flattenTemplateFields(item?.templateDetails ?? item?.templateFields ?? []);
+    const value = fields.find(field =>
+      (selectedField?.fieldId != null && String(field?.fieldId) === String(selectedField.fieldId))
+      || String(field?.fieldName ?? field?.name ?? '').trim().toLowerCase() === String(selectedField?.fieldName ?? selectedField?.name ?? '').trim().toLowerCase()
+    );
+    const fieldValue = value?.value ?? value?.fieldValue;
+    return fieldValue === null || fieldValue === undefined || fieldValue === '' ? '—' : String(fieldValue);
+  }
+
+  getTicketGridTemplate(): string {
+    const dynamicColumns = this.selectedTemplateFieldIds.map(() => '1.2fr').join(' ');
+    return `1.05fr 1.25fr 1fr 1.65fr .95fr${dynamicColumns ? ' ' + dynamicColumns : ''}`;
+  }
+
+  getStatusCode(status: any): string {
+    return String(status && typeof status === 'object'
+      ? status.statusCode ?? status.statusName ?? status.name ?? status.statusId
+      : status ?? '').trim();
+  }
+
+  private applyFilters(items: any[]): any[] {
+    const text = this.filterText.trim().toLowerCase();
+    const status = this.filterStatus.trim().toLowerCase();
+    return items.filter(item => {
+      const searchable = [this.getRequestNumber(item), this.getTitle(item), this.getRequestedBy(item), this.getAssignee(item), this.getPriority(item), this.getStatusCode(item?.status)]
+        .filter(Boolean).join(' ').toLowerCase();
+      const itemStatus = this.getStatusCode(item?.status || 'Open').toLowerCase();
+      return (!text || searchable.includes(text)) && (!status || itemStatus === status);
+    });
+  }
+
   getPaginatedTickets(): any[] {
     const startIndex = this.currentPage * this.pageSize;
     return this.currentList.slice(startIndex, startIndex + this.pageSize);
@@ -182,7 +307,7 @@ export class MyTicketsComponent implements OnInit {
   }
 
   getStatus(item: any): string {
-    return item?.status || item?.requestStatus || item?.state || 'Open';
+    return item?.status?.statusCode;
   }
 
   getPriority(item: any): string {
@@ -207,5 +332,9 @@ export class MyTicketsComponent implements OnInit {
     this.router.navigate(['/agent', this.agentId || 0, requestType], {
       queryParams: { ritmId: String(ritmId) }
     });
+  }
+
+  back(): void {
+    this.router.navigate(['/settings']);
   }
 }

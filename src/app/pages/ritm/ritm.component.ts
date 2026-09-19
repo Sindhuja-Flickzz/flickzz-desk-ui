@@ -22,6 +22,7 @@ export class RitmComponent implements OnInit, OnDestroy {
   ritmForm!: FormGroup;
   taskForm!: FormGroup;
   users: AgentMaster[] = [];
+  ritmStatuses: any[] = [];
   priorities: PriorityMaster[] = [];
   notes: NoteItem[] = [];
   logs: LogEntry[] = [];
@@ -55,9 +56,11 @@ export class RitmComponent implements OnInit, OnDestroy {
   showSuccessScreen = false;
   successRitmDetails: any = null;
   templates: any[] = [];
+  expandedTemplates: Record<string, boolean> = {};
   templatesLoading = false;
   private fieldTypeMap = new Map<number, string>();
   private existingTemplateDetails: any[] = [];
+  private existingStatusValue: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -90,14 +93,16 @@ export class RitmComponent implements OnInit, OnDestroy {
     this.ritmForm = this.fb.group({
       ritmNumber: [{ value: '', disabled: true }],
       openedBy: [{ value: '', disabled: true }],
-      requestedFor: [''],
+      requestedFor: ['', Validators.required],
       location: [{ value: '', disabled: true }],
       availabilityTime: [{ value: '', disabled: true }],
       currentTime: [{ value: '', disabled: true }],
-      category: [''],
-      subCategory: [''],
+      category: ['', Validators.required],
+      subCategory: ['', Validators.required],
       assignmentGroup: [''],
-      priority: [''],
+      priority: ['', Validators.required],
+      status: [''],
+      assignedTo: [''],
       watchList: [],
       attachments: [[]]
     });
@@ -129,6 +134,7 @@ export class RitmComponent implements OnInit, OnDestroy {
   private initializePage(): void {
     this.loading = true;
     this.loadUsers();
+    this.loadRitmStatuses();
 
     const id = this.route.snapshot.queryParamMap.get('id');
     const navigationState = this.router.getCurrentNavigation()?.extras?.state as { ritmData?: any } | undefined;
@@ -203,6 +209,19 @@ export class RitmComponent implements OnInit, OnDestroy {
     return Array.isArray(template?.templateDetails) ? template.templateDetails : [];
   }
 
+  getTemplateKey(template: any, index: number): string {
+    return String(template?.templateId ?? template?.templateName ?? index) + ':' + index;
+  }
+
+  isTemplateExpanded(template: any, index: number): boolean {
+    return this.expandedTemplates[this.getTemplateKey(template, index)] === true;
+  }
+
+  toggleTemplate(template: any, index: number): void {
+    const key = this.getTemplateKey(template, index);
+    this.expandedTemplates[key] = !this.isTemplateExpanded(template, index);
+  }
+
   getFieldType(field: any): string {
     const fieldType = field?.fieldTypeCode || field?.fieldTypeLabel || field?.fieldType
       || this.fieldTypeMap.get(Number(field?.fieldTypeId)) || field?.fieldTypeId || 'TEXTBOX';
@@ -269,8 +288,19 @@ export class RitmComponent implements OnInit, OnDestroy {
   }
 
   private validateTemplateFields(): boolean {
-    this.templates.forEach(template => this.getTemplateFields(template).forEach(field => field.templateError = ''));
-    return true;
+    let isValid = true;
+    this.templates.forEach(template => this.getTemplateFields(template).forEach(field => {
+      field.templateError = '';
+      if (this.isMandatoryTemplateField(field)) {
+        const value = this.getUserTemplateValue(field);
+        const isEmpty = value === null || value === undefined || (typeof value === 'string' && value.trim() === '');
+        if (isEmpty) {
+          field.templateError = `${field.fieldName || 'This field'} is required.`;
+          isValid = false;
+        }
+      }
+    }));
+    return isValid;
   }
 
   private loadCategories(): void {
@@ -340,6 +370,19 @@ export class RitmComponent implements OnInit, OnDestroy {
       error: (err: unknown) => {
         this.submitError = 'Unable to load user list.';
         console.error(err);
+      }
+    });
+  }
+
+  private loadRitmStatuses(): void {
+    this.ritmService.getRitmStatuses(this.orgId).subscribe({
+      next: (response: any) => {
+        const statuses = response?.attributes ?? response ?? [];
+        this.ritmStatuses = Array.isArray(statuses) ? statuses : [];
+        this.applyExistingStatusValue();
+      },
+      error: () => {
+        this.ritmStatuses = [];
       }
     });
   }
@@ -530,12 +573,16 @@ export class RitmComponent implements OnInit, OnDestroy {
       subCategory: ritm.subCategoryId ?? ritm.subCategory?.subCategoryId ?? ritm.subCategory?.id ?? '',
       assignmentGroup: ritm.assignmentGroup || '',
       priority: ritm.priority.priorityId || '',
+      status: '',
+      assignedTo: this.getAssignedAgentId(ritm.assignedTo ?? ritm.assignedToId),
       watchList: this.normalizeWatchListIds(ritm.watchlist || []),
       shortDescription: ritm.shortDescription || '',
       description: ritm.description || '',
       stepsToReproduce: ritm.stepsToReproduce || '',
       otherNotes: ritm.otherNotes || ''
     });
+    this.existingStatusValue = ritm.status ?? ritm.statusId ?? ritm.statusCode ?? '';
+    this.applyExistingStatusValue();
     this.assignmentGroupId = ritm.supportGroupId
       ?? ritm.assignmentGroupId
       ?? ritm.assignmentGroup?.supportGroupId
@@ -546,11 +593,43 @@ export class RitmComponent implements OnInit, OnDestroy {
     if (!ritm.ritmNumber) {
       this.generateRitmNumber();
     }
-
-    // if (!this.isEditMode) {
-    //   this.loadSupportTabs();
-    // }
     this.loading = false;
+  }
+
+  private getRitmStatusValue(status: any): string {
+    if (status && typeof status === 'object') {
+      return String(status.statusCode ?? status.statusName ?? status.name ?? status.statusId ?? '');
+    }
+    return status == null ? '' : String(status);
+  }
+
+  private applyExistingStatusValue(): void {
+    if (this.existingStatusValue === null || this.existingStatusValue === undefined || this.existingStatusValue === '') {
+      return;
+    }
+
+    const existingStatus = this.existingStatusValue;
+    const statusId = existingStatus && typeof existingStatus === 'object'
+      ? existingStatus.statusId ?? existingStatus.id
+      : existingStatus;
+    const statusCode = this.getRitmStatusValue(existingStatus);
+    const matchingStatus = this.ritmStatuses.find(status =>
+      (statusId != null && String(status.statusId ?? status.id) === String(statusId))
+      || (statusCode && String(status.statusCode ?? status.statusName ?? status.name).toLowerCase() === statusCode.toLowerCase())
+    );
+
+    if (matchingStatus) {
+      this.ritmForm.get('status')?.setValue(
+        String(matchingStatus.statusId ?? matchingStatus.id)
+      );
+    }
+  }
+
+  private getAssignedAgentId(assignedTo: any): number | string {
+    if (assignedTo && typeof assignedTo === 'object') {
+      return assignedTo.agentId ?? assignedTo.id ?? assignedTo.userId ?? '';
+    }
+    return assignedTo ?? '';
   }
 
   private loadRitmDetails(ritmId: string): void {
@@ -697,6 +776,10 @@ export class RitmComponent implements OnInit, OnDestroy {
       updatedBy: Number(localStorage.getItem('userId') || 0),
       isCreatorAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
       isUpdaterAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      status: this.isEditMode && rawValues.status !== '' && rawValues.status !== null
+        ? Number(rawValues.status)
+        : rawValues.status,
+      ...(this.isEditMode ? { ritmId: Number(this.ritmId) } : {}),
       templateDetails: this.getTemplatePayload()
     };
     const payload = new FormData();
@@ -740,7 +823,7 @@ export class RitmComponent implements OnInit, OnDestroy {
         }
       },
       error: err => {
-        this.submitError = err?.error?.message || 'Failed to save RITM. Please try again.';
+        this.submitError = err?.error?.description || 'Failed to save RITM. Please try again.';
         this.submitting = false;
         console.error(err);
       }
@@ -926,7 +1009,7 @@ export class RitmComponent implements OnInit, OnDestroy {
 
     return [
       { label: 'Requested For', value: requestedFor || '—', icon: '◔', iconClass: 'primary', className: '' },
-      { label: 'Status', value: this.normalizeSuccessValue(data.status || 'OPEN'), icon: '◉', iconClass: 'success', className: 'status-pill' },
+      { label: 'Status', value: this.normalizeSuccessValue(data.status?.statusCode || 'OPEN'), icon: '◉', iconClass: 'success', className: 'status-pill' },
       { label: 'Priority', value: priority || '—', icon: '◢', iconClass: 'warning', className: 'priority-pill' },
       { label: 'Created On', value: this.successCreatedOnLabel, icon: '◧', iconClass: 'primary', className: '' },
       { label: 'Requested By', value: requestedBy || '—', icon: '◐', iconClass: 'muted', className: '' },

@@ -704,14 +704,30 @@ export class RitmDetailsComponent implements OnInit {
     return String(value);
   }
 
+  getStatusLabel(): string {
+    const status = this.ritm?.status;
+    if (status && typeof status === 'object') {
+      return String(status.statusCode || status.statusName || status.name || 'Open');
+    }
+    return this.getFieldValue('status', 'Open');
+  }
+
+  getAssignedToLabel(): string {
+    const assignedTo = this.ritm?.assignedTo;
+    if (assignedTo && typeof assignedTo === 'object') {
+      return String(assignedTo.agentName || assignedTo.name || assignedTo.userName || assignedTo.fullName || assignedTo.accessId || 'N/A');
+    }
+    return this.getFieldValue('assignedToName', assignedTo || 'N/A');
+  }
+
   getDetailRows(): Array<{label: string, value: string}> {
     return [
       { label: 'Requested For', value: this.getNestedValue('requestedFor.agentName', this.getFieldValue('requestedForName', this.getFieldValue('requestedFor', 'N/A'))) },
-      { label: 'Status', value: this.getFieldValue('status', 'Open') },
+      { label: 'Status', value: this.getStatusLabel() },
       { label: 'Priority', value: this.getNestedValue('priority.code', this.getFieldValue('priorityName', this.getFieldValue('priority', 'Normal'))) },
       { label: 'Created On', value: this.getFieldValue('createdOn', this.getFieldValue('createdAt', this.getFieldValue('requestedAt', 'N/A'))) },
       { label: 'Requested By', value: this.getNestedValue('requestedBy.agentName', this.getFieldValue('requestedByName', this.getFieldValue('openedByName', this.getFieldValue('openedBy', 'N/A')))) },
-      { label: 'Assigned To', value: this.getNestedValue('assignedTo.agentName', this.getFieldValue('assignedToName', 'N/A')) },
+      { label: 'Assigned To', value: this.getAssignedToLabel() },
       { label: 'Category', value: this.getNestedValue('category.categoryName', this.getFieldValue('categoryName', this.getFieldValue('category', 'N/A'))) },
       { label: 'Sub Category', value: this.getNestedValue('subCategory.subCategoryName', this.getFieldValue('subCategoryName', this.getFieldValue('subCategory', 'N/A'))) },
       { label: 'Support Group', value: this.getNestedValue('supportGroup.groupName', this.getFieldValue('assignmentGroupName', this.getFieldValue('assignmentGroup', this.getFieldValue('supportGroupName', 'N/A')))) },

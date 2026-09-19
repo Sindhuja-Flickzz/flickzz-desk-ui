@@ -1,5 +1,6 @@
 <div class="my-tickets-page">
   <header class="page-header">
+    <button type="button" class="header-back" aria-label="Back to home" (click)="back()"><mat-icon>chevron_left</mat-icon></button>
     <h1>My Tickets</h1>
     <p>Track requests opened by you or assigned to you.</p>
   </header>
@@ -23,17 +24,29 @@
           <div class="heading-title"><h2>{{ getPrimaryLabel() }}</h2><span class="count-badge">{{ currentList.length }}</span></div>
           <p>{{ subTab === 'ritm' ? 'Requests in this category.' : subTab === 'incident' ? 'Incidents in this category.' : 'User stories in this category.' }}</p>
         </div>
+        <div class="panel-actions"><button type="button" class="filter-button" [class.active]="filterOpen" (click)="toggleFilters()"><mat-icon>filter_alt</mat-icon> Filters</button></div>
+      </div>
+
+      <div class="filter-panel" *ngIf="filterOpen">
+        <input type="text" [(ngModel)]="filterText" (ngModelChange)="resetPagination()" placeholder="Search tickets, requester, or description" />
+        <select [(ngModel)]="filterStatus" (ngModelChange)="resetPagination()"><option value="">All statuses</option><option *ngFor="let status of ritmStatuses" [value]="getStatusCode(status).toLowerCase()">{{ getStatusCode(status) }}</option></select>
+        <div class="column-picker">
+          <button type="button" class="column-picker-trigger" [class.active]="columnMenuOpen || selectedTemplateFieldIds.length > 0" (click)="toggleColumnMenu()"><mat-icon>view_column</mat-icon><span>Add column</span><span class="column-count" *ngIf="selectedTemplateFieldIds.length">{{ selectedTemplateFieldIds.length }}</span><mat-icon class="column-chevron">expand_more</mat-icon></button>
+          <div class="column-picker-menu" *ngIf="columnMenuOpen"><div class="column-picker-title">Choose columns</div><label class="column-option" *ngFor="let field of templateFields"><input type="checkbox" [checked]="selectedTemplateFieldIds.includes(getTemplateFieldKey(field))" (change)="toggleTemplateField(getTemplateFieldKey(field))" /><span>{{ field.fieldName || field.name }}</span></label><div class="column-picker-empty" *ngIf="!templateFields.length">No template fields available</div></div>
+        </div>
+        <button type="button" class="clear-filter-button" (click)="clearFilters()">Clear</button>
       </div>
 
       <div *ngIf="loading" class="loading-state">Loading tickets...</div>
-      <div *ngIf="!loading && currentList.length" class="ticket-list">
-        <div class="table-header"><span>Ticket</span><span>Requested by</span><span>Priority</span><span>Requested on</span><span>Status</span></div>
-        <button type="button" class="ticket-row" *ngFor="let item of getPaginatedTickets()" (click)="openTicket(item)">
+      <div *ngIf="!loading && currentList.length" class="ticket-list" [class.has-dynamic-column]="selectedTemplateFieldIds.length > 0">
+        <div class="table-header" [style.grid-template-columns]="getTicketGridTemplate()"><span>Ticket</span><span>Requested by</span><span>Priority</span><span>Requested on</span><span>Status</span><span *ngFor="let field of getSelectedTemplateFields()">{{ field.fieldName || field.name }}</span></div>
+        <button type="button" class="ticket-row" *ngFor="let item of getPaginatedTickets()" (click)="openTicket(item)" [style.grid-template-columns]="getTicketGridTemplate()">
           <span class="ticket-number">{{ getRequestNumber(item) }}</span>
           <span>{{ primaryTab === 'assigned-to-me' ? getRequestedBy(item) : getAssignee(item) }}</span>
           <span><em class="ticket-priority" [ngClass]="(getPriority(item) || 'medium').toLowerCase()">{{ getPriority(item) || 'Medium' }}</em></span>
           <span>{{ item.requestedOn || item.createdAt || item.createdOn || 'N/A' }}</span>
           <span><em class="ticket-status" [ngClass]="getStatus(item).toLowerCase()">{{ getStatus(item) }}</em></span>
+          <span *ngFor="let fieldId of selectedTemplateFieldIds">{{ getDynamicFieldValue(item, fieldId) }}</span>
         </button>
       </div>
       <div class="pagination-controls" *ngIf="!loading && currentList.length">

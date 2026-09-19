@@ -34,13 +34,14 @@
           </div>
 
           <div class="field field-requested-for">
-            <label>Requested For</label>
+            <label>Requested For <span class="mandatory-indicator" aria-hidden="true">*</span></label>
             <select formControlName="requestedFor" (change)="setRequestedForLocation($any($event.target).value)">
               <option value="" disabled>Select requester</option>
               <option *ngFor="let user of users" [value]="user.agentId">
                 {{ user.agentName }} ({{ user.accessId }})
               </option>
             </select>
+            <span *ngIf="showRequiredError('requestedFor')" class="error-text">Requested For is required.</span>
           </div>
 
           <div class="field field-location">
@@ -59,21 +60,33 @@
           </div>
 
           <div class="field field-category">
-            <label>Category</label>
+            <label>Category <span class="mandatory-indicator" aria-hidden="true">*</span></label>
             <select formControlName="category">
               <option value="" selected disabled>Select category</option>
               <option *ngFor="let category of categories" [value]="category.categoryId">
                 {{ category.categoryName }}
               </option>
             </select>
+            <span *ngIf="showRequiredError('category')" class="error-text">Category is required.</span>
           </div>
 
           <div class="field field-sub-category">
-            <label>Sub category</label>
+            <label>Sub category <span class="mandatory-indicator" aria-hidden="true">*</span></label>
             <select formControlName="subCategory">
               <option value="" selected disabled>Select sub category</option>
               <option *ngFor="let subCategory of subCategories" [value]="subCategory.subCategoryId">
                 {{ subCategory.subCategoryName }}
+              </option>
+            </select>
+            <span *ngIf="showRequiredError('subCategory')" class="error-text">Sub category is required.</span>
+          </div>
+
+          <div class="field field-status" *ngIf="isEditMode">
+            <label>Status</label>
+            <select formControlName="status">
+              <option value="" disabled>Select status</option>
+              <option *ngFor="let status of ritmStatuses" [value]="status.statusId || status.id">
+                {{ status.statusCode || status.statusName || status.name }}
               </option>
             </select>
           </div>
@@ -92,14 +105,25 @@
             <input formControlName="assignmentGroup" readonly />
           </div>
 
+          <div class="field assigned-to-field" *ngIf="isEditMode">
+            <label>Assign To</label>
+            <select formControlName="assignedTo">
+              <option value="">Not assigned</option>
+              <option *ngFor="let user of users" [value]="user.agentId">
+                {{ user.agentName }} ({{ user.accessId }})
+              </option>
+            </select>
+          </div>
+
           <div class="field priority-field">
-            <label>Priority</label>
+            <label>Priority <span class="mandatory-indicator" aria-hidden="true">*</span></label>
             <select formControlName="priority">
               <option value="" selected disabled>Select priority</option>
               <option *ngFor="let priority of priorities" [value]="priority.priorityId">
                 {{ priority.code }}
               </option>
             </select>
+            <span *ngIf="showRequiredError('priority')" class="error-text">Priority is required.</span>
           </div>
 
           <div class="field watch-list-field">
@@ -159,18 +183,22 @@
         <mat-spinner diameter="28"></mat-spinner>
       </div>
 
-      <div *ngFor="let template of templates" class="section-block request-details-block">
+      <div *ngFor="let template of templates; let templateIndex = index" class="section-block request-details-block">
         <div class="section-header amber-header">
           <span class="section-header-icon">▣</span>
           <span>{{ template.templateName }}</span>
+          <button type="button" class="section-toggle icon-only" [attr.aria-label]="isTemplateExpanded(template, templateIndex) ? 'Collapse template' : 'Expand template'" [attr.title]="isTemplateExpanded(template, templateIndex) ? 'Collapse template' : 'Expand template'" [attr.aria-expanded]="isTemplateExpanded(template, templateIndex)" (click)="toggleTemplate(template, templateIndex)">
+            <mat-icon class="section-toggle-icon">{{ isTemplateExpanded(template, templateIndex) ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
         </div>
 
-        <div class="template-group">
+        <div class="template-group" *ngIf="isTemplateExpanded(template, templateIndex)">
           <div class="field-grid detail-grid">
             <div class="field full-width-field" *ngFor="let field of getTemplateFields(template)">
               <div class="field-label-row">
                 <label [attr.for]="'ritm-field-' + field.fieldId">
                   {{ field.fieldName }}
+                  <span *ngIf="isMandatoryTemplateField(field)" class="mandatory-indicator" aria-hidden="true">*</span>
                 </label>
                 <button *ngIf="hasDefaultValue(field)" type="button" class="default-value-button"
                   [attr.aria-label]="'Use default value for ' + field.fieldName"
@@ -267,7 +295,7 @@
           <h2>{{ successRitmDetails?.ritmNumber || 'RITM' }} Created Successfully</h2>
           <p>Your request is now in progress and the details below were captured for processing.</p>
         </div>
-        <div class="success-pill">{{ successRitmDetails?.status || 'Open' }}</div>
+        <div class="success-pill">{{ successRitmDetails?.status?.statusCode || 'Open' }}</div>
       </header>
 
       <section class="detail-section">
