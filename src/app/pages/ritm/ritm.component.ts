@@ -55,6 +55,7 @@ export class RitmComponent implements OnInit, OnDestroy {
   assignmentGroupId: number | null = null;
   showSuccessScreen = false;
   successRitmDetails: any = null;
+  successWasUpdate = false;
   templates: any[] = [];
   expandedTemplates: Record<string, boolean> = {};
   templatesLoading = false;
@@ -818,13 +819,16 @@ export class RitmComponent implements OnInit, OnDestroy {
 
     saveRequest$.subscribe({
       next: (response: any) => {
-        this.submitSuccess = this.isEditMode ? 'RITM updated successfully.' : 'RITM created successfully.';
+        const wasEditMode = this.isEditMode;
+        this.submitSuccess = wasEditMode ? 'RITM updated successfully.' : 'RITM created successfully.';
         this.submitting = false;
-        if (!this.isEditMode) {
-          const createdRitm = response?.attributes || response || {};
-          this.successRitmDetails = this.buildSuccessRitmDetails(createdRitm, rawValues);
+        this.successWasUpdate = wasEditMode;
+        const savedRitm = response?.attributes || response || {};
+        this.successRitmDetails = this.buildSuccessRitmDetails(savedRitm, rawValues);
+        this.showSuccessScreen = true;
+        this.isEditMode = false;
+        if (!wasEditMode) {
           console.log('RITM created successfully:', this.successRitmDetails);
-          this.showSuccessScreen = true;
           this.applyFormDefaults();
           this.ritmForm.get('category')?.reset();
           this.ritmForm.get('subCategory')?.reset();

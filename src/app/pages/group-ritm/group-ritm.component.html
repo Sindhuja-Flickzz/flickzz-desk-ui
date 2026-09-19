@@ -58,7 +58,7 @@
     </section>
 
     <aside class="details-drawer" *ngIf="selectedRequest">
-      <div class="drawer-header"><div><mat-icon>article</mat-icon><button type="button" class="ritm-link" (click)="openRitmDetails()">{{ getDrawerFieldValue('ritmNumber', 'requestNumber') }}</button><em class="status open">{{ getDrawerFieldValue('status') }}</em></div><button type="button" class="close-button" title="Close" (click)="selectedRequest = null"><mat-icon>close</mat-icon></button></div>
+      <div class="drawer-header"><div><mat-icon>article</mat-icon><button type="button" class="ritm-link" (click)="openRitmDetails()">{{ getDrawerFieldValue('ritmNumber', 'requestNumber') }}</button><em class="status open">{{ getDrawerStatusCode() }}</em></div><button type="button" class="close-button" title="Close" (click)="selectedRequest = null"><mat-icon>close</mat-icon></button></div>
       <div *ngIf="drawerLoading" class="loading-state">Loading RITM details...</div>
       <ng-container *ngIf="!drawerLoading">
         <!-- <div class="drawer-number"><span>{{ getDrawerFieldValue('ritmNumber', 'requestNumber') }}</span><em class="status open">{{ getDrawerFieldValue('status') }}</em></div> -->

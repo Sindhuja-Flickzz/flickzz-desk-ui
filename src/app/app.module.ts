@@ -80,7 +80,6 @@ import { HomeComponent } from './pages/home/home.component';
 import { NotificationComponent } from './notification/notification.component';
 import { NotificationPopupComponent } from './shared/notification-popup/notification-popup.component';
 import { NotificationDropdownComponent } from './notification-dropdown/notification-dropdown.component';
-import { NotificationCenterComponent } from './pages/notification-center/notification-center.component';
 import { MyTicketsComponent } from './pages/my-tickets/my-tickets.component';
 import { RitmDetailsComponent } from './pages/ritm/ritm-details.component';
 import { VariantComponent } from './pages/settings/variant/variant.component';
@@ -147,7 +146,6 @@ import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
     FormsModule,
     ReactiveFormsModule,
     CommonModule,
-    NotificationCenterComponent,
     // Angular Material modules
     MatDialogModule,
     MatIconModule,

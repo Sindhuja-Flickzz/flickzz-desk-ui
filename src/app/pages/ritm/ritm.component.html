@@ -292,8 +292,8 @@
       <header class="success-hero">
         <div class="success-badge" aria-hidden="true">✓</div>
         <div class="success-hero-copy">
-          <h2>{{ successRitmDetails?.ritmNumber || 'RITM' }} Created Successfully</h2>
-          <p>Your request is now in progress and the details below were captured for processing.</p>
+          <h2>{{ successRitmDetails?.ritmNumber || 'RITM' }} {{ successWasUpdate ? 'Updated' : 'Created' }} Successfully</h2>
+          <p>{{ successWasUpdate ? 'Your changes were saved successfully. The updated details are shown below.' : 'Your request is now in progress and the details below were captured for processing.' }}</p>
         </div>
         <div class="success-pill">{{ successRitmDetails?.status?.statusCode || 'Open' }}</div>
       </header>
