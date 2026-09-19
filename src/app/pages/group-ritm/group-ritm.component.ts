@@ -452,6 +452,19 @@ export class GroupRitmComponent implements OnInit {
     return 'N/A';
   }
 
+  getDrawerStatusCode(): string {
+    const status = this.selectedRequestDetails?.status ?? this.selectedRequest?.status;
+    return this.getStatusCode(
+      status?.statusCode
+        ?? status?.statusName
+        ?? status?.name
+        ?? status?.code
+        ?? this.selectedRequestDetails?.statusCode
+        ?? this.selectedRequestDetails?.statusName
+        ?? status
+    ) || 'N/A';
+  }
+
   toggleFilters(): void {
     this.filterOpen = !this.filterOpen;
   }

@@ -32,9 +32,7 @@ import { SupportGroupComponent } from './pages/support-group/support-group.compo
 import { SupportCategoryComponent } from './pages/support-category/support-category.component';
 import { ConfigApprovalComponent } from './pages/config-approval/config-approval.component';
 import { authGuard } from './service/auth/auth.guard';
-import { SystemAuditComponent } from './pages/system-audit/system-audit.component';
 import { HomeComponent } from './pages/home/home.component';
-import { NotificationCenterComponent } from './pages/notification-center/notification-center.component';
 import { MyTicketsComponent } from './pages/my-tickets/my-tickets.component';
 import { RitmDetailsComponent } from './pages/ritm/ritm-details.component';
 import { GroupRitmComponent } from './pages/group-ritm/group-ritm.component';
@@ -67,7 +65,7 @@ const routes: Routes = [
   },
   {
     path: 'system-audit',
-    component: SystemAuditComponent,
+    loadComponent: () => import('./pages/system-audit/system-audit.component').then(m => m.SystemAuditComponent),
     canActivate: [authGuard]
   },
   {
@@ -229,7 +227,7 @@ const routes: Routes = [
   },
   {
     path: 'notifications',
-    component: NotificationCenterComponent,
+    loadComponent: () => import('./pages/notification-center/notification-center.component').then(m => m.NotificationCenterComponent),
     canActivate: [authGuard]
   },
   {
