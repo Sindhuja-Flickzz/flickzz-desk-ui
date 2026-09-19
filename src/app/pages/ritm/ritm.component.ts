@@ -752,6 +752,21 @@ export class RitmComponent implements OnInit, OnDestroy {
     this.submitError = '';
     this.submitSuccess = '';
 
+    if (!this.isEditMode) {
+      const unavailableDependencies: string[] = [];
+      if (this.ritmStatuses.length === 0) {
+        unavailableDependencies.push('status');
+      }
+      if (this.templates.length === 0) {
+        unavailableDependencies.push('template');
+      }
+
+      if (unavailableDependencies.length > 0) {
+        this.submitError = `RITM creation is unavailable because ${unavailableDependencies.join(' and ')} data is not available.`;
+        return;
+      }
+    }
+
     if (!this.validateTemplateFields()) {
       this.submitError = 'Please provide values for all mandatory template fields.';
       return;
