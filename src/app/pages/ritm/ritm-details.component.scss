@@ -5,6 +5,19 @@
   background: #ffffff;
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  color: #00246B;
+}
+
+.ritm-details-page .page-header,
+.ritm-details-page .section-header,
+.ritm-details-page .detail-label,
+.ritm-details-page .detail-item strong,
+.ritm-details-page .field-label-row label,
+.ritm-details-page .description-block,
+.ritm-details-page .description-block p,
+.ritm-details-page .drawer-entry,
+.ritm-details-page .tab-panel {
+  color: #00246B;
 }
 
 .page-header {
@@ -19,7 +32,7 @@
   border: none;
   border-radius: 8px 8px 0 0;
   background: #f4f4f4;
-  color: #00246b;
+  color: #00246B;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -35,7 +48,7 @@
 .page-title-group h1 {
   margin: 0;
   font-size: 30px;
-  color: #1d326d;
+  color: #00246B;
 }
 
 .page-subtitle {
@@ -84,7 +97,7 @@
 .ritm-number {
   font-size: 22px;
   font-weight: 700;
-  color: #1d326d;
+  color: #00246B;
   margin: 10px 0;
 }
 
@@ -124,7 +137,7 @@
   flex: 1;
   border: none;
   background: #f4f4f4;
-  color: #00246b;
+  color: #00246B;
   font-size: 14px;
   font-weight: 700;
   padding: 10px 0;
@@ -133,7 +146,7 @@
 }
 
 .tab-btn.active {
-  background: #00246b;
+  background: #00246B;
   color: #fff;
 }
 
@@ -144,13 +157,13 @@
   margin-bottom: 12px;
   font-size: 14px;
   font-weight: 700;
-  color: #1d326d;
+  color: #00246B;
   border-bottom: 1px solid #edf2f7;
   padding-bottom: 8px;
 }
 
 .section-header-icon {
-  color: #0f5bba;
+  color: #00246B;
 }
 
 .amber-header .section-header-icon {
@@ -217,7 +230,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: #0f5bba;
+  color: #00246B;
   cursor: pointer;
 }
 
@@ -289,7 +302,7 @@
   border: 1px solid #dbe5f2;
   border-radius: 999px;
   background: #f5f8fc;
-  color: #29456f;
+  color: #00246B;
   font-size: 12px;
   font-weight: 600;
 }
@@ -331,7 +344,7 @@
   padding: 4px 6px;
   border-radius: 5px;
   background: #e8eef8;
-  color: #28558f;
+  color: #00246B;
   font-size: 10px;
   font-weight: 800;
 }
@@ -358,7 +371,7 @@
 }
 
 .comment-box textarea:focus {
-  border-color: #0f5bba;
+  border-color: #00246B;
   outline: none;
 }
 
@@ -380,14 +393,14 @@
 
 .primary-action {
   border: none;
-  background: #00246b;
+  background: #00246B;
   color: #fff;
 }
 
 .secondary-action {
   background: #fff;
-  color: #0f5bba;
-  border: 1px solid #0f5bba;
+  color: #00246B;
+  border: 1px solid #00246B;
 }
 
 .notes-list,
@@ -649,7 +662,7 @@
 
 .single-field-name {
   background: #f3e8ff;
-  color: #4c1d95;
+  color: #00246B;
   border-radius: 18px;
   padding: 5px 8px;
   font-weight: 600;

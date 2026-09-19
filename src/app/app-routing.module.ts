@@ -38,6 +38,7 @@ import { NotificationCenterComponent } from './pages/notification-center/notific
 import { MyTicketsComponent } from './pages/my-tickets/my-tickets.component';
 import { RitmDetailsComponent } from './pages/ritm/ritm-details.component';
 import { GroupRitmComponent } from './pages/group-ritm/group-ritm.component';
+import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
 
 const routes: Routes = [
   {
@@ -162,6 +163,11 @@ const routes: Routes = [
   {
     path: 'ritm',
     component: RitmComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'ritm-status',
+    component: RitmStatusComponent,
     canActivate: [authGuard]
   },
   {

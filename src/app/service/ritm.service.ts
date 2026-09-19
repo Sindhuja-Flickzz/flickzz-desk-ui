@@ -6,6 +6,14 @@ import { UserProfile, NoteItem, ApproverItem, LogEntry, WorkflowStage, CatalogTa
 import { PriorityMaster } from '../models/priority-master';
 import { AgentMaster } from '../models/agent-master';
 
+export interface RitmStatusCreateRequest {
+  companyId: number;
+  statusCode: string;
+  sequenceNo: number;
+  createdBy: number;
+  isCreatorAdmin: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -30,8 +38,20 @@ export class RitmService {
     return this.http.post(`${this.baseUrl}/ritm/create`, payload);
   }
 
+  createRitmStatus(payload: RitmStatusCreateRequest[]): Observable<any> {
+    return this.http.post(`${this.baseUrl}/ritm/status/create`, payload);
+  }
+
+  getRitmStatuses(orgId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/ritm/get/status/${orgId}`);
+  }
+
+  deleteRitmStatus(statusId: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/ritm/status/delete`, { body: { statusId } });
+  }
+
   updateRitm(payload: any): Observable<any> {
-    return this.http.put(`${this.baseUrl}/ritm/update`, payload);
+    return this.http.post(`${this.baseUrl}/ritm/update`, payload);
   }
 
   assignRitm(payload: { ritmId: number; assignedTo: number; assignedBy: number }): Observable<any> {

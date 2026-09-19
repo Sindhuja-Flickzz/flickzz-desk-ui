@@ -1,5 +1,6 @@
 <div class="group-ritm-page">
   <header class="page-header">
+    <button type="button" class="header-back" aria-label="Back to home" (click)="back()"><mat-icon>chevron_left</mat-icon></button>
     <h1>Group RITM</h1>
     <p>View and manage RITMs assigned to group agents.</p>
   </header>
@@ -15,11 +16,34 @@
 
     <section class="request-panel">
       <div class="panel-header"><div><div class="heading-title"><h2>{{ selectedAgentId === null ? 'Not Assigned' : selectedAgentName }}</h2><span class="count-badge">{{ filteredRequests.length }}</span></div><p>RITMs that are not yet assigned to any agent.</p></div><div class="panel-actions"><button type="button" class="icon-button" title="Refresh" (click)="selectUnassigned()"><mat-icon>sync</mat-icon></button><button type="button" class="filter-button" [class.active]="filterOpen" (click)="toggleFilters()"><mat-icon>filter_alt</mat-icon> Filters</button></div></div>
-      <div class="filter-panel" *ngIf="filterOpen"><input type="text" [(ngModel)]="filterText" (ngModelChange)="currentPage = 0" placeholder="Search RITM, requester, or description" /><select [(ngModel)]="filterStatus" (ngModelChange)="currentPage = 0"><option value="">All statuses</option><option value="open">Open</option><option value="pending">Pending</option><option value="in-progress">In Progress</option><option value="closed">Closed</option></select><button type="button" class="clear-filter-button" (click)="clearFilters()">Clear</button></div>
+      <div class="filter-panel" *ngIf="filterOpen">
+        <input type="text" [(ngModel)]="filterText" (ngModelChange)="currentPage = 0" placeholder="Search RITM, requester, or description" />
+        <select [(ngModel)]="filterStatus" (ngModelChange)="currentPage = 0">
+          <option value="">All statuses</option>
+          <option *ngFor="let status of ritmStatuses" [value]="getStatusCode(status).toLowerCase()">{{ getStatusCode(status) }}</option>
+        </select>
+        <div class="column-picker">
+          <button type="button" class="column-picker-trigger" [class.active]="columnMenuOpen || selectedTemplateFieldIds.length > 0" (click)="toggleColumnMenu()" aria-haspopup="listbox" [attr.aria-expanded]="columnMenuOpen">
+            <mat-icon>view_column</mat-icon>
+            <span>Add column</span>
+            <span class="column-count" *ngIf="selectedTemplateFieldIds.length">{{ selectedTemplateFieldIds.length }}</span>
+            <mat-icon class="column-chevron">expand_more</mat-icon>
+          </button>
+          <div class="column-picker-menu" *ngIf="columnMenuOpen" role="listbox" aria-multiselectable="true">
+            <div class="column-picker-title">Choose columns</div>
+            <label class="column-option" *ngFor="let field of templateFields">
+              <input type="checkbox" [checked]="selectedTemplateFieldIds.includes(getTemplateFieldKey(field))" (change)="toggleTemplateField(getTemplateFieldKey(field))" />
+              <span>{{ field.fieldName || field.name }}</span>
+            </label>
+            <div class="column-picker-empty" *ngIf="!templateFields.length">No template fields available</div>
+          </div>
+        </div>
+        <button type="button" class="clear-filter-button" (click)="clearFilters()">Clear</button>
+      </div>
       <div *ngIf="requestsLoading" class="loading-state">Loading requests...</div>
-      <div *ngIf="!requestsLoading && filteredRequests.length" class="request-list">
-        <div class="table-header"><span>RITM Number</span><span>Requested by</span><span>Priority</span><span>Requested on</span><span>Status</span></div>
-        <button type="button" class="request-row" *ngFor="let item of getPaginatedRequests()" [class.selected]="selectedRequest === item" (click)="selectRequest(item)"><span class="ritm-number">{{ item.ritmNumber || 'RITM' }}</span><span>{{ item.requestedBy?.agentName || item.requestedByName || 'N/A' }}</span><span><em class="priority {{ (item.priority?.code || item.priorityName || 'medium').toLowerCase() }}">{{ item.priority?.code || item.priorityName || 'Medium' }}</em></span><span>{{ item.requestedOn || item.createdAt || 'N/A' }}</span><span><em class="status {{ (item.status || 'Open').toLowerCase() }}">{{ item.status || 'Open' }}</em></span></button>
+      <div *ngIf="!requestsLoading && filteredRequests.length" class="request-list" [class.has-dynamic-column]="selectedTemplateFieldIds.length > 0">
+        <div class="table-header" [style.grid-template-columns]="getRequestGridTemplate()"><span>RITM Number</span><span>Requested by</span><span>Priority</span><span>Requested on</span><span>Status</span><span *ngFor="let field of getSelectedTemplateFields()">{{ field.fieldName || field.name }}</span></div>
+        <button type="button" class="request-row" *ngFor="let item of getPaginatedRequests()" [class.selected]="selectedRequest === item" (click)="selectRequest(item)" [style.grid-template-columns]="getRequestGridTemplate()"><span class="ritm-number">{{ item.ritmNumber || 'RITM' }}</span><span>{{ item.requestedBy?.agentName || item.requestedByName || 'N/A' }}</span><span><em class="priority {{ (item.priority?.code || item.priorityName || 'medium').toLowerCase() }}">{{ item.priority?.code || item.priorityName || 'Medium' }}</em></span><span>{{ item.requestedOn || item.createdAt || 'N/A' }}</span><span><em class="status {{ getStatusCode(item.status || 'Open').toLowerCase() }}">{{ getStatusCode(item.status || 'Open') }}</em></span><span *ngFor="let fieldId of selectedTemplateFieldIds">{{ getDynamicFieldValue(item, fieldId) }}</span></button>
       </div>
       <div *ngIf="!requestsLoading && !filteredRequests.length" class="empty-state"><mat-icon>inbox</mat-icon><h3>No RITMs to display</h3><p>{{ requests.length ? 'No RITMs match the selected filters.' : 'There are no RITMs in this category.' }}</p></div>
       <div class="pagination-controls" *ngIf="!requestsLoading && filteredRequests.length">

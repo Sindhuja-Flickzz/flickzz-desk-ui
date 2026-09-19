@@ -22,7 +22,10 @@
       <div class="detail-grid request-detail-grid">
         <div class="detail-item" *ngFor="let detail of getDetailRows()">
           <span class="detail-label">{{ detail.label }}</span>
-          <strong>{{ detail.value }}</strong>
+          <strong *ngIf="detail.label !== 'Status'">{{ detail.value }}</strong>
+          <span *ngIf="detail.label === 'Status'" class="status-badge" [ngClass]="getDisplayStatus(detail.value)">
+            {{ detail.value }}
+          </span>
         </div>
       </div>
     </section>

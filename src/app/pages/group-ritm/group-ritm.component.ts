@@ -4,6 +4,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { AgentService } from '../../service/agent.service';
 import { RitmService } from '../../service/ritm.service';
 import { SupportGroupService } from '../../service/support-group.service';
+import { VariantService } from '../../service/variant.service';
 
 interface GroupRitmUser {
   userId: number | null;
@@ -29,6 +30,9 @@ export class GroupRitmComponent implements OnInit {
   selectedAgentId: number | null = null;
   selectedAgentName = 'Unassigned';
   requests: any[] = [];
+  ritmStatuses: any[] = [];
+  templateFields: any[] = [];
+  selectedTemplateFieldIds: string[] = [];
   selectedRequest: any = null;
   selectedRequestDetails: any = null;
   drawerTab: 'details' | 'comments' | 'history' | 'watchlist' | 'attachments' = 'details';
@@ -39,6 +43,7 @@ export class GroupRitmComponent implements OnInit {
   assignmentMessage = '';
   assignmentDropdownOpen = false;
   filterOpen = false;
+  columnMenuOpen = false;
   filterText = '';
   filterStatus = '';
   private agentNameMap = new Map<number, string>();
@@ -55,11 +60,14 @@ export class GroupRitmComponent implements OnInit {
     private router: Router,
     private agentService: AgentService,
     private ritmService: RitmService,
-    private supportGroupService: SupportGroupService
+    private supportGroupService: SupportGroupService,
+    private variantService: VariantService
   ) {}
 
   ngOnInit(): void {
     this.orgId = Number(localStorage.getItem('userOrgId') || 0);
+    this.loadRitmStatuses();
+    this.loadTemplateFields();
     this.loadAgentNameMap();
     const userId = Number(localStorage.getItem('userId') || 0);
 
@@ -97,6 +105,101 @@ export class GroupRitmComponent implements OnInit {
     this.assignSearch = '';
     this.currentPage = 0;
     this.totalRecords = 0;
+  }
+
+  private loadRitmStatuses(): void {
+    this.ritmService.getRitmStatuses(String(this.orgId || 0)).subscribe({
+      next: (response: any) => {
+        const statuses = response?.attributes ?? response ?? [];
+        this.ritmStatuses = Array.isArray(statuses) ? statuses : [];
+      },
+      error: () => {
+        this.ritmStatuses = [];
+      }
+    });
+  }
+
+  getStatusCode(status: any): string {
+    if (status && typeof status === 'object') {
+      return String(status.statusCode).trim();
+    }
+    return String(status ?? '').trim();
+  }
+
+  private loadTemplateFields(): void {
+    this.variantService.getRitmTemplateDetails(String(this.orgId || 0)).subscribe({
+      next: (response: any) => {
+        const fields = this.flattenTemplateFields(response?.attributes ?? response ?? []);
+        const seen = new Set<string>();
+        this.templateFields = fields.filter(field => {
+          const key = String(field?.fieldId ?? field?.fieldName ?? field?.name ?? '').trim();
+          if (!key || seen.has(key)) {
+            return false;
+          }
+          seen.add(key);
+          return true;
+        });
+      },
+      error: () => {
+        this.templateFields = [];
+      }
+    });
+  }
+
+  private flattenTemplateFields(value: any): any[] {
+    if (Array.isArray(value)) {
+      return value.flatMap(item => this.flattenTemplateFields(item));
+    }
+    if (!value || typeof value !== 'object') {
+      return [];
+    }
+    const nested = value.templateDetails ?? value.templateFields ?? value.details;
+    if (nested !== undefined) {
+      return this.flattenTemplateFields(nested);
+    }
+    return value.fieldId != null || value.fieldName != null || value.name != null ? [value] : [];
+  }
+
+  getTemplateFieldKey(field: any): string {
+    return String(field?.fieldId ?? field?.fieldName ?? field?.name ?? '').trim();
+  }
+
+  getSelectedTemplateFields(): any[] {
+    return this.selectedTemplateFieldIds
+      .map(fieldId => this.templateFields.find(field => this.getTemplateFieldKey(field) === fieldId))
+      .filter(Boolean);
+  }
+
+  toggleColumnMenu(): void {
+    this.columnMenuOpen = !this.columnMenuOpen;
+  }
+
+  toggleTemplateField(fieldId: string): void {
+    this.selectedTemplateFieldIds = this.selectedTemplateFieldIds.includes(fieldId)
+      ? this.selectedTemplateFieldIds.filter(id => id !== fieldId)
+      : [...this.selectedTemplateFieldIds, fieldId];
+    this.currentPage = 0;
+  }
+
+  getDynamicFieldValue(request: any, fieldId: string): string {
+    if (!fieldId) {
+      return '';
+    }
+    const fields = this.flattenTemplateFields(request?.templateDetails ?? request?.templateFields ?? []);
+    const selectedField = this.templateFields.find(field => this.getTemplateFieldKey(field) === fieldId);
+    const selectedFieldId = selectedField?.fieldId;
+    const selectedFieldName = String(selectedField?.fieldName ?? selectedField?.name ?? '').trim().toLowerCase();
+    const value = fields.find(field =>
+      (selectedFieldId != null && String(field?.fieldId) === String(selectedFieldId))
+      || (selectedFieldName && String(field?.fieldName ?? field?.name ?? '').trim().toLowerCase() === selectedFieldName)
+    );
+    const fieldValue = value?.value ?? value?.fieldValue;
+    return fieldValue === null || fieldValue === undefined || fieldValue === '' ? '—' : String(fieldValue);
+  }
+
+  getRequestGridTemplate(): string {
+    const dynamicColumns = this.selectedTemplateFieldIds.map(() => '1.2fr').join(' ');
+    return `1.05fr 1.25fr 1fr 1.65fr .95fr${dynamicColumns ? ' ' + dynamicColumns : ''}`;
   }
 
   selectRequest(item: any): void {
@@ -273,11 +376,15 @@ export class GroupRitmComponent implements OnInit {
 
   @HostListener('document:click', ['$event'])
   closeDrawerOnOutsideClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (this.columnMenuOpen && !target?.closest('.column-picker')) {
+      this.columnMenuOpen = false;
+    }
+
     if (!this.selectedRequest) {
       return;
     }
 
-    const target = event.target as HTMLElement | null;
     if (target?.closest('.details-drawer') || target?.closest('.request-row')) {
       return;
     }
@@ -352,6 +459,8 @@ export class GroupRitmComponent implements OnInit {
   clearFilters(): void {
     this.filterText = '';
     this.filterStatus = '';
+    this.selectedTemplateFieldIds = [];
+    this.columnMenuOpen = false;
     this.currentPage = 0;
   }
 
@@ -368,9 +477,9 @@ export class GroupRitmComponent implements OnInit {
         item?.description,
         item?.priority?.code,
         item?.priorityName,
-        item?.status
+          this.getStatusCode(item?.status)
       ].filter(Boolean).join(' ').toLowerCase();
-      const itemStatus = String(item?.status || 'Open').toLowerCase();
+        const itemStatus = this.getStatusCode(item?.status || 'Open').toLowerCase();
       return (!search || searchable.includes(search)) && (!status || itemStatus === status);
     });
   }
@@ -726,6 +835,6 @@ export class GroupRitmComponent implements OnInit {
   }
 
   back(): void {
-    this.router.navigate(['/home']);
+    this.router.navigate(['/settings']);
   }
 }

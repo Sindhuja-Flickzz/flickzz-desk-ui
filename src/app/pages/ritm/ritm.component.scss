@@ -8,6 +8,21 @@
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 6px 15px rgba(0,0,0,.08);
+  color: #00246B;
+}
+
+.ritm-page .page-title-group h1,
+.ritm-page .page-subtitle,
+.ritm-page .section-header,
+.ritm-page .field label,
+.ritm-page .field-label-row label,
+.ritm-page .template-field,
+.ritm-page .detail-field,
+.ritm-page .field-value,
+.ritm-page input,
+.ritm-page select,
+.ritm-page textarea {
+  color: #00246B;
 }
 
 .page-header {
@@ -558,6 +573,22 @@ form {
 .section-toggle:hover {
   background: #fffdf6;
   border-color: #c7a94f;
+}
+
+.section-toggle.icon-only {
+  min-width: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #765b14;
+}
+
+.section-toggle.icon-only:hover {
+  background: rgba(255, 255, 255, 0.62);
+  border-color: transparent;
 }
 
 .section-toggle:focus-visible {

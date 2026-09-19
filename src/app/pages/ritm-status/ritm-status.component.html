@@ -1,0 +1,93 @@
+<div class="ritm-status-page">
+  <div class="tabs">
+    <button type="button" class="header-back" (click)="backToHome()" aria-label="Back to settings">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <section *ngIf="activeTab === 'create'" class="panel">
+    <h2>{{ pageTitle }}</h2>
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+    <form [formGroup]="ritmStatusForm" (ngSubmit)="onSave()">
+      <div class="field status-entry-field">
+        <label>Status Details <span class="required">*</span></label>
+        <div class="status-input-row">
+          <input id="statusCode" type="text" formControlName="statusCode" placeholder="Enter status code" />
+          <input id="sequenceNo" type="number" formControlName="sequenceNo" min="0" step="1" placeholder="Sequence" />
+          <button type="button" class="add-btn" (click)="addStatus()" aria-label="Add status">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
+        <span *ngIf="formError.statusCode" class="error-text">{{ formError.statusCode }}</span>
+        <span *ngIf="formError.sequenceNo" class="error-text">{{ formError.sequenceNo }}</span>
+      </div>
+
+      <div *ngIf="statusList.length > 0" class="statuses-added">
+        <h3>Statuses to Create:</h3>
+        <div class="status-table">
+          <div class="status-table-header">
+            <span>Status Code</span>
+            <span>Sequence</span>
+            <span>Action</span>
+          </div>
+          <div *ngFor="let status of statusList" class="status-table-row">
+            <span>{{ status.statusCode }}</span>
+            <span>{{ status.sequenceNo }}</span>
+            <button type="button" class="remove-btn" (click)="removeStatus(status)" aria-label="Remove status">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Saving...' : 'Save Statuses' }}
+        </button>
+        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+      </div>
+    </form>
+  </section>
+
+  <section *ngIf="activeTab === 'list'" class="panel">
+    <div class="list-heading">
+      <h2>RITM Status List</h2>
+      <button type="button" class="primary-action" (click)="selectTab('create')">
+        <mat-icon>add</mat-icon>
+        Add Status
+      </button>
+    </div>
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+    <div *ngIf="loading" class="empty-state">Loading statuses...</div>
+    <div *ngIf="!loading && statuses.length === 0" class="empty-state">No RITM statuses found.</div>
+
+    <div *ngIf="!loading && statuses.length > 0" class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Status Code</th>
+            <th>Sequence</th>
+            <th>Active</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let status of statuses">
+            <td>{{ status.statusCode }}</td>
+            <td>{{ status.sequenceNo }}</td>
+            <td>{{ status.isActive ? 'Yes' : 'No' }}</td>
+            <td class="action-buttons">
+              <button type="button" (click)="onDelete(status)" aria-label="Delete status"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
