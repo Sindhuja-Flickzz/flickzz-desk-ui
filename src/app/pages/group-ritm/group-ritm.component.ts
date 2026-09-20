@@ -5,6 +5,13 @@ import { AgentService } from '../../service/agent.service';
 import { RitmService } from '../../service/ritm.service';
 import { SupportGroupService } from '../../service/support-group.service';
 import { VariantService } from '../../service/variant.service';
+import { forkJoin } from 'rxjs';
+
+interface GroupRitmStatusCountInfo {
+  statusId: number;
+  statusCode: string;
+  ritmCount: number;
+}
 
 interface GroupRitmUser {
   userId: number | null;
@@ -17,6 +24,17 @@ interface GroupRitmUser {
   [key: string]: any;
 }
 
+interface SupportGroupSummary {
+  supportGroupId: number;
+  groupName: string;
+  users: GroupRitmUser[];
+  unassignedRequests: any[];
+  requests: any[];
+  totalCountRitm: number;
+  unassignedRitmCount: number;
+  statusCounts: GroupRitmStatusCountInfo[];
+}
+
 @Component({
   selector: 'app-group-ritm',
   templateUrl: './group-ritm.component.html',
@@ -27,6 +45,12 @@ export class GroupRitmComponent implements OnInit {
   orgId: number | null = null;
   supportGroupIds: number[] = [];
   users: GroupRitmUser[] = [];
+  supportGroups: SupportGroupSummary[] = [];
+  selectedSupportGroupId: number | null = null;
+  supportGroupRequests: any[] = [];
+  agentSearch = '';
+  expandedAgentId: number | 'unassigned' | 'status' | null = null;
+  groupLoading = false;
   selectedAgentId: number | null = null;
   selectedAgentName = 'Unassigned';
   requests: any[] = [];
@@ -66,15 +90,12 @@ export class GroupRitmComponent implements OnInit {
 
   ngOnInit(): void {
     this.orgId = Number(localStorage.getItem('userOrgId') || 0);
-    this.loadRitmStatuses();
     this.loadTemplateFields();
-    this.loadAgentNameMap();
     const userId = Number(localStorage.getItem('userId') || 0);
 
     if (!userId) {
       this.users = [];
       this.supportGroupIds = [];
-      this.loadNotAssignedRequests();
       return;
     }
 
@@ -93,6 +114,9 @@ export class GroupRitmComponent implements OnInit {
   }
 
   resetSelection(): void {
+    this.selectedSupportGroupId = null;
+    this.supportGroupRequests = [];
+    this.expandedAgentId = null;
     this.selectedAgentId = null;
     this.selectedAgentName = 'Unassigned';
     this.requests = [];
@@ -107,23 +131,29 @@ export class GroupRitmComponent implements OnInit {
     this.totalRecords = 0;
   }
 
-  private loadRitmStatuses(): void {
-    this.ritmService.getRitmStatuses(String(this.orgId || 0)).subscribe({
-      next: (response: any) => {
-        const statuses = response?.attributes ?? response ?? [];
-        this.ritmStatuses = Array.isArray(statuses) ? statuses : [];
-      },
-      error: () => {
-        this.ritmStatuses = [];
-      }
-    });
-  }
-
   getStatusCode(status: any): string {
     if (status && typeof status === 'object') {
-      return String(status.statusCode).trim();
+      return String(status.statusCode ?? status.statusName ?? status.name ?? status.code ?? '').trim();
     }
     return String(status ?? '').trim();
+  }
+
+  getStatusClass(status: any): string {
+    const normalizedStatus = this.getStatusCode(status).toLowerCase().replace(/\s+/g, '-');
+    const statusAliases: Record<string, string> = {
+      'inprogress': 'in-progress',
+      'in-progress': 'in-progress',
+      'work-in-progress': 'in-progress',
+      resolved: 'resolved',
+      closed: 'closed',
+      cancelled: 'cancelled',
+      canceled: 'cancelled',
+      rejected: 'rejected',
+      approved: 'approved',
+      pending: 'pending',
+      open: 'open'
+    };
+    return statusAliases[normalizedStatus] || 'other';
   }
 
   private loadTemplateFields(): void {
@@ -284,19 +314,13 @@ export class GroupRitmComponent implements OnInit {
   }
 
   loadAssignmentSuggestions(supportGroupId: number | null): void {
-    if (!supportGroupId) {
+    const group = this.supportGroups.find(item => item.supportGroupId === supportGroupId);
+    if (!group) {
       this.assignmentSuggestions = [];
       return;
     }
 
-    this.supportGroupService.getSupportGroupUsers([supportGroupId]).subscribe({
-      next: (users) => {
-        this.assignmentSuggestions = this.normalizeAssignmentSuggestions(users);
-      },
-      error: () => {
-        this.assignmentSuggestions = [];
-      }
-    });
+    this.assignmentSuggestions = this.normalizeAssignmentSuggestions(group.users);
   }
 
   normalizeAssignmentSuggestions(users: any[]): any[] {
@@ -353,27 +377,6 @@ export class GroupRitmComponent implements OnInit {
     }
   }
 
-  private loadAgentNameMap(): void {
-    if (!this.orgId) {
-      return;
-    }
-
-    this.agentService.getActiveAgentList(String(this.orgId)).subscribe({
-      next: (response: any) => {
-        const agents = this.normalizeList(response?.attributes ?? response ?? []);
-        this.agentNameMap = new Map(
-          agents
-            .map((agent: any) => [
-              Number(agent?.agentId ?? agent?.id ?? agent?.userId ?? 0),
-              String(agent?.agentName || agent?.name || agent?.userName || '')
-            ] as [number, string])
-            .filter(([agentId, agentName]) => agentId > 0 && !!agentName)
-        );
-      },
-      error: () => this.agentNameMap.clear()
-    });
-  }
-
   @HostListener('document:click', ['$event'])
   closeDrawerOnOutsideClick(event: MouseEvent): void {
     const target = event.target as HTMLElement | null;
@@ -412,7 +415,7 @@ export class GroupRitmComponent implements OnInit {
         this.selectedRequestDetails = null;
         this.assignmentDropdownOpen = false;
         if (this.selectedAgentId === null) {
-          this.selectUnassigned();
+          this.refreshSupportGroup();
         } else {
           this.refreshSelectedAgentRequests();
         }
@@ -667,7 +670,7 @@ export class GroupRitmComponent implements OnInit {
     if (!this.agentId || !this.orgId) {
       this.users = [];
       this.supportGroupIds = [];
-      this.loadNotAssignedRequests();
+      this.supportGroups = [];
       return;
     }
 
@@ -678,40 +681,117 @@ export class GroupRitmComponent implements OnInit {
 
         if (!this.supportGroupIds.length) {
           this.users = [];
+          this.supportGroups = [];
           this.usersLoading = false;
-          this.loadNotAssignedRequests();
           return;
         }
-
-        this.supportGroupService.getSupportGroupUsers(this.supportGroupIds).subscribe({
-          next: (agents) => {
-            this.users = this.normalizeUsers(agents);
-            this.usersLoading = false;
-            this.loadNotAssignedRequests();
-          },
-          error: () => {
-            this.users = [];
-            this.usersLoading = false;
-            this.loadNotAssignedRequests();
-          }
-        });
+        this.loadSupportGroupSummaries();
+        this.usersLoading = false;
       },
       error: () => {
         this.users = [];
         this.supportGroupIds = [];
         this.usersLoading = false;
-        this.loadNotAssignedRequests();
       }
     });
   }
 
-  refreshSelectedAgentRequests(): void {
-    if (!this.selectedAgentId) {
+  private loadSupportGroupSummaries(): void {
+    this.groupLoading = true;
+    forkJoin(this.supportGroupIds.map(supportGroupId => this.supportGroupService.getSupportGroupInfo(supportGroupId))).subscribe({
+      next: (responses) => {
+        this.supportGroups = this.supportGroupIds.map((supportGroupId, index) => {
+          const payload = responses[index]?.attributes ?? responses[index] ?? {};
+          const group = Array.isArray(payload) ? payload[0] : payload;
+          return {
+            supportGroupId,
+            groupName: group?.supportGroupName || group?.groupName || `Support group ${supportGroupId}`,
+            users: this.normalizeUsers(group?.agents || []),
+            unassignedRequests: [],
+            requests: [],
+            totalCountRitm: Number(group?.totalCountRitm || 0),
+            unassignedRitmCount: Number(group?.unassignedRitmCount || 0),
+            statusCounts: group?.statusCounts || {}
+          };
+        });
+        this.loadFirstSupportGroup();
+      },
+      error: () => {
+        this.supportGroups = this.supportGroupIds.map(supportGroupId => ({ supportGroupId, groupName: `Support group ${supportGroupId}`, users: [], unassignedRequests: [], requests: [], totalCountRitm: 0, unassignedRitmCount: 0, statusCounts: [] }));
+        this.loadFirstSupportGroup();
+      }
+    });
+  }
+
+  private loadFirstSupportGroup(): void {
+    this.groupLoading = false;
+    const firstGroup = this.supportGroups[0];
+    if (firstGroup) {
+      this.selectSupportGroup(firstGroup);
+    }
+  }
+
+  selectSupportGroup(group: SupportGroupSummary): void {
+    this.selectedSupportGroupId = group.supportGroupId;
+    this.ritmStatuses = group.statusCounts || [];
+    this.selectedAgentId = null;
+    this.selectedAgentName = 'All agents';
+    this.expandedAgentId = null;
+    this.agentSearch = '';
+    this.selectedRequest = null;
+    this.users = group.users;
+    this.supportGroupRequests = [];
+    this.requests = [];
+    this.totalRecords = 0;
+    this.currentPage = 0;
+  }
+
+  refreshSupportGroup(): void {
+    if (this.selectedSupportGroupId) {
+      this.loadSupportGroupSummaries();
+    }
+  }
+
+  getSelectedSupportGroup(): SupportGroupSummary | null {
+    return this.supportGroups.find(group => group.supportGroupId === this.selectedSupportGroupId) || null;
+  }
+
+  getFilteredUsers(): GroupRitmUser[] {
+    const query = this.agentSearch.trim().toLowerCase();
+    if (!query) {
+      return this.users;
+    }
+    return this.users.filter(user => this.displayAgentName(user).toLowerCase().includes(query)
+      || String(user.email || '').toLowerCase().includes(query));
+  }
+
+  toggleAgent(agent: GroupRitmUser): void {
+    const agentId = Number(agent?.agent?.agentId ?? agent?.userId ?? 0);
+    this.expandedAgentId = this.expandedAgentId === agentId ? null : agentId;
+    if (this.expandedAgentId) {
+      this.selectAgent(agent);
+    } else {
+      this.requests = this.supportGroupRequests;
+      this.selectedAgentId = null;
+      this.selectedAgentName = 'All agents';
+    }
+  }
+
+  expandUnassigned(): void {
+    const group = this.getSelectedSupportGroup();
+    if (!group) {
       return;
     }
-
+    this.expandedAgentId = 'unassigned';
+    this.selectedAgentId = null;
+    this.selectedAgentName = 'Not assigned';
+    this.selectedRequest = null;
     this.requestsLoading = true;
-    this.supportGroupService.getAssignedRequestsForAgent(this.selectedAgentId).subscribe({
+    this.requests = [];
+    this.totalRecords = 0;
+    this.currentPage = 0;
+
+    this.supportGroupService.getUnassignedRequestsForSupportGroup(group.supportGroupId).subscribe({
       next: (items) => {
         this.requests = items || [];
         this.totalRecords = this.requests.length;
@@ -727,46 +807,74 @@ export class GroupRitmComponent implements OnInit {
     });
   }
 
-  loadNotAssignedRequests(): void {
-    this.requestsLoading = true;
+  collapseExpandedAgent(): void {
+    this.expandedAgentId = null;
+    this.selectedAgentId = null;
+    this.selectedAgentName = 'All agents';
+    this.requests = this.supportGroupRequests;
+    this.totalRecords = this.requests.length;
+    this.currentPage = 0;
+  }
 
-    if (!this.supportGroupIds.length) {
-      this.requests = [];
-      this.requestsLoading = false;
+  returnToAgentList(): void {
+    this.collapseExpandedAgent();
+    this.refreshSupportGroup();
+  }
+
+  getUnassignedRequestCount(): number {
+    return this.getSelectedSupportGroup()?.unassignedRitmCount || 0;
+  }
+
+  getStatusCount(status: any): number {
+    return Number(status?.ritmCount || 0);
+  }
+
+  selectStatus(status: GroupRitmStatusCountInfo): void {
+    const group = this.getSelectedSupportGroup();
+    if (!group) {
       return;
     }
 
-    this.supportGroupService.getUnassignedRequestsForSupportGroups(this.supportGroupIds).subscribe({
-      next: (items) => { 
+    this.expandedAgentId = 'status';
+    this.selectedAgentId = null;
+    this.selectedAgentName = status.statusCode;
+    this.selectedRequest = null;
+    this.filterText = '';
+    this.filterStatus = '';
+    this.currentPage = 0;
+    this.requests = [];
+    this.totalRecords = 0;
+    this.requestsLoading = true;
+
+    this.supportGroupService.getRequestsByStatus(status.statusId, group.supportGroupId).subscribe({
+      next: (items) => {
         this.requests = items || [];
         this.totalRecords = this.requests.length;
-        this.currentPage = 0;
         this.requestsLoading = false;
       },
       error: () => {
         this.requests = [];
         this.totalRecords = 0;
-        this.currentPage = 0;
         this.requestsLoading = false;
       }
     });
   }
 
-  selectUnassigned(): void {
-    this.selectedAgentId = null;
-    this.selectedAgentName = 'Unassigned';
-    this.selectedRequest = null;
-    this.assignmentSuggestions = [];
-    this.assignSearch = '';
-    this.requestsLoading = true;
+  getTotalStatusCount(): number {
+    return this.getSelectedSupportGroup()?.totalCountRitm || 0;
+  }
 
-    if (!this.supportGroupIds.length) {
-      this.requests = [];
-      this.requestsLoading = false;
+  getAgentRequestCount(agent: GroupRitmUser): number {
+    return Number((agent as any)?.ritmCount || 0);
+  }
+
+  refreshSelectedAgentRequests(): void {
+    if (!this.selectedAgentId) {
       return;
     }
 
-    this.supportGroupService.getUnassignedRequestsForSupportGroups(this.supportGroupIds).subscribe({
+    this.requestsLoading = true;
+    this.supportGroupService.getAssignedRequestsForAgent(this.selectedAgentId).subscribe({
       next: (items) => {
         this.requests = items || [];
         this.totalRecords = this.requests.length;
