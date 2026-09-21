@@ -230,6 +230,29 @@
 .action-buttons {
   display: flex;
   gap: 8px;
+
+  button {
+    width: 45px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #eff4fb;
+    color: #084d8f;
+
+    &:last-child {
+      margin-right: 0;
+    }
+
+    mat-icon {
+      width: 18px;
+      height: 18px;
+      font-size: 18px;
+    }
+  }
 }
 
 .option-summary {

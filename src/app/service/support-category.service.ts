@@ -16,8 +16,18 @@ export class SupportCategoryService {
     return this.http.get(url);
   }
 
+  getActiveSupportGroups(businessPartnerId?: number | null): Observable<any> {
+    const url = `${this.baseUrl}/bp/config/support-group/active/${businessPartnerId}`;
+    return this.http.get(url);
+  }
+
   getSubCategories(businessPartnerId?: number | null): Observable<any> {
     const url = `${this.baseUrl}/bp/config/sub-category/${businessPartnerId}`;
+    return this.http.get(url);
+  }
+
+  getActiveSubCategories(businessPartnerId?: number | null): Observable<any> {
+    const url = `${this.baseUrl}/bp/config/sub-category/active/${businessPartnerId}`;
     return this.http.get(url);
   }
 

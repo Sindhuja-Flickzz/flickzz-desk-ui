@@ -136,7 +136,7 @@
 
     <div class="search-container">
       <input class="search-input" type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by group or agent" />
-      <button type="button" class="save-btn" (click)="openGroupItemPage()">Open Group Item</button>
+      <!-- <button type="button" class="save-btn" (click)="openGroupItemPage()">Open Group Item</button> -->
     </div>
 
     <div *ngIf="loading" class="context-banner">Loading support groups...</div>

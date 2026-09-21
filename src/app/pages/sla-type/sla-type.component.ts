@@ -83,6 +83,21 @@ export class SlaTypeComponent implements OnInit {
       this.selectionMode = mode === 'bp' ? 'bp' : 'internal';
       this.businessPartnerId = bpId ? Number(bpId) : null;
       this.businessPartnerName = bpName || null;
+      if(this.businessPartnerId == null) {
+        this.companyService.getServiceProviderList(Number(this.orgId)).subscribe({
+          next: (response) => {
+            this.bpOptions = (response as any).attributes || response || [];
+            const matchingRole = this.bpOptions.find((bp) => {
+              return bp.company?.companyId != null && bp.mappedCompany?.companyId != null
+                && bp.company.companyId === bp.mappedCompany.companyId;
+            });
+            this.businessPartnerId = matchingRole?.businessPartnerId ?? null;
+          },
+          error: () => {
+            console.error('Failed to load business partners');
+          }
+        });
+      }
       this.contextLabel = this.selectionMode === 'bp'
         ? `Using business partner configuration for ${this.businessPartnerName || this.businessPartnerId}`
         : 'Using your organization configuration';

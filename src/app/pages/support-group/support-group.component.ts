@@ -102,6 +102,21 @@ export class SupportGroupComponent implements OnInit {
       this.selectionMode = mode === 'bp' ? 'bp' : 'internal';
       this.selectedContextOrgId = orgId ? Number(orgId) : Number(localStorage.getItem('userOrgId') || 0);
       this.businessPartnerId = bpId ? Number(bpId) : null;
+      if(this.businessPartnerId == null) {
+        this.companyService.getServiceProviderList(Number(this.orgId)).subscribe({
+          next: (response) => {
+            this.bpOptions = (response as any).attributes || response || [];
+            const matchingRole = this.bpOptions.find((bp) => {
+              return bp.company?.companyId != null && bp.mappedCompany?.companyId != null
+                && bp.company.companyId === bp.mappedCompany.companyId;
+            });
+            this.businessPartnerId = matchingRole?.businessPartnerId ?? null;
+          },
+          error: () => {
+            console.error('Failed to load business partners');
+          }
+        });
+      }
       this.businessPartnerName = bpName || null;
       this.contextLabel = this.selectionMode === 'bp'
         ? `Using business partner configuration for ${this.businessPartnerName || this.businessPartnerId}`
@@ -111,10 +126,6 @@ export class SupportGroupComponent implements OnInit {
 
   backToPrevious(): void {
     this.location.back();
-  }
-
-  openGroupItemPage(): void {
-    this.router.navigate(['/group-ritm']);
   }
 
   selectTab(tab: 'create' | 'list'): void {
