@@ -74,6 +74,21 @@ export class SupportCategoryComponent implements OnInit {
       this.selectionMode = mode === 'bp' ? 'bp' : 'internal';
       this.selectedContextOrgId = orgId ? Number(orgId) : Number(localStorage.getItem('userOrgId') || 0);
       this.businessPartnerId = bpId ? Number(bpId) : null;
+      if(this.businessPartnerId == null) {
+        this.companyService.getServiceProviderList(Number(this.orgId)).subscribe({
+          next: (response) => {
+            this.bpOptions = (response as any).attributes || response || [];
+            const matchingRole = this.bpOptions.find((bp) => {
+              return bp.company?.companyId != null && bp.mappedCompany?.companyId != null
+                && bp.company.companyId === bp.mappedCompany.companyId;
+            });
+            this.businessPartnerId = matchingRole?.businessPartnerId ?? null;
+          },
+          error: () => {
+            console.error('Failed to load business partners');
+          }
+        });
+      }
       this.businessPartnerName = bpName || null;
       this.contextLabel = this.selectionMode === 'bp'
         ? `Using business partner configuration for ${this.businessPartnerName || this.businessPartnerId}`
@@ -120,7 +135,7 @@ export class SupportCategoryComponent implements OnInit {
     const q = (this.supportGroupQuery || '').trim();
     const orgId = this.businessPartnerId ?? this.selectedContextOrgId;
     if (!orgId) { this.supportGroupOptions = []; return; }
-    this.supportCategoryService.getSupportGroups(orgId).subscribe({
+    this.supportCategoryService.getActiveSupportGroups(orgId).subscribe({
       next: (res) => {
         const items = (res as any)?.attributes || res || [];
         this.supportGroupOptions = items.map((i: any) => ({ id: i.supportGroupId ?? i.id, name: i.groupName || i.supportGroupName || i.name || '' }))

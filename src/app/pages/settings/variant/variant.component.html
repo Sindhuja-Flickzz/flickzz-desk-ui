@@ -106,9 +106,12 @@
             <td>{{ template.workItemLabel || template.workItemCode || '-' }}</td>
             <td>{{ template.templateDetails.length || 0 }}</td>
             <td class="action-buttons">
-              <button type="button" class="action-icon" (click)="onEditTemplate(template)">Edit</button>
-              <!-- <button type="button" class="action-icon" (click)="onViewTemplateConfig(template)">View Config</button> -->
-              <button type="button" class="action-icon delete-icon" (click)="onDeleteTemplate(template)">Delete</button>
+              <button type="button" (click)="onEditTemplate(template)" aria-label="Edit template">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button type="button" (click)="onDeleteTemplate(template)" aria-label="Delete template">
+                <mat-icon>delete</mat-icon>
+              </button>
             </td>
           </tr>
         </tbody>
