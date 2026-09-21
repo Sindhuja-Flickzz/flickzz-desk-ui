@@ -12,7 +12,7 @@
 
   <div class="ticket-layout">
     <aside class="category-sidebar">
-      <div class="sidebar-title"><span class="sidebar-icon">▦</span><strong>Ticket Types</strong><span class="sidebar-chevron">⌃</span></div>
+      <div class="sidebar-title"><span class="sidebar-icon">▦</span><strong>Ticket Types</strong></div>
       <button type="button" class="category-option" [class.active]="subTab === 'ritm'" (click)="setSubTab('ritm')"><span class="category-icon">R</span><span>RITM</span><b *ngIf="subTab === 'ritm'">{{ currentList.length }}</b></button>
       <button type="button" class="category-option" [class.active]="subTab === 'incident'" (click)="setSubTab('incident')"><span class="category-icon">I</span><span>Incident</span><b *ngIf="subTab === 'incident'">{{ currentList.length }}</b></button>
       <button type="button" class="category-option" [class.active]="subTab === 'others'" (click)="setSubTab('others')"><span class="category-icon">U</span><span>User Stories</span><b *ngIf="subTab === 'others'">{{ currentList.length }}</b></button>
@@ -45,7 +45,7 @@
           <span>{{ primaryTab === 'assigned-to-me' ? getRequestedBy(item) : getAssignee(item) }}</span>
           <span><em class="ticket-priority" [ngClass]="(getPriority(item) || 'medium').toLowerCase()">{{ getPriority(item) || 'Medium' }}</em></span>
           <span>{{ item.requestedOn || item.createdAt || item.createdOn || 'N/A' }}</span>
-          <span><em class="ticket-status" [ngClass]="getStatus(item).toLowerCase()">{{ getStatus(item) }}</em></span>
+          <span><em class="ticket-status" [ngClass]="getStatus(item).toLowerCase()" [style.color]="getStatusColor(item) || null">{{ getStatus(item) }}</em></span>
           <span *ngFor="let fieldId of selectedTemplateFieldIds">{{ getDynamicFieldValue(item, fieldId) }}</span>
         </button>
       </div>

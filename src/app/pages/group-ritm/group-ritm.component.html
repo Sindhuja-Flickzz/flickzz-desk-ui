@@ -5,18 +5,41 @@
     <p>View and manage RITMs assigned to group agents.</p>
   </header>
 
-  <div class="group-layout" [class.drawer-open]="selectedRequest">
-    <aside class="agent-sidebar">
-      <div class="sidebar-title"><mat-icon>group</mat-icon><strong>Agents</strong><mat-icon class="collapse-icon">expand_less</mat-icon></div>
-      <button type="button" class="agent-option" [class.active]="selectedAgentId === null" (click)="selectUnassigned()"><mat-icon>inbox</mat-icon><span>Not Assigned</span><b>{{ selectedAgentId === null ? requests.length : '' }}</b></button>
-      <button type="button" class="agent-option" *ngFor="let user of users" [class.active]="selectedAgentId === (user.agent?.agentId ?? user.userId)" (click)="selectAgent(user)"><span class="agent-avatar">{{ displayAgentName(user).charAt(0) }}</span><span class="agent-name">{{ displayAgentName(user) }}</span></button>
-      <div *ngIf="usersLoading" class="loading-state">Loading agents...</div>
-      <button type="button" class="invite-button"><mat-icon>person_add</mat-icon> Invite Agent</button>
+  <div class="group-layout" [class.drawer-open]="selectedRequest" [style.grid-template-columns]="getGroupGridTemplate()">
+    <aside class="support-group-sidebar">
+      <div class="sidebar-kicker">WORKSPACE</div>
+      <div class="sidebar-title"><strong>Support groups</strong><button type="button" class="sidebar-reset" (click)="resetSidebarWidth()" title="Reset sidebar width" aria-label="Reset sidebar width"><mat-icon>restart_alt</mat-icon></button></div>
+      <div class="support-group-search"><mat-icon>search</mat-icon><input type="search" [(ngModel)]="supportGroupSearch" placeholder="Search groups" aria-label="Search support groups" /></div>
+      <button type="button" class="support-group-option" *ngFor="let group of getFilteredSupportGroups()" [title]="group.groupName" [class.active]="selectedSupportGroupId === group.supportGroupId" (click)="selectSupportGroup(group)">
+        <span class="group-mark">{{ group.groupName.charAt(0) }}</span><span>{{ group.groupName }}</span><mat-icon>chevron_right</mat-icon>
+      </button>
+      <div *ngIf="groupLoading || usersLoading" class="loading-state">Loading groups...</div>
+      <div *ngIf="!groupLoading && !supportGroups.length" class="sidebar-empty">No support groups found.</div>
+      <div *ngIf="!groupLoading && supportGroups.length && !getFilteredSupportGroups().length" class="sidebar-empty">No matching groups found.</div>
+      <button type="button" class="sidebar-resize-handle" (pointerdown)="startSidebarResize($event)" title="Resize sidebar" aria-label="Resize sidebar"></button>
     </aside>
 
     <section class="request-panel">
-      <div class="panel-header"><div><div class="heading-title"><h2>{{ selectedAgentId === null ? 'Not Assigned' : selectedAgentName }}</h2><span class="count-badge">{{ filteredRequests.length }}</span></div><p>RITMs that are not yet assigned to any agent.</p></div><div class="panel-actions"><button type="button" class="icon-button" title="Refresh" (click)="selectUnassigned()"><mat-icon>sync</mat-icon></button><button type="button" class="filter-button" [class.active]="filterOpen" (click)="toggleFilters()"><mat-icon>filter_alt</mat-icon> Filters</button></div></div>
-      <div class="filter-panel" *ngIf="filterOpen">
+      <div class="panel-header"><div><div class="heading-title"><button type="button" class="header-agent-back" *ngIf="expandedAgentId" aria-label="Back to all agents" title="Back to all agents" (click)="returnToAgentList()"><mat-icon>arrow_back</mat-icon></button><h2>{{ expandedAgentId ? selectedAgentName : (getSelectedSupportGroup()?.groupName || 'Support group') }}</h2><span class="count-badge">{{ expandedAgentId ? requests.length : getTotalStatusCount() }}</span></div></div><div class="panel-actions"><div class="agent-tools" *ngIf="!expandedAgentId"><div class="agent-search"><mat-icon>search</mat-icon><input type="search" [(ngModel)]="agentSearch" (ngModelChange)="agentPageIndex = 0" placeholder="Filter agents" /></div><button type="button" class="icon-button" title="Refresh agents" (click)="refreshSupportGroup()"><mat-icon>refresh</mat-icon></button></div><button type="button" class="icon-button" *ngIf="expandedAgentId" title="Refresh" (click)="refreshSupportGroup()"><mat-icon>sync</mat-icon></button><button type="button" class="filter-button" *ngIf="expandedAgentId" [class.active]="filterOpen" (click)="toggleFilters()"><mat-icon>filter_alt</mat-icon> Filters</button></div></div>
+      <div class="status-dashboard" *ngIf="!expandedAgentId">
+        <!-- <div class="dashboard-intro"><span class="pulse-dot"></span><span>Live request health</span><strong>{{ getTotalStatusCount() }} total RITMs</strong></div> -->
+        <div class="dashboard-grid">
+          <div class="status-summary">
+            <div class="donut-chart" [style.background]="getDonutStyle()"><div class="donut-hole"><strong>{{ getTotalStatusCount() }}</strong><span>Total RITMs</span></div></div>
+            <div class="status-legend"><button type="button" class="legend-row" *ngFor="let status of getDashboardStatuses()" (click)="selectStatus(status)"><span class="legend-label"><i [style.background]="getStatusColor(status)"></i>{{ getStatusCode(status) }}</span><strong>{{ getStatusCount(status) }}</strong><small>{{ getStatusPercentage(status) }}</small></button></div>
+          </div>
+          <div class="trend-panel"><div class="trend-title"><strong>RITM Trend</strong></div><div class="trend-chart" *ngIf="getTrendValues().length"><div class="trend-grid"><span>30</span><span>20</span><span>10</span><span>0</span></div><svg viewBox="0 0 100 38" preserveAspectRatio="none" aria-label="RITM trend"><polyline [attr.points]="getTrendPoints()" fill="none" stroke="#1479ee" stroke-width="1.2" vector-effect="non-scaling-stroke"></polyline></svg><div class="trend-labels"><span *ngFor="let label of getTrendLabels()">{{ label }}</span></div></div><div class="trend-empty" *ngIf="!getTrendValues().length">No trend data available</div></div>
+        </div>
+      </div>
+      <section class="agent-directory" *ngIf="!expandedAgentId">
+        <div class="agent-list" *ngIf="!requestsLoading">
+          <button type="button" class="agent-card unassigned-card" (click)="expandUnassigned()"><span class="agent-card-copy"><strong>Not assigned</strong></span><span class="agent-count"><strong>{{ getUnassignedRequestCount() }} <small>RITMs</small></strong></span><mat-icon>chevron_right</mat-icon></button>
+          <button type="button" class="agent-card" *ngFor="let user of getPaginatedUsers()" (click)="toggleAgent(user)"><span class="agent-card-copy"><strong [title]="displayAgentName(user)">{{ displayAgentName(user) }}</strong></span><span class="agent-count"><strong>{{ getAgentRequestCount(user) }} <small>RITMs</small></strong></span><mat-icon>chevron_right</mat-icon></button>
+        </div>
+        <div *ngIf="!requestsLoading && !getFilteredUsers().length" class="empty-state compact"><mat-icon>group_off</mat-icon><h3>No agents found</h3><p>Try another agent filter.</p></div>
+        <mat-paginator *ngIf="!requestsLoading && getFilteredUsers().length > agentPageSize" class="agent-paginator" [length]="getFilteredUsers().length" [pageIndex]="agentPageIndex" [pageSize]="agentPageSize" [pageSizeOptions]="agentPageSizeOptions" (page)="onAgentPageChange($event)" showFirstLastButtons></mat-paginator>
+      </section>
+      <div class="filter-panel" *ngIf="filterOpen && expandedAgentId">
         <input type="text" [(ngModel)]="filterText" (ngModelChange)="currentPage = 0" placeholder="Search RITM, requester, or description" />
         <select [(ngModel)]="filterStatus" (ngModelChange)="currentPage = 0">
           <option value="">All statuses</option>
@@ -41,12 +64,12 @@
         <button type="button" class="clear-filter-button" (click)="clearFilters()">Clear</button>
       </div>
       <div *ngIf="requestsLoading" class="loading-state">Loading requests...</div>
-      <div *ngIf="!requestsLoading && filteredRequests.length" class="request-list" [class.has-dynamic-column]="selectedTemplateFieldIds.length > 0">
+      <div *ngIf="expandedAgentId && !requestsLoading && filteredRequests.length" class="request-list" [class.has-dynamic-column]="selectedTemplateFieldIds.length > 0">
         <div class="table-header" [style.grid-template-columns]="getRequestGridTemplate()"><span>RITM Number</span><span>Requested by</span><span>Priority</span><span>Requested on</span><span>Status</span><span *ngFor="let field of getSelectedTemplateFields()">{{ field.fieldName || field.name }}</span></div>
-        <button type="button" class="request-row" *ngFor="let item of getPaginatedRequests()" [class.selected]="selectedRequest === item" (click)="selectRequest(item)" [style.grid-template-columns]="getRequestGridTemplate()"><span class="ritm-number">{{ item.ritmNumber || 'RITM' }}</span><span>{{ item.requestedBy?.agentName || item.requestedByName || 'N/A' }}</span><span><em class="priority {{ (item.priority?.code || item.priorityName || 'medium').toLowerCase() }}">{{ item.priority?.code || item.priorityName || 'Medium' }}</em></span><span>{{ item.requestedOn || item.createdAt || 'N/A' }}</span><span><em class="status {{ getStatusCode(item.status || 'Open').toLowerCase() }}">{{ getStatusCode(item.status || 'Open') }}</em></span><span *ngFor="let fieldId of selectedTemplateFieldIds">{{ getDynamicFieldValue(item, fieldId) }}</span></button>
+        <button type="button" class="request-row" *ngFor="let item of getPaginatedRequests()" [class.selected]="selectedRequest === item" (click)="selectRequest(item)" [style.grid-template-columns]="getRequestGridTemplate()"><span class="ritm-number">{{ item.ritmNumber || 'RITM' }}</span><span>{{ item.requestedBy?.agentName || item.requestedByName || 'N/A' }}</span><span><em class="priority {{ (item.priority?.code || item.priorityName || 'medium').toLowerCase() }}">{{ item.priority?.code || item.priorityName || 'Medium' }}</em></span><span>{{ item.requestedOn || item.createdAt || 'N/A' }}</span><span><em class="status" [ngClass]="getStatusClass(item.status || 'Open')" [style.color]="getStatusColor(item.status || 'Open') || null">{{ getStatusCode(item.status || 'Open') }}</em></span><span *ngFor="let fieldId of selectedTemplateFieldIds">{{ getDynamicFieldValue(item, fieldId) }}</span></button>
       </div>
-      <div *ngIf="!requestsLoading && !filteredRequests.length" class="empty-state"><mat-icon>inbox</mat-icon><h3>No RITMs to display</h3><p>{{ requests.length ? 'No RITMs match the selected filters.' : 'There are no RITMs in this category.' }}</p></div>
-      <div class="pagination-controls" *ngIf="!requestsLoading && filteredRequests.length">
+      <div *ngIf="expandedAgentId && !requestsLoading && !filteredRequests.length" class="empty-state"><mat-icon>inbox</mat-icon><h3>No RITMs to display</h3><p>{{ requests.length ? 'No RITMs match the selected filters.' : 'There are no RITMs in this category.' }}</p></div>
+      <div class="pagination-controls" *ngIf="expandedAgentId && !requestsLoading && filteredRequests.length">
         <mat-paginator
           [length]="filteredRequests.length"
           [pageSize]="pageSize"
@@ -58,7 +81,8 @@
     </section>
 
     <aside class="details-drawer" *ngIf="selectedRequest">
-      <div class="drawer-header"><div><mat-icon>article</mat-icon><button type="button" class="ritm-link" (click)="openRitmDetails()">{{ getDrawerFieldValue('ritmNumber', 'requestNumber') }}</button><em class="status open">{{ getDrawerStatusCode() }}</em></div><button type="button" class="close-button" title="Close" (click)="selectedRequest = null"><mat-icon>close</mat-icon></button></div>
+      <button type="button" class="drawer-resize-handle" (pointerdown)="startDrawerResize($event)" title="Resize details drawer" aria-label="Resize details drawer"></button>
+      <div class="drawer-header"><div><mat-icon>article</mat-icon><button type="button" class="ritm-link" (click)="openRitmDetails()">{{ getDrawerFieldValue('ritmNumber', 'requestNumber') }}</button><em class="status" [ngClass]="getStatusClass(getDrawerStatusCode())" [style.color]="getStatusColor(selectedRequestDetails?.status || selectedRequest?.status || getDrawerStatusCode()) || null">{{ getDrawerStatusCode() }}</em></div><div class="drawer-header-actions"><button type="button" class="drawer-reset" (click)="resetDrawerWidth()" title="Reset drawer width" aria-label="Reset drawer width"><mat-icon>restart_alt</mat-icon></button><button type="button" class="close-button" title="Close" (click)="selectedRequest = null"><mat-icon>close</mat-icon></button></div></div>
       <div *ngIf="drawerLoading" class="loading-state">Loading RITM details...</div>
       <ng-container *ngIf="!drawerLoading">
         <!-- <div class="drawer-number"><span>{{ getDrawerFieldValue('ritmNumber', 'requestNumber') }}</span><em class="status open">{{ getDrawerFieldValue('status') }}</em></div> -->

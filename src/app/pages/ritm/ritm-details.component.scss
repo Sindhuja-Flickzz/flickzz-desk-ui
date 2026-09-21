@@ -102,23 +102,8 @@
 }
 
 .status-badge {
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
   font-weight: 700;
-  background: #e5e7eb;
-  color: #374151;
 }
-
-.status-badge.open,
-.status-badge.new,
-.status-badge.pending { background: #dbeafe; color: #1d4ed8; }
-.status-badge.in-progress,
-.status-badge.progress { background: #fef3c7; color: #92400e; }
-.status-badge.closed,
-.status-badge.resolved { background: #dcfce7; color: #166534; }
-.status-badge.cancelled,
-.status-badge.rejected { background: #fee2e2; color: #991b1b; }
 
 .summary-meta {
   display: flex;
@@ -191,10 +176,6 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  // padding: 8px 10px;
-  // background: #f9fafb;
-  // border: 1px solid #e5e7eb;
-  // border-radius: 8px;
 }
 
 .template-field-grid {
@@ -544,8 +525,8 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #fff;
-  border: 3px solid #a78bfa;
+  background: #F4F4F4;
+  border: 3px solid #00246b;
 }
 
 .history-card-header {
@@ -661,7 +642,7 @@
 }
 
 .single-field-name {
-  background: #f3e8ff;
+  background: #F4F4F4;
   color: #00246B;
   border-radius: 18px;
   padding: 5px 8px;

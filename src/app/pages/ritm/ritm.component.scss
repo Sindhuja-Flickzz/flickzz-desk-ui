@@ -203,8 +203,6 @@
 .success-pill {
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(43, 182, 115, 0.12);
-  color: #1e8b5f;
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -550,6 +548,15 @@ form {
   height: 17px;
   font-size: 0.82rem;
   color: #2d4f8a;
+}
+
+.template-section-header {
+  cursor: pointer;
+}
+
+.template-section-header:focus-visible {
+  outline: 2px solid #b58a1d;
+  outline-offset: -2px;
 }
 
 .section-toggle {

@@ -712,6 +712,15 @@ export class RitmDetailsComponent implements OnInit {
     return this.getFieldValue('status', 'Open');
   }
 
+  getStatusColor(): string {
+    const status = this.ritm?.status;
+    return String(
+      (status && typeof status === 'object' ? status.statusColor : '')
+      || this.ritm?.statusColor
+      || ''
+    ).trim();
+  }
+
   getAssignedToLabel(): string {
     const assignedTo = this.ritm?.assignedTo;
     if (assignedTo && typeof assignedTo === 'object') {

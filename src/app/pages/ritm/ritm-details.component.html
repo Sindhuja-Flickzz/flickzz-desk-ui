@@ -23,7 +23,7 @@
         <div class="detail-item" *ngFor="let detail of getDetailRows()">
           <span class="detail-label">{{ detail.label }}</span>
           <strong *ngIf="detail.label !== 'Status'">{{ detail.value }}</strong>
-          <span *ngIf="detail.label === 'Status'" class="status-badge" [ngClass]="getDisplayStatus(detail.value)">
+          <span *ngIf="detail.label === 'Status'" class="status-badge" [ngClass]="getDisplayStatus(detail.value)" [style.color]="getStatusColor() || null" [title]="getStatusColor() || detail.value">
             {{ detail.value }}
           </span>
         </div>

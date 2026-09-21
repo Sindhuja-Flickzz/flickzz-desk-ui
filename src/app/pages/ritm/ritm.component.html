@@ -184,10 +184,10 @@
       </div>
 
       <div *ngFor="let template of templates; let templateIndex = index" class="section-block request-details-block">
-        <div class="section-header amber-header">
+        <div class="section-header amber-header template-section-header" role="button" tabindex="0" [attr.aria-expanded]="isTemplateExpanded(template, templateIndex)" [attr.aria-label]="isTemplateExpanded(template, templateIndex) ? 'Collapse ' + template.templateName : 'Expand ' + template.templateName" (click)="toggleTemplate(template, templateIndex)" (keydown.enter)="toggleTemplate(template, templateIndex)" (keydown.space)="$event.preventDefault(); toggleTemplate(template, templateIndex)">
           <span class="section-header-icon">▣</span>
           <span>{{ template.templateName }}</span>
-          <button type="button" class="section-toggle icon-only" [attr.aria-label]="isTemplateExpanded(template, templateIndex) ? 'Collapse template' : 'Expand template'" [attr.title]="isTemplateExpanded(template, templateIndex) ? 'Collapse template' : 'Expand template'" [attr.aria-expanded]="isTemplateExpanded(template, templateIndex)" (click)="toggleTemplate(template, templateIndex)">
+          <button type="button" class="section-toggle icon-only" [attr.aria-label]="isTemplateExpanded(template, templateIndex) ? 'Collapse template' : 'Expand template'" [attr.title]="isTemplateExpanded(template, templateIndex) ? 'Collapse template' : 'Expand template'" [attr.aria-expanded]="isTemplateExpanded(template, templateIndex)" (click)="$event.stopPropagation(); toggleTemplate(template, templateIndex)">
             <mat-icon class="section-toggle-icon">{{ isTemplateExpanded(template, templateIndex) ? 'expand_less' : 'expand_more' }}</mat-icon>
           </button>
         </div>
@@ -295,7 +295,9 @@
           <h2>{{ successRitmDetails?.ritmNumber || 'RITM' }} {{ successWasUpdate ? 'Updated' : 'Created' }} Successfully</h2>
           <p>{{ successWasUpdate ? 'Your changes were saved successfully. The updated details are shown below.' : 'Your request is now in progress and the details below were captured for processing.' }}</p>
         </div>
-        <div class="success-pill">{{ successRitmDetails?.status?.statusCode || 'Open' }}</div>
+        <div class="success-pill" [style.color]="getSuccessStatusColor() || null" [title]="getSuccessStatusColor() || ''">
+          {{ successRitmDetails?.status?.statusCode || successRitmDetails?.status || 'Open' }}
+        </div>
       </header>
 
       <section class="detail-section">
@@ -367,4 +369,105 @@
       </div>
     </div>
   </ng-template>
+  <!-- <mat-card class="tab-card">
+    <mat-tab-group class="tab-group" animationDuration="0ms">
+      <mat-tab label="Work Notes">
+        <div class="notes-list">
+          <div *ngFor="let note of notes" class="note-item" [class.current-user]="note.userId === currentUserId">
+            <div class="note-header">
+              <strong>{{ note.userId }}</strong>
+              <span>{{ note.createdAt | date:'medium' }}</span>
+            </div>
+            <p>{{ note.comment }}</p>
+          </div>
+          <p *ngIf="notes.length === 0" class="empty-state">No notes found.</p>
+        </div>
+      </mat-tab>
+      <mat-tab label="Log">
+        <div class="log-list">
+          <div *ngFor="let log of logs" class="log-entry">
+            <span class="log-time">{{ log.timestamp | date:'short' }}</span>
+            <span>{{ log.message }}</span>
+          </div>
+          <p *ngIf="logs.length === 0" class="empty-state">No logs available yet.</p>
+        </div>
+      </mat-tab>
+      <mat-tab label="Workflow">
+        <div class="workflow-list">
+          <div *ngFor="let stage of workflowStages" class="workflow-stage">
+            <div class="stage-header">
+              <span>{{ stage.step }}</span>
+              <span class="status">{{ stage.status }}</span>
+            </div>
+            <div class="stage-meta">Owned by {{ stage.owner }} • {{ stage.updatedAt | date:'short' }}</div>
+          </div>
+          <p *ngIf="workflowStages.length === 0" class="empty-state">Workflow details not available.</p>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+
+  <mat-card class="tab-card">
+    <mat-tab-group class="tab-group" animationDuration="0ms">
+      <mat-tab label="Catalog Tasks">
+        <div class="task-panel">
+          <form [formGroup]="taskForm" class="task-form" (ngSubmit)="addCatalogTask()">
+            <mat-form-field appearance="outline">
+              <mat-label>Task Title</mat-label>
+              <input matInput formControlName="title" placeholder="Task title" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Assign To</mat-label>
+              <input matInput formControlName="assignedTo" placeholder="User or group" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Due Date</mat-label>
+              <input matInput type="date" formControlName="dueDate" />
+            </mat-form-field>
+            <button mat-flat-button color="primary" type="submit">Add Task</button>
+          </form>
+
+          <div class="catalog-task-list">
+            <div *ngFor="let task of catalogTasks" class="catalog-task-card">
+              <div class="task-title">{{ task.title }}</div>
+              <div>Assigned to {{ task.assignedTo }}</div>
+              <div>Due {{ task.dueDate }}</div>
+              <div class="task-status">{{ task.status }}</div>
+            </div>
+            <p *ngIf="catalogTasks.length === 0" class="empty-state">No catalog tasks created.</p>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Approvers">
+        <div class="approvers-list">
+          <div *ngFor="let approver of approvers" class="approver-row">
+            <span>{{ approver.name }}</span>
+            <span class="badge">{{ approver.status }}</span>
+            <div *ngIf="approver.comment" class="comment">{{ approver.comment }}</div>
+          </div>
+          <p *ngIf="approvers.length === 0" class="empty-state">No approver details found.</p>
+        </div>
+      </mat-tab>
+      <mat-tab label="Task SLA(s)">
+        <div class="task-sla-list">
+          <div *ngFor="let sla of taskSlas" class="task-sla-row">
+            <strong>{{ sla.metric }}</strong>
+            <span>{{ sla.threshold }}</span>
+            <span>{{ sla.status }}</span>
+          </div>
+          <p *ngIf="taskSlas.length === 0" class="empty-state">No task SLA details available.</p>
+        </div>
+      </mat-tab>
+      <mat-tab label="Change Request">
+        <div class="change-request-list">
+          <div *ngFor="let change of changeRequests" class="change-row">
+            <strong>{{ change.title }}</strong>
+            <span class="badge">{{ change.status }}</span>
+            <div>Requested by {{ change.requestedBy }}</div>
+          </div>
+          <p *ngIf="changeRequests.length === 0" class="empty-state">No change requests linked.</p>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card> -->
 </div>
