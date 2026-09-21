@@ -11,6 +11,7 @@ interface RitmStatus {
   companyId: number;
   statusCode: string;
   sequenceNo: number;
+  statusColor: string;
   isActive: boolean;
   createdBy: number;
   isCreatorAdmin: boolean;
@@ -19,11 +20,13 @@ interface RitmStatus {
 interface RitmStatusFormError {
   statusCode?: string;
   sequenceNo?: string;
+  statusColor?: string;
 }
 
 interface PendingRitmStatus {
   statusCode: string;
   sequenceNo: number;
+  statusColor: string;
 }
 
 @Component({
@@ -44,6 +47,7 @@ export class RitmStatusComponent implements OnInit {
   isSubmitting = false;
   loading = false;
   userOrgId = '';
+  selectedColor = '#00246b';
 
   constructor(
     private fb: FormBuilder,
@@ -53,7 +57,8 @@ export class RitmStatusComponent implements OnInit {
   ) {
     this.ritmStatusForm = this.fb.group({
       statusCode: ['', [Validators.required, Validators.maxLength(100)]],
-      sequenceNo: [null, [Validators.required, Validators.min(0), Validators.pattern('^[0-9]+$')]]
+      sequenceNo: [null, [Validators.required, Validators.min(0), Validators.pattern('^[0-9]+$')]],
+      statusColor: [this.selectedColor, [Validators.required]]
     });
     this.userOrgId = localStorage.getItem('userOrgId') || '';
   }
@@ -80,7 +85,8 @@ export class RitmStatusComponent implements OnInit {
     this.submitError = '';
     this.submitSuccess = '';
     this.statusList = [];
-    this.ritmStatusForm.reset({ statusCode: '', sequenceNo: null });
+    this.selectedColor = '#00246b';
+    this.ritmStatusForm.reset({ statusCode: '', sequenceNo: null, statusColor: this.selectedColor });
   }
 
   backToHome(): void {
@@ -94,6 +100,7 @@ export class RitmStatusComponent implements OnInit {
 
     const statusCode = (this.ritmStatusForm.get('statusCode')?.value || '').trim();
     const sequenceNo = this.ritmStatusForm.get('sequenceNo')?.value;
+    const statusColor = (this.ritmStatusForm.get('statusColor')?.value || '').trim();
 
     if (!statusCode) {
       this.formError.statusCode = 'Status Code is required';
@@ -102,6 +109,9 @@ export class RitmStatusComponent implements OnInit {
       this.formError.sequenceNo = 'Sequence is required';
     } else if (!Number.isInteger(Number(sequenceNo)) || Number(sequenceNo) < 0) {
       this.formError.sequenceNo = 'Sequence must be a non-negative number';
+    }
+    if (!/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(statusColor)) {
+      this.formError.statusColor = 'Enter a valid hex color code';
     }
     if (Object.keys(this.formError).length > 0) {
       return;
@@ -130,8 +140,23 @@ export class RitmStatusComponent implements OnInit {
       return;
     }
 
-    this.statusList.push({ statusCode, sequenceNo: numericSequence });
-    this.ritmStatusForm.patchValue({ statusCode: '', sequenceNo: null });
+    this.statusList.push({ statusCode, sequenceNo: numericSequence, statusColor });
+    this.ritmStatusForm.patchValue({ statusCode: '', sequenceNo: null, statusColor: this.selectedColor });
+  }
+
+  onColorCodeInput(): void {
+    const statusColor = this.ritmStatusForm.get('statusColor')?.value || '';
+    if (/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(statusColor)) {
+      this.selectedColor = statusColor.length === 4
+        ? `#${statusColor.slice(1).split('').map((value: string) => value + value).join('')}`
+        : statusColor;
+    }
+  }
+
+  onColorPickerChange(event: Event): void {
+    const statusColor = (event.target as HTMLInputElement).value;
+    this.selectedColor = statusColor;
+    this.ritmStatusForm.patchValue({ statusColor });
   }
 
   removeStatus(status: PendingRitmStatus): void {
@@ -158,6 +183,7 @@ export class RitmStatusComponent implements OnInit {
       companyId,
       statusCode: status.statusCode,
       sequenceNo: status.sequenceNo,
+      statusColor: status.statusColor,
       createdBy: userId,
       isCreatorAdmin: isAdmin
     }));
@@ -166,6 +192,46 @@ export class RitmStatusComponent implements OnInit {
       next: () => this.finishSave('RITM status created successfully.'),
       error: (err) => this.handleSaveError(err, 'Failed to create RITM status.')
     });
+  }
+
+  toggleStatusActive(status: RitmStatus): void {
+    const action = status.isActive ? 'Deactivate' : 'Activate';
+    const dialogData: ConfirmationDialogData = {
+      title: `${action} RITM Status`,
+      message: `Are you sure you want to ${action.toLowerCase()} status "${status.statusCode}"?`,
+      confirmText: action,
+      cancelText: 'Cancel',
+      showCancel: true,
+      type: 'delete'
+    };
+
+    this.dialog.open(ConfirmationDialogComponent, { width: '420px', data: dialogData })
+      .afterClosed().subscribe(confirmed => {
+        if (!confirmed) {
+          return;
+        }
+
+        const isAdmin = localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase();
+        const userId = Number(localStorage.getItem('userId') || 0);
+
+        this.ritmService.updateRitmStatusActive({
+          statusId: status.statusId,
+          isActive: !status.isActive,
+          updatedBy: userId,
+          isUpdaterAdmin: isAdmin
+        }).subscribe({
+          next: () => {
+            this.submitSuccess = status.isActive ? 'RITM status deactivated successfully.' : 'RITM status activated successfully.';
+            this.loadStatusList();
+            setTimeout(() => {
+              this.submitSuccess = '';
+            }, 3000);
+          },
+          error: (err) => {
+            this.submitError = err.error?.description || `Failed to ${action.toLowerCase()} RITM status.`;
+          }
+        });
+      });
   }
 
   onDelete(status: RitmStatus): void {
@@ -193,6 +259,14 @@ export class RitmStatusComponent implements OnInit {
           }
         });
       });
+  }
+
+  getStatusText(status: RitmStatus): string {
+    return status.isActive === true ? 'Active' : 'Inactive';
+  }
+
+  getStatusClass(status: RitmStatus): string {
+    return status.isActive === true ? 'status-pill active' : 'status-pill inactive';
   }
 
   private loadStatusList(): void {

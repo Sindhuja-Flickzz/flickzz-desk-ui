@@ -41,7 +41,7 @@
   .field {
     display: flex;
     flex-direction: column;
-    max-width: 760px;
+    // max-width: 760px;
     margin-bottom: 14px;
     label { margin-bottom: 6px; color: #1d326d; font-weight: 600; }
     input {
@@ -61,6 +61,27 @@
     gap: 10px;
     input:first-child { flex: 1; }
     input[type='number'] { width: 150px; }
+    .color-code-input { width: 110px; }
+  }
+
+  .color-picker {
+    width: 46px;
+    height: 44px;
+    padding: 4px;
+    border: 1px solid #ccd6e8;
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .color-preview,
+  .status-color-cell i {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 1px solid #ccd6e8;
+    border-radius: 50%;
+    vertical-align: middle;
   }
 
   .add-btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid #ccd6e8; border-radius: 10px; background: #00246b; color: #fff; cursor: pointer; }
@@ -149,7 +170,7 @@
   .status-table-header,
   .status-table-row {
     display: grid;
-    grid-template-columns: minmax(180px, 1fr) 150px 70px;
+    grid-template-columns: minmax(180px, 1fr) 120px minmax(130px, 1fr) 70px;
     gap: 12px;
     align-items: center;
     padding: 11px 14px;
@@ -216,10 +237,51 @@
       color: #00246b;
       cursor: pointer;
 
+      &.active-icon {
+        color: green;
+        cursor: pointer;
+      }
+      &.inactive-icon {
+        color: gray;
+        cursor: pointer;
+      }
+
       &:last-child {
         color: #eb5757;
       }
     }
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .status-pill.active {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .status-pill.inactive {
+    background: #fdecea;
+    color: #c62828;
+  }
+
+  .status-list-color {
+    display: inline-block;
+    width: 26px;
+    height: 26px;
+    border: 1px solid #ccd6e8;
+    border-radius: 50%;
+    cursor: help;
+    vertical-align: middle;
   }
 
   .empty-state {
@@ -256,7 +318,7 @@
 
     .status-table-header,
     .status-table-row {
-      grid-template-columns: minmax(120px, 1fr) 90px 50px;
+      grid-template-columns: minmax(120px, 1fr) 90px minmax(110px, 1fr) 50px;
       padding: 10px;
     }
   }

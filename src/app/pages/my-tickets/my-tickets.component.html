@@ -45,7 +45,7 @@
           <span>{{ primaryTab === 'assigned-to-me' ? getRequestedBy(item) : getAssignee(item) }}</span>
           <span><em class="ticket-priority" [ngClass]="(getPriority(item) || 'medium').toLowerCase()">{{ getPriority(item) || 'Medium' }}</em></span>
           <span>{{ item.requestedOn || item.createdAt || item.createdOn || 'N/A' }}</span>
-          <span><em class="ticket-status" [ngClass]="getStatus(item).toLowerCase()">{{ getStatus(item) }}</em></span>
+          <span><em class="ticket-status" [ngClass]="getStatus(item).toLowerCase()" [style.color]="getStatusColor(item) || null">{{ getStatus(item) }}</em></span>
           <span *ngFor="let fieldId of selectedTemplateFieldIds">{{ getDynamicFieldValue(item, fieldId) }}</span>
         </button>
       </div>

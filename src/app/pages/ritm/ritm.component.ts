@@ -376,7 +376,7 @@ export class RitmComponent implements OnInit, OnDestroy {
   }
 
   private loadRitmStatuses(): void {
-    this.ritmService.getRitmStatuses(this.orgId).subscribe({
+    this.ritmService.getRitmActiveStatuses(this.orgId).subscribe({
       next: (response: any) => {
         const statuses = response?.attributes ?? response ?? [];
         this.ritmStatuses = Array.isArray(statuses) ? statuses : [];
@@ -823,7 +823,9 @@ export class RitmComponent implements OnInit, OnDestroy {
         this.submitSuccess = wasEditMode ? 'RITM updated successfully.' : 'RITM created successfully.';
         this.submitting = false;
         this.successWasUpdate = wasEditMode;
-        const savedRitm = response?.attributes || response || {};
+        const responseData = response?.attributes ?? response ?? {};
+        const savedRitmValue = Array.isArray(responseData) ? responseData[0] : responseData;
+        const savedRitm = savedRitmValue?.ritm ?? savedRitmValue?.data ?? savedRitmValue ?? {};
         this.successRitmDetails = this.buildSuccessRitmDetails(savedRitm, rawValues);
         this.showSuccessScreen = true;
         this.isEditMode = false;
@@ -879,7 +881,8 @@ export class RitmComponent implements OnInit, OnDestroy {
   }
 
   private buildSuccessRitmDetails(createdRitm: any, rawValues: any): any {
-    const item = createdRitm || {};
+    const item = (createdRitm?.ritm ?? createdRitm) || {};
+    const status = item.status || 'OPEN';
     const category = item.category || this.categories.find(category => `${category.categoryId}` === `${rawValues.category}`);
     const subCategory = item.subCategory || this.subCategories.find(subCategory => `${subCategory.subCategoryId}` === `${rawValues.subCategory}`);
     const priority = item.priority || this.priorities.find(priority => Number(priority.priorityId) === Number(rawValues.priority));
@@ -893,7 +896,8 @@ export class RitmComponent implements OnInit, OnDestroy {
     return {
       ...item,
       ritmNumber: item.ritmNumber || item.requestNumber || rawValues.ritmNumber,
-      status: item.status || 'OPEN',
+      status,
+      statusColor: item.statusColor || (status && typeof status === 'object' ? status.statusColor : ''),
       createdOn: item.createdOn || item.createdAt || item.requestedAt || new Date(),
       categoryName: this.readDisplayName(category, ['categoryName', 'name']) || rawValues.category,
       subCategoryName: this.readDisplayName(subCategory, ['subCategoryName', 'name']) || rawValues.subCategory,
@@ -907,6 +911,15 @@ export class RitmComponent implements OnInit, OnDestroy {
       comments: item.comments || [],
       audits: item.audits || []
     };
+  }
+
+  getSuccessStatusColor(): string {
+    const status = this.successRitmDetails?.status;
+    return String(
+      (status && typeof status === 'object' ? status.statusColor : '')
+      || this.successRitmDetails?.statusColor
+      || ''
+    ).trim();
   }
 
   private readDisplayName(source: any, keys: string[]): string {

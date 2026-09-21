@@ -18,12 +18,16 @@
         <div class="status-input-row">
           <input id="statusCode" type="text" formControlName="statusCode" placeholder="Enter status code" />
           <input id="sequenceNo" type="number" formControlName="sequenceNo" min="0" step="1" placeholder="Sequence" />
+          <input id="statusColor" class="color-code-input" type="text" formControlName="statusColor" placeholder="#00246b" maxlength="7" (input)="onColorCodeInput()" aria-label="Status color code" />
+          <input class="color-picker" type="color" [value]="selectedColor" (input)="onColorPickerChange($event)" aria-label="Pick status color" />
+          <span class="color-preview" [style.background-color]="ritmStatusForm.get('statusColor')?.value"></span>
           <button type="button" class="add-btn" (click)="addStatus()" aria-label="Add status">
             <mat-icon>add</mat-icon>
           </button>
         </div>
         <span *ngIf="formError.statusCode" class="error-text">{{ formError.statusCode }}</span>
         <span *ngIf="formError.sequenceNo" class="error-text">{{ formError.sequenceNo }}</span>
+        <span *ngIf="formError.statusColor" class="error-text">{{ formError.statusColor }}</span>
       </div>
 
       <div *ngIf="statusList.length > 0" class="statuses-added">
@@ -32,11 +36,13 @@
           <div class="status-table-header">
             <span>Status Code</span>
             <span>Sequence</span>
+            <span>Color</span>
             <span>Action</span>
           </div>
           <div *ngFor="let status of statusList" class="status-table-row">
             <span>{{ status.statusCode }}</span>
             <span>{{ status.sequenceNo }}</span>
+            <span class="status-color-cell"><i [style.background-color]="status.statusColor"></i>{{ status.statusColor }}</span>
             <button type="button" class="remove-btn" (click)="removeStatus(status)" aria-label="Remove status">
               <mat-icon>close</mat-icon>
             </button>
@@ -73,6 +79,7 @@
           <tr>
             <th>Status Code</th>
             <th>Sequence</th>
+            <th>Status Color</th>
             <th>Active</th>
             <th>Actions</th>
           </tr>
@@ -81,8 +88,21 @@
           <tr *ngFor="let status of statuses">
             <td>{{ status.statusCode }}</td>
             <td>{{ status.sequenceNo }}</td>
-            <td>{{ status.isActive ? 'Yes' : 'No' }}</td>
+            <td>
+              <span
+                class="status-list-color"
+                [style.background-color]="status.statusColor || '#ffffff'"
+                [title]="status.statusColor || 'No color set'"
+                [attr.aria-label]="status.statusColor || 'No color set'">
+              </span>
+            </td>
+            <td>
+              <span [class]="getStatusClass(status)">{{ getStatusText(status) }}</span>
+            </td>
             <td class="action-buttons">
+              <button type="button" [class]="status.isActive ? 'active-icon' : 'inactive-icon'" (click)="toggleStatusActive(status)" [title]="status.isActive ? 'Deactivate status' : 'Activate status'" [attr.aria-label]="status.isActive ? 'Deactivate status' : 'Activate status'">
+                <mat-icon>{{ status.isActive ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+              </button>
               <button type="button" (click)="onDelete(status)" aria-label="Delete status"><mat-icon>delete</mat-icon></button>
             </td>
           </tr>

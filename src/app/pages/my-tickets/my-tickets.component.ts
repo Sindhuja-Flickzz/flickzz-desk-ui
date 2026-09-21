@@ -266,6 +266,7 @@ export class MyTicketsComponent implements OnInit {
 
   getPaginatedTickets(): any[] {
     const startIndex = this.currentPage * this.pageSize;
+    console.log('Paginated Tickets:', this.currentList.slice(startIndex, startIndex + this.pageSize));
     return this.currentList.slice(startIndex, startIndex + this.pageSize);
   }
 
@@ -308,6 +309,10 @@ export class MyTicketsComponent implements OnInit {
 
   getStatus(item: any): string {
     return item?.status?.statusCode;
+  }
+
+  getStatusColor(item: any): string {
+    return item?.status?.statusColor || '';
   }
 
   getPriority(item: any): string {

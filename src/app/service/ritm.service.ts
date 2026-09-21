@@ -10,8 +10,16 @@ export interface RitmStatusCreateRequest {
   companyId: number;
   statusCode: string;
   sequenceNo: number;
+  statusColor: string;
   createdBy: number;
   isCreatorAdmin: boolean;
+}
+
+export interface RitmStatusUpdateRequest {
+  statusId: number;
+  isActive: boolean;
+  updatedBy?: number;
+  isUpdaterAdmin?: boolean;
 }
 
 @Injectable({
@@ -46,8 +54,16 @@ export class RitmService {
     return this.http.get(`${this.baseUrl}/ritm/get/status/${orgId}`);
   }
 
+  getRitmActiveStatuses(orgId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/ritm/get/status/active/${orgId}`);
+  }
+
   deleteRitmStatus(statusId: number): Observable<any> {
     return this.http.delete(`${this.baseUrl}/ritm/status/delete`, { body: { statusId } });
+  }
+
+  updateRitmStatusActive(request: RitmStatusUpdateRequest): Observable<any> {
+    return this.http.post(`${this.baseUrl}/ritm/status/update`, request);
   }
 
   updateRitm(payload: any): Observable<any> {
