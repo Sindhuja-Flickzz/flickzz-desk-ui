@@ -1,0 +1,74 @@
+<div class="request-approver-page">
+  <div class="tabs">
+    <button type="button" class="save-btn header-back" (click)="backToHome()" aria-label="Back to settings"><mat-icon>chevron_left</mat-icon></button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ isEditMode ? 'Edit' : 'Create' }}</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <h2>{{ pageTitle }}</h2>
+    <form [formGroup]="requestApproverForm" (ngSubmit)="onSave()">
+      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+      <div class="field">
+        <label for="approverCode">Approver Code <span class="required">*</span></label>
+        <input [readOnly]="isEditMode" id="approverCode" type="text" formControlName="approverCode" maxlength="50" placeholder="Enter approver code" />
+        <span *ngIf="formError.approverCode" class="error-text">{{ formError.approverCode }}</span>
+      </div>
+
+      <div class="approver-list" formArrayName="approvers">
+        <div class="section-heading">
+          <div><h3>Approver List</h3><span class="helper-text">Add approvers in the order they should be considered.</span></div>
+          <button type="button" class="add-line-btn" (click)="addApprover()"><mat-icon>add</mat-icon> Add Approver</button>
+        </div>
+        <div class="approver-header"><span>Agent</span><span>Sequence</span><span>Action</span></div>
+        <div class="approver-row" *ngFor="let row of approvers.controls; let i = index" [formGroupName]="i">
+          <div class="agent-field">
+            <input type="text" formControlName="agentQuery" placeholder="Select agent" autocomplete="off" (input)="onAgentSearch(i)" />
+            <div class="suggestions" *ngIf="agentSuggestions[i]?.length && row.get('agentQuery')?.value?.trim() && !row.get('agentId')?.value">
+              <div class="suggestion-items">
+                <div class="suggestion" *ngFor="let agent of agentSuggestions[i]" (click)="selectAgent(i, agent)">
+                  <div class="suggestion-content"><span class="suggestion-name">{{ agent.agentName }}</span><span class="suggestion-email" *ngIf="agent.mailId">{{ agent.mailId }}</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <input class="sequence-input" type="number" min="1" formControlName="approverSequence" placeholder="Enter sequence" />
+          <button type="button" class="remove-btn" (click)="removeApprover(i)" [disabled]="approvers.length === 1" aria-label="Remove approver"><mat-icon>delete</mat-icon></button>
+        </div>
+        <span *ngIf="formError.approvers" class="error-text">{{ formError.approvers }}</span>
+      </div>
+
+      <div class="toggle-fields">
+        <div class="toggle-field"><label for="followSequence">Follow Sequence</label><mat-slide-toggle id="followSequence" formControlName="followSequence"></mat-slide-toggle></div>
+        <div class="toggle-field"><label for="isAnyApprovalSufficient">One Approval is Enough</label><mat-slide-toggle id="isAnyApprovalSufficient" formControlName="isAnyApprovalSufficient"></mat-slide-toggle></div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update' : 'Save') }}</button>
+        <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+        <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <h2>Request Approver Configuration List</h2>
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+    <div class="search-container"><input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by approver code..." class="search-input" /></div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Approver Code</th><th>Approvers</th><th>Follow Sequence</th><th>One Approval is Enough</th><th>Actions</th></tr></thead>
+        <tbody><tr *ngFor="let configuration of getPaginatedConfigurations()">
+          <td>{{ configuration.approverCode }}</td><td>{{ getAgentNames(configuration) }}</td><td>{{ configuration.followSequence ? 'Yes' : 'No' }}</td><td>{{ configuration.isAnyApprovalSufficient ? 'Yes' : 'No' }}</td>
+          <td class="action-buttons"><button type="button" (click)="onViewConfiguration(configuration)" aria-label="Edit"><mat-icon>edit</mat-icon></button><button type="button" (click)="onDeleteConfiguration(configuration)" aria-label="Delete"><mat-icon>delete</mat-icon></button></td>
+        </tr></tbody>
+      </table>
+    </div>
+    <div *ngIf="!loading && filteredConfigurations.length === 0" class="empty-state">No request approver configurations found.</div>
+    <div class="pagination-controls"><mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" (page)="onPageChange($event)" showFirstLastButtons></mat-paginator></div>
+  </div>
+</div>

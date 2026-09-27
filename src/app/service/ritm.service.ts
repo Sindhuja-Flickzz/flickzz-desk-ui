@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
 import { UserProfile, NoteItem, ApproverItem, LogEntry, WorkflowStage, CatalogTask, TaskSlaItem, ChangeRequestItem } from '../models/ritm.model';
@@ -72,6 +72,23 @@ export class RitmService {
 
   assignRitm(payload: { ritmId: number; assignedTo: number; assignedBy: number }): Observable<any> {
     return this.http.put(`${this.baseUrl}/ritm/assign`, payload);
+  }
+
+  assignApprover(payload: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/ritm/approver/assign`, payload);
+  }
+
+  getRitmApprovers(ritmId: string | number, companyId: number): Observable<any> {
+    const params = new HttpParams().set('companyId', companyId);
+    return this.http.get(`${this.baseUrl}/ritm/approver/list/${ritmId}`, { params });
+  }
+
+  updateApprover(payload: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/ritm/approver/update`, payload);
+  }
+
+  deleteRitmApprovers(ritmId: string | number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/ritm/approver/delete/${ritmId}`);
   }
 
   getNotes(userId: string): Observable<NoteItem[]> {

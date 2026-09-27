@@ -1,0 +1,69 @@
+<div class="request-type-page">
+  <div class="tabs">
+    <button type="button" class="save-btn header-back" (click)="backToSettings()"><mat-icon>chevron_left</mat-icon></button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <h2>Create Request Type</h2>
+    <form [formGroup]="requestTypeForm" (ngSubmit)="onSave()">
+      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+      <div class="field">
+        <label>Request Type</label>
+        <div class="input-row">
+          <input type="text" formControlName="requestType" placeholder="Enter request type">
+          <button type="button" class="add-btn" (click)="addRequestType()">+</button>
+        </div>
+        <span *ngIf="formError.requestType" class="error-text">{{ formError.requestType }}</span>
+      </div>
+
+      <div *ngIf="requestTypeList.length > 0" class="items-added">
+        <h3>Request Types to Create:</h3>
+        <div class="chips">
+          <button type="button" *ngFor="let requestType of requestTypeList" class="chip" (click)="removeRequestType(requestType)">
+            {{ requestType.name }} <span class="remove-icon">×</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Saving Request Types' : 'Save Request Types' }}</button>
+        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <h2>Request Type List</h2>
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+    <div class="search-container">
+      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by request type..." class="search-input">
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>Request Type</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let requestType of getPaginatedRequestTypes()">
+            <td>{{ requestType.requestTypeName }}</td>
+            <td class="action-buttons">
+              <button type="button" (click)="onDeleteRequestType(requestType)" title="Delete request type"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && !error && requestTypes.length === 0" class="empty-state">No Request Types found.</div>
+    <div class="pagination-controls">
+      <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" (page)="onPageChange($event)" showFirstLastButtons></mat-paginator>
+    </div>
+  </div>
+</div>

@@ -5,9 +5,11 @@ import {WelcomeComponent} from "./pages/welcome/welcome.component";
 import {CalendarComponent} from "./pages/calendar/calendar.component/calendar.component";
 import { CalendarTypeComponent } from "./pages/calendar/type/calendar-type.component";
 import {PlantComponent}from "./pages/plant/plant.component";
+import { RequestApproverComponent } from './pages/requestapprover/requestapprover.component';
 import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
 // import { ProjectTimelineGanttComponent } from './pages/project-builder/project-timeline-gantt/project-timeline-gantt.component';
 import {SkillComponent} from "./pages/skill/skill.component";
+import { RequestTypeComponent } from './pages/request-type/request-type.component';
 import {CompanyComponent} from "./pages/company/company.component";
 import { BpAssignmentComponent } from './pages/business-partner/bp-assignment/bp-assignment.component';
 import {AgentComponent} from "./pages/agent/agent.component";
@@ -99,6 +101,11 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'request-approver',
+    component: RequestApproverComponent,
+    canActivate: [authGuard]
+  },
+  {
     path: 'project-builder',
     component: ProjectBuilderComponent,
     canActivate: [authGuard]
@@ -171,6 +178,11 @@ const routes: Routes = [
   {
     path: 'skill',
     component: SkillComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'request-type',
+    component: RequestTypeComponent,
     canActivate: [authGuard]
   },
   {

@@ -1,8 +1,13 @@
 <div class="ritm-page" [class.success-state]="showSuccessScreen">
   <div class="page-header">
-    <div class="page-title-group" *ngIf="!showSuccessScreen">
-      <h1>RITM Request</h1>
-      <p class="page-subtitle">Raise a request to get the support you need</p>
+    <div class="page-heading" *ngIf="!showSuccessScreen">
+      <button type="button" class="save-btn header-back" (click)="onCancel()" aria-label="Back to Settings" title="Back to Settings">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <div class="page-title-group">
+        <h1>RITM Request</h1>
+        <p class="page-subtitle">Raise a request to get the support you need</p>
+      </div>
     </div>
 
     <div *ngIf="loading" class="loading-panel">
@@ -57,6 +62,17 @@
           <div class="field field-current-time">
             <label>Current Time</label>
             <input formControlName="currentTime" readonly />
+          </div>
+
+          <div class="field field-request-type">
+            <label>Request Type <span class="mandatory-indicator" aria-hidden="true">*</span></label>
+            <select formControlName="requestTypeId">
+              <option value="" disabled>Select request type</option>
+              <option *ngFor="let requestType of requestTypes" [value]="requestType.requestTypeId">
+                {{ requestType.requestTypeName }}
+              </option>
+            </select>
+            <span *ngIf="showRequiredError('requestTypeId')" class="error-text">Request Type is required.</span>
           </div>
 
           <div class="field field-category">
@@ -369,7 +385,7 @@
       </div>
     </div>
   </ng-template>
-   <mat-card class="tab-card">
+   <!-- <mat-card class="tab-card">
     <mat-tab-group class="tab-group" animationDuration="0ms">
       <mat-tab label="Work Notes">
         <div class="notes-list">
@@ -469,5 +485,5 @@
         </div>
       </mat-tab>
     </mat-tab-group>
-  </mat-card> 
+  </mat-card>  -->
 </div>
