@@ -1,0 +1,230 @@
+<main class="approval-page">
+  <header class="page-header">
+    <div>
+      <h1>Approvals</h1>
+      <p class="subtitle">Review requests assigned to you</p>
+    </div>
+    <div class="refresh-area">
+      <span>Updated {{ lastRefreshed | date: 'MMM d, yyyy h:mm a' }}</span>
+      <button mat-icon-button aria-label="Refresh approvals" [disabled]="isLoading" (click)="loadApprovals()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div
+    class="approval-layout"
+    [class.with-details]="selectedApproval"
+    [style.--list-pane-width]="listPaneWidth === null ? null : listPaneWidth + 'px'">
+    <section class="list-panel" aria-label="Approval records">
+      <div class="list-heading">
+        <h2>Assigned requests</h2>
+        <span class="count-badge">{{ filteredApprovals.length }}</span>
+      </div>
+
+      <div class="filter-bar" *ngIf="!isLoading && approvals.length" aria-label="Filter approvals">
+        <input
+          type="search"
+          [(ngModel)]="filterKeyword"
+          (ngModelChange)="applyFilters()"
+          placeholder="Search approvals"
+          aria-label="Search approvals by keyword">
+        <select [(ngModel)]="filterRequestType" (ngModelChange)="applyFilters()" aria-label="Filter by request type">
+          <option value="">All request types</option>
+          <option *ngFor="let requestType of requestTypes" [value]="requestType">{{ requestType }}</option>
+        </select>
+        <select [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()" aria-label="Filter by status">
+          <option value="">All statuses</option>
+          <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+        </select>
+        <button
+          type="button"
+          class="clear-filter-button"
+          *ngIf="filterKeyword || filterRequestType || filterStatus"
+          (click)="clearFilters()">Clear</button>
+      </div>
+
+      <div *ngIf="isLoading" class="state-message"><mat-spinner diameter="32"></mat-spinner></div>
+      <div *ngIf="!isLoading && !approvals.length" class="state-message">
+        <mat-icon>inbox</mat-icon>
+        <p>No approval requests found</p>
+      </div>
+      <div *ngIf="!isLoading && approvals.length && !filteredApprovals.length" class="state-message">
+        <mat-icon>search_off</mat-icon>
+        <p>No approvals match these filters</p>
+      </div>
+
+      <div class="record-list" *ngIf="!isLoading && filteredApprovals.length">
+        <button
+          type="button"
+          class="record-row"
+          *ngFor="let approval of getPaginatedApprovals()"
+          [class.selected]="selectedApproval?.approvalId === approval.approvalId"
+          (click)="selectApproval(approval)">
+          <span class="request-type">{{ approval.requestType }}</span>
+          <span class="request-id"> </span>
+          <strong class="record-description">{{ approval.description || 'Request ' + approval.requestId }}</strong>
+          <span class="status" [attr.data-status]="approval.status.toLowerCase()">{{ approval.status }}</span>
+          <span class="record-date">{{ approval.createdOn | date: 'MMM d, yyyy' }}</span>
+          <mat-icon class="chevron">chevron_right</mat-icon>
+        </button>
+      </div>
+
+      <div class="pagination-controls" *ngIf="!isLoading && filteredApprovals.length">
+        <mat-paginator
+          [length]="filteredApprovals.length"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          [pageIndex]="currentPage"
+          (page)="onPageChange($event)"
+          showFirstLastButtons>
+        </mat-paginator>
+      </div>
+    </section>
+
+    <div
+      *ngIf="selectedApproval"
+      class="pane-resizer"
+      role="separator"
+      aria-label="Resize approval records and details"
+      aria-orientation="vertical"
+      tabindex="0"
+      (pointerdown)="startPaneResize($event)"
+      (keydown)="onPaneResizeKeydown($event)"></div>
+
+    <aside class="details-panel" *ngIf="selectedApproval as approval" aria-label="Approval details">
+      <header class="details-header">
+        <div>
+          <!-- <p class="eyebrow">REQUEST {{ approval.requestId }}</p> -->
+          <h2>{{ approval.requestType }} approval</h2>
+        </div>
+        <button mat-icon-button aria-label="Close details" (click)="closeDetails()"><mat-icon>close</mat-icon></button>
+      </header>
+
+      <p class="request-description" *ngIf="!isBusinessPartnerApproval(approval)">{{ approval.description || 'No description provided' }}</p>
+      <dl class="details-grid" *ngIf="!isBusinessPartnerApproval(approval)">
+        <ng-container *ngIf="!isRitmApproval(approval)">
+        <div><dt>Status</dt><dd>{{ approval.status }}</dd></div>
+        <div><dt>Request type</dt><dd>{{ approval.requestType }}</dd></div>
+        <div><dt>Approval type</dt><dd>{{ approval.approvalType }}</dd></div>
+        <div><dt>Approver type</dt><dd>{{ approval.approverType }}</dd></div>
+        <div><dt>Approver level</dt><dd>{{ approval.approverLevel }}</dd></div>
+        <div><dt>Mandatory</dt><dd>{{ approval.mandatory ? 'Yes' : 'No' }}</dd></div>
+        <div><dt>Created by</dt><dd>{{ approval.createdBy }}</dd></div>
+        <div><dt>Created on</dt><dd>{{ getFormattedDate(approval.createdOn) }}</dd></div>
+        <div><dt>Updated on</dt><dd>{{ getFormattedDate(approval.updatedOn) }}</dd></div>
+        <div *ngIf="approval.remarks"><dt>Remarks</dt><dd>{{ approval.remarks }}</dd></div>
+        </ng-container>
+      </dl>
+
+      <section class="ritm-approval-details" *ngIf="isRitmApproval(approval)">
+        <h3>RITM Approver Details</h3>
+        <div *ngIf="isDetailLoading" class="detail-state"><mat-spinner diameter="28"></mat-spinner></div>
+        <p *ngIf="detailLoadError" class="detail-error">{{ detailLoadError }}</p>
+        <dl class="details-grid" *ngIf="!isDetailLoading && ritmApprover as approver">
+          <div><dt>RITM Number</dt><dd>{{ getRitmNumber(approval, approver) }}</dd></div>
+          <div *ngFor="let detail of approver.templateDetails"><dt>{{ detail.fieldName }}</dt><dd>{{ formatRitmValue(detail.value) }}</dd></div>
+          <div><dt>Approval Remark</dt><dd>{{ formatRitmValue(approver.approvalRemark) }}</dd></div>
+        </dl>
+      </section>
+
+      <section class="business-partner-details" *ngIf="isBusinessPartnerApproval(approval)">
+        <h3>Configuration Summary</h3>
+        <div *ngIf="isDetailLoading" class="detail-state"><mat-spinner diameter="28"></mat-spinner></div>
+        <p *ngIf="detailLoadError" class="detail-error">{{ detailLoadError }}</p>
+        <ng-container *ngIf="!isDetailLoading && businessPartnerChangeRequest as changeRequest">
+          <dl class="details-grid business-partner-summary-grid">
+            <div><dt>Configuration Type</dt><dd>{{ businessPartnerConfigurationType || 'Configuration' }}</dd></div>
+            <div><dt>Operation</dt><dd>{{ formatBusinessPartnerValue(changeRequest.operation) }}</dd></div>
+            <div><dt>Approval Type</dt><dd>{{ formatBusinessPartnerValue(approval.approvalType) }}</dd></div>
+            <div><dt>Status</dt><dd>{{ formatBusinessPartnerValue(approval.status) }}</dd></div>
+            <div><dt>Created By</dt><dd>{{ getBusinessPartnerUserName(approval.createdBy) }}</dd></div>
+            <div><dt>Organization</dt><dd>{{ formatBusinessPartnerValue(changeRequest.requestedByOrg?.companyName) }}</dd></div>
+            <div><dt>Created On</dt><dd>{{ getFormattedDate(approval.createdOn) }}</dd></div>
+            <div><dt>Remark</dt><dd>{{ getBusinessPartnerApprovalRemark(approval, changeRequest) }}</dd></div>
+          </dl>
+
+          <section class="business-partner-detail-section">
+            <h4>Configuration Details</h4>
+            <div *ngIf="isConfigurationDetailLoading" class="detail-state"><mat-spinner diameter="28"></mat-spinner></div>
+            <p *ngIf="configurationDetailError" class="detail-error">{{ configurationDetailError }}</p>
+            <div class="configuration-comparison-wrapper" *ngIf="businessPartnerConfigurationType && !isConfigurationDetailLoading && !configurationDetailError && businessPartnerConfigurationRows.length">
+              <table class="configuration-comparison-table">
+                <thead>
+                  <tr>
+                    <th>Field</th>
+                    <th *ngIf="businessPartnerCurrentConfiguration">Current Value</th>
+                    <th>{{ businessPartnerCurrentConfiguration ? 'Updated Value' : 'Value' }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of businessPartnerConfigurationRows">
+                    <td>{{ row.field }}</td>
+                    <td *ngIf="businessPartnerCurrentConfiguration">{{ row.currentValue }}</td>
+                    <td>{{ row.updatedValue }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p *ngIf="!isConfigurationDetailLoading && !configurationDetailError && !businessPartnerConfigurationType" class="configuration-empty">
+              No configuration detail template is available for this request type.
+            </p>
+            <p *ngIf="!isConfigurationDetailLoading && !configurationDetailError && businessPartnerConfigurationType && !businessPartnerConfigurationRows.length" class="configuration-empty">
+              No configuration detail is available.
+            </p>
+          </section>
+
+          <section class="business-partner-detail-section">
+            <h4>Remarks</h4>
+            <div class="remarks-table-wrapper">
+              <table class="configuration-comparison-table remarks-comparison-table" *ngIf="changeRequest.remarks?.length; else noBusinessPartnerRemarks">
+                <thead>
+                  <tr>
+                    <th>Action Owner</th>
+                    <th>Action</th>
+                    <th>Remark</th>
+                    <th class="date-column">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let remark of changeRequest.remarks">
+                    <td>{{ getBusinessPartnerRemarkAuthor(remark.userId) }}</td>
+                    <td>{{ remark.remarkType ? remark.remarkType.toUpperCase() : 'Unknown' }}</td>
+                    <td>{{ remark.remark || '-' }}</td>
+                    <td>{{ getFormattedDate(remark.createdOn) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <ng-template #noBusinessPartnerRemarks>
+                <p class="configuration-empty">No remarks available for this approval.</p>
+              </ng-template>
+            </div>
+          </section>
+
+          <section class="business-partner-detail-section">
+            <h4>Approval Tracking</h4>
+            <div class="business-partner-progress">
+              <div class="business-partner-progress-track"></div>
+              <div class="business-partner-progress-steps">
+                <div *ngFor="let stage of businessPartnerTrackingStages" class="business-partner-progress-step"
+                  [class.completed]="stage.completed" [class.current]="stage.current" [class.rejected]="stage.rejected">
+                  <span class="business-partner-step-dot"></span>
+                  <span class="business-partner-step-label">{{ stage.stage }}</span>
+                  <span class="business-partner-step-status">{{ stage.completed ? 'Completed' : stage.current ? 'In progress' : stage.rejected ? 'Rejected' : 'Pending' }}</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </ng-container>
+      </section>
+
+      <div class="action-buttons" *ngIf="canTakeAction(approval)">
+        <button mat-raised-button color="primary" (click)="openApprovalDialog('approve')"><mat-icon>check_circle</mat-icon>Approve</button>
+        <button mat-raised-button color="warn" (click)="openApprovalDialog('decline')"><mat-icon>cancel</mat-icon>Decline</button>
+        <button mat-stroked-button (click)="openApprovalDialog('clarify')"><mat-icon>help_outline</mat-icon>Request clarification</button>
+      </div>
+    </aside>
+  </div>
+</main>

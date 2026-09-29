@@ -22,7 +22,8 @@ export class RitmDetailsComponent implements OnInit {
   history: any[] = [];
   slaInfo: any = null;
   commentText = '';
-  activeTab: 'details' | 'work-notes' | 'history' | 'approvers' | 'catalog-task' | 'effort' | 'sla' = 'details';
+  activeTab: 'details' | 'work-notes' | 'history' | 'sla' = 'details';
+  activeAdditionalTab: 'approvers' | 'catalog-task' | 'effort' = 'approvers';
   loading = false;
   notesLoading = false;
   historyLoading = false;
@@ -125,6 +126,7 @@ export class RitmDetailsComponent implements OnInit {
           detailPayload?.sla ??
           detailPayload?.serviceLevelAgreement ??
           null;
+        this.loadApproverData();
       },
       error: () => {
         this.ritm = {};
@@ -310,7 +312,7 @@ export class RitmDetailsComponent implements OnInit {
     });
   }
 
-  setActiveTab(tab: 'details' | 'work-notes' | 'history' | 'approvers' | 'catalog-task' | 'effort' | 'sla'): void {
+  setActiveTab(tab: 'details' | 'work-notes' | 'history' | 'sla'): void {
     this.activeTab = tab;
 
     if (tab === 'work-notes' && this.ritmId) {
@@ -321,9 +323,11 @@ export class RitmDetailsComponent implements OnInit {
       this.loadHistory();
     }
 
-    if (tab === 'approvers') {
-      this.loadApproverData();
-    }
+  }
+
+  setActiveAdditionalTab(tab: 'approvers' | 'catalog-task' | 'effort'): void {
+    this.activeAdditionalTab = tab;
+    if (tab === 'approvers' && this.ritmId && !this.loading) this.loadApproverData();
   }
 
   private loadApproverData(): void {
@@ -468,20 +472,30 @@ export class RitmDetailsComponent implements OnInit {
         type: 'delete'
       }
     }).afterClosed().subscribe(result => {
-      if (!result?.confirmed) {
+      if (!result) {
         return;
       }
 
       this.assigningApprover = true;
-      this.ritmService.deleteRitmApprovers(this.ritmId!).pipe(finalize(() => this.assigningApprover = false)).subscribe({
+      const companyId = Number(this.ritm?.companyId ?? this.ritm?.company?.companyId ?? this.orgId);
+      const deletedBy = Number(localStorage.getItem('userId') || 0);
+      const isDeletedByAdmin = localStorage.getItem('isAdmin') === 'true';
+      this.ritmService.deleteRitmApprovers(this.ritmId!, companyId, deletedBy, isDeletedByAdmin)
+        .pipe(finalize(() => this.assigningApprover = false)).subscribe({
         next: response => {
           this.assignedApprovers = [];
           this.editingApprover = false;
-          this.approverMessage = response?.message || response?.description || 'Approver assignment deleted.';
+          this.approverMessage = response?.title || 'Approver assignment deleted.';
           this.approverError = '';
+        setTimeout(() => {
+          this.approverMessage = '';
+        }, 3000);
         },
         error: error => {
           this.approverError = error?.error?.message || error?.error?.description || 'Unable to delete approvers.';
+        setTimeout(() => {
+          this.approverError = '';
+        }, 3000);
         }
       });
     });
@@ -650,9 +664,15 @@ export class RitmDetailsComponent implements OnInit {
           this.approverMessage = response?.message || response?.description || (this.editingApprover ? 'Approver assignment updated successfully.' : 'Approver assignment submitted successfully.');
           this.editingApprover = false;
           this.loadAssignedApprovers();
+          setTimeout(() => {
+            this.approverMessage = '';
+          }, 3000);
         },
         error: error => {
           this.approverError = error?.error?.message || error?.error?.description || 'Unable to assign approver.';
+          setTimeout(() => {
+            this.approverError = '';
+          }, 3000);
         }
       });
     });

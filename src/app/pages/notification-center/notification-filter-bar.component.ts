@@ -1,7 +1,7 @@
 import { Component, Output, EventEmitter, ChangeDetectionStrategy, Input } from '@angular/core';
 import { Observable } from 'rxjs';
 
-type NotificationCountKey = 'ALL' | 'UNREAD' | 'PRIORITY' | 'SLA' | 'CATEGORY' | 'SUPPORT_GROUP' | 'ASSIGNMENT';
+type NotificationCountKey = 'ALL' | 'UNREAD' | 'PRIORITY' | 'SLA' | 'CATEGORY' | 'SUPPORT_GROUP' | 'ASSIGNMENT' | 'RITM';
 
 type NotificationCounts = Record<NotificationCountKey, number>;
 
@@ -17,6 +17,7 @@ type NotificationCounts = Record<NotificationCountKey, number>;
         <button class="chip" type="button" (click)="filterChange.emit('CATEGORY')">Category <span class="count">{{(counts$|async)?.['CATEGORY'] || 0}}</span></button>
         <button class="chip" type="button" (click)="filterChange.emit('SUPPORT_GROUP')">Support Group <span class="count">{{(counts$|async)?.['SUPPORT_GROUP'] || 0}}</span></button>
         <button class="chip" type="button" (click)="filterChange.emit('ASSIGNMENT')">Assignment <span class="count">{{(counts$|async)?.['ASSIGNMENT'] || 0}}</span></button>
+        <button class="chip" type="button" (click)="filterChange.emit('RITM')">RITM <span class="count">{{(counts$|async)?.['RITM'] || 0}}</span></button>
       </div>
       <app-notification-search class="filter-search" (search)="search.emit($event)"></app-notification-search>
     </div>

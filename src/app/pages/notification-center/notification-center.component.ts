@@ -10,7 +10,7 @@ import { Observable, BehaviorSubject, combineLatest } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import { NotificationPayload } from '../../models/notification.model';
 
-type NotificationCountKey = 'ALL' | 'UNREAD' | 'PRIORITY' | 'SLA' | 'CATEGORY' | 'SUPPORT_GROUP' | 'ASSIGNMENT';
+type NotificationCountKey = 'ALL' | 'UNREAD' | 'PRIORITY' | 'SLA' | 'CATEGORY' | 'SUPPORT_GROUP' | 'ASSIGNMENT' | 'RITM';
 
 type NotificationCounts = Record<NotificationCountKey, number>;
 
@@ -83,7 +83,8 @@ export class NotificationCenterComponent implements OnInit {
           SLA: items.filter((i) => i.notificationType === 'SLA').length,
           CATEGORY: items.filter((i) => i.notificationType === 'Category').length,
           SUPPORT_GROUP: items.filter((i) => i.notificationType === 'Support Group').length,
-          ASSIGNMENT: items.filter((i) => i.notificationType === 'Assignment').length
+          ASSIGNMENT: items.filter((i) => i.notificationType === 'Assignment').length,
+          RITM: items.filter((i) => i.notificationType === 'RITM').length
         };
         return counts;
       })
@@ -110,6 +111,8 @@ export class NotificationCenterComponent implements OnInit {
           out = out.filter((i) => i.notificationType === 'Support Group');
         } else if (filter === 'ASSIGNMENT') {
           out = out.filter((i) => i.notificationType === 'Assignment');
+        } else if (filter === 'RITM') {
+          out = out.filter((i) => i.notificationType === 'RITM');
         }
 
         // search

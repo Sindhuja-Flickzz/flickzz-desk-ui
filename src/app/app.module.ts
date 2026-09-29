@@ -87,6 +87,7 @@ import { RitmDetailsComponent } from './pages/ritm/ritm-details.component';
 import { VariantComponent } from './pages/settings/variant/variant.component';
 import { TemplatecomponentComponent } from './pages/settings/templatecomponent/templatecomponent.component';
 import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
+import { ApprovalComponent } from './pages/approval/approval.component';
 
 @NgModule({
   declarations: [
@@ -140,7 +141,8 @@ import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
     NotificationPopupComponent,
     MyTicketsComponent,
     RitmDetailsComponent,
-    RitmStatusComponent
+    RitmStatusComponent,
+    ApprovalComponent
   ],
   imports: [
     BrowserModule,

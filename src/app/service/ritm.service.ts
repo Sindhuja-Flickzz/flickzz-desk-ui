@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
+import { RitmApproverResponse } from '../models/approval.model';
 import { UserProfile, NoteItem, ApproverItem, LogEntry, WorkflowStage, CatalogTask, TaskSlaItem, ChangeRequestItem } from '../models/ritm.model';
 import { PriorityMaster } from '../models/priority-master';
 import { AgentMaster } from '../models/agent-master';
@@ -83,12 +84,20 @@ export class RitmService {
     return this.http.get(`${this.baseUrl}/ritm/approver/list/${ritmId}`, { params });
   }
 
-  updateApprover(payload: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/ritm/approver/update`, payload);
+  getRitmApprover(requestId: number): Observable<RitmApproverResponse> {
+    return this.http.get<RitmApproverResponse>(`${this.baseUrl}/ritm/approver/${requestId}`);
   }
 
-  deleteRitmApprovers(ritmId: string | number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/ritm/approver/delete/${ritmId}`);
+  updateApprover(payload: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/ritm/approver/update`, payload);
+  }
+
+  deleteRitmApprovers(ritmId: string | number, companyId: number, deletedBy: number, isDeletedByAdmin: boolean): Observable<any> {
+    const params = new HttpParams()
+      .set('companyId', companyId)
+      .set('deletedBy', deletedBy)
+      .set('isDeletedByAdmin', isDeletedByAdmin);
+    return this.http.delete(`${this.baseUrl}/ritm/approver/delete/${ritmId}`, { params });
   }
 
   getNotes(userId: string): Observable<NoteItem[]> {

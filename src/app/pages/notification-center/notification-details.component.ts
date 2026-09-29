@@ -33,7 +33,7 @@ import { ApprovalWorkflowComponent } from './approval-workflow.component';
         <div class="meta-item"><span>Status</span><strong>{{notification.status}}</strong></div>
       </div>
 
-      <div class="config-section">
+      <div class="config-section" *ngIf="isBP(notification)">
         <div class="section-title">Configuration Details</div>
         <div class="config-grid">
           <div><span>Configuration Type</span><strong>{{notification.notificationType}}</strong></div>
@@ -91,4 +91,7 @@ import { ApprovalWorkflowComponent } from './approval-workflow.component';
 export class NotificationDetailsComponent {
   @Input() notification: NotificationPayload | null = null;
   @Output() action = new EventEmitter<string>();
+  isBP(notification: any): boolean {
+    return notification?.requestType?.trim()?.toUpperCase() === 'BP';
+  }
 }

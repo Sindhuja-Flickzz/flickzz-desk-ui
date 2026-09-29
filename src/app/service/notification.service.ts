@@ -333,6 +333,7 @@ export class NotificationService {
       title: this.getRecordValue(record, ['title', 'subject']) ?? 'New notification',
       message: this.getRecordValue(record, ['message', 'body']) ?? 'You have a new update',
       notificationType: this.getRecordValue(record, ['notificationType', 'type']),
+      requestType: this.getRecordValue(record, ['requestType', 'request_type']),
       actionUrl: this.getRecordValue(record, ['actionUrl', 'action_url']),
       status: this.getRecordValue(record, ['status']) ?? (this.getRecordValue(record, ['isRead']) ? 'READ' : 'UNREAD'),
       isRead: this.getRecordValue(record, ['isRead', 'read']) ?? false,

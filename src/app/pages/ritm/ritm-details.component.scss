@@ -39,6 +39,25 @@
   cursor: pointer;
 }
 
+.header-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-left: auto;
+  border: 1px solid #d9dee8;
+  border-radius: 6px;
+  background: #fff;
+  color: #00246B;
+  cursor: pointer;
+}
+
+.header-edit:hover,
+.header-edit:focus-visible {
+  background: #f4f4f4;
+}
+
 .page-title-group {
   display: flex;
   flex-direction: column;
@@ -116,6 +135,12 @@
   display: flex;
   flex-wrap: wrap;
   margin-bottom: 12px;
+}
+
+.supplemental-tabs {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #eef2f9;
 }
 
 .tab-btn {

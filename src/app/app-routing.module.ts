@@ -39,6 +39,7 @@ import { MyTicketsComponent } from './pages/my-tickets/my-tickets.component';
 import { RitmDetailsComponent } from './pages/ritm/ritm-details.component';
 import { GroupRitmComponent } from './pages/group-ritm/group-ritm.component';
 import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
+import { ApprovalComponent } from './pages/approval/approval.component';
 
 const routes: Routes = [
   {
@@ -235,6 +236,11 @@ const routes: Routes = [
   {
     path: 'config-approval',
     component: ConfigApprovalComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'approval',
+    component: ApprovalComponent,
     canActivate: [authGuard]
   },
   {

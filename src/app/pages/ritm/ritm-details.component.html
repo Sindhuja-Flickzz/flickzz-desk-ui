@@ -4,6 +4,9 @@
       <mat-icon>chevron_left</mat-icon>
     </button>
     <h1 class="ritm-number">{{ getNestedValue('ritmNumber', 'RITM') }}</h1>
+    <button *ngIf="canEdit()" type="button" class="header-edit" aria-label="Edit RITM" title="Edit RITM" (click)="editRitm()">
+      <mat-icon>edit</mat-icon>
+    </button>
   </div>
 
   <div *ngIf="loading" class="loading-panel">
@@ -34,9 +37,6 @@
       <button type="button" class="tab-btn" [class.active]="activeTab === 'details'" (click)="setActiveTab('details')">Details</button>
       <button type="button" class="tab-btn" [class.active]="activeTab === 'work-notes'" (click)="setActiveTab('work-notes')">Work Notes</button>
       <button type="button" class="tab-btn" [class.active]="activeTab === 'history'" (click)="setActiveTab('history')">History</button>
-      <button type="button" class="tab-btn" [class.active]="activeTab === 'approvers'" (click)="setActiveTab('approvers')">Approvers</button>
-      <button type="button" class="tab-btn" [class.active]="activeTab === 'catalog-task'" (click)="setActiveTab('catalog-task')">Catalog Task</button>
-      <button type="button" class="tab-btn" [class.active]="activeTab === 'effort'" (click)="setActiveTab('effort')">Effort Calculation</button>
       <!-- <button type="button" class="tab-btn" [class.active]="activeTab === 'sla'" (click)="setActiveTab('sla')">SLA</button> -->
     </div>
 
@@ -134,9 +134,6 @@
         </div>
       </section>
 
-      <div class="actions" *ngIf="canEdit()">
-        <button type="button" class="primary-action" (click)="editRitm()">Edit RITM</button>
-      </div>
     </div>
 
     <div class="tab-panel" *ngIf="activeTab === 'work-notes'">
@@ -255,7 +252,15 @@
       </ng-template>
     </div>
 
-    <div class="tab-panel approvers-panel" *ngIf="activeTab === 'approvers'">
+    
+
+    <div class="tabs supplemental-tabs" role="tablist" aria-label="Additional RITM tabs">
+      <button type="button" class="tab-btn" [class.active]="activeAdditionalTab === 'approvers'" (click)="setActiveAdditionalTab('approvers')">Approvers</button>
+      <button type="button" class="tab-btn" [class.active]="activeAdditionalTab === 'catalog-task'" (click)="setActiveAdditionalTab('catalog-task')">Catalog Task</button>
+      <button type="button" class="tab-btn" [class.active]="activeAdditionalTab === 'effort'" (click)="setActiveAdditionalTab('effort')">Effort Calculation</button>
+    </div>
+  </div>
+  <div class="tab-panel approvers-panel" *ngIf="activeAdditionalTab === 'approvers'">
 
       <div *ngIf="approverDataLoading" class="loading-panel small">
         <mat-spinner diameter="28"></mat-spinner>
@@ -348,7 +353,7 @@
       </ng-container>
     </div>
 
-    <div class="tab-panel" *ngIf="activeTab === 'catalog-task'">
+    <div class="tab-panel" *ngIf="activeAdditionalTab === 'catalog-task'">
       <div class="section-header">
         <span class="section-header-icon">▣</span>
         <span>Catalog Tasks</span>
@@ -366,7 +371,7 @@
       </ng-template>
     </div>
 
-    <div class="tab-panel" *ngIf="activeTab === 'effort'">
+    <div class="tab-panel" *ngIf="activeAdditionalTab === 'effort'">
       <div class="section-header">
         <span class="section-header-icon">◷</span>
         <span>Effort Calculation</span>
@@ -405,5 +410,4 @@
         <button type="button" class="secondary-action" (click)="escalate()">Escalate</button>
       </div>
     </div>
-  </div>
 </div>
