@@ -184,7 +184,7 @@ export class MyTicketsComponent implements OnInit {
   }
 
   private loadRitmStatuses(): void {
-    this.ritmService.getRitmStatuses(String(this.orgId || 0)).subscribe({
+    this.ritmService.getRitmActiveStatuses(String(this.orgId || 0), 'RITM').subscribe({
       next: response => this.ritmStatuses = this.normalizeList(response?.attributes ?? response),
       error: () => this.ritmStatuses = []
     });

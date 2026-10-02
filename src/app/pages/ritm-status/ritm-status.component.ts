@@ -496,7 +496,7 @@ export class RitmStatusComponent implements OnInit {
   private loadStatusList(): void {
     this.loading = true;
     this.submitError = '';
-    this.ritmService.getRitmStatuses(this.userOrgId).subscribe({
+    this.ritmService.getAllStatuses(this.userOrgId).subscribe({
       next: (response) => {
         const data = (response as any)?.attributes || response || [];
         this.statuses = Array.isArray(data) ? data : [];

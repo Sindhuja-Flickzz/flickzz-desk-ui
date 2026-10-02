@@ -14,8 +14,8 @@ describe('RitmStatusComponent', () => {
   let ritmServiceSpy: jasmine.SpyObj<RitmService>;
 
   beforeEach(async () => {
-    ritmServiceSpy = jasmine.createSpyObj('RitmService', ['getRitmStatuses', 'updateRitmStatusVisibility']);
-    ritmServiceSpy.getRitmStatuses.and.returnValue(of({ attributes: [] }));
+    ritmServiceSpy = jasmine.createSpyObj('RitmService', ['getAllStatuses', 'updateRitmStatusVisibility']);
+    ritmServiceSpy.getAllStatuses.and.returnValue(of({ attributes: [] }));
     ritmServiceSpy.updateRitmStatusVisibility.and.returnValue(of({}));
     const variantServiceSpy = jasmine.createSpyObj('VariantService', ['getWorkItemList']);
     variantServiceSpy.getWorkItemList.and.returnValue(of({ attributes: [{ code: 'RITM', label: 'Request Item' }] }));
