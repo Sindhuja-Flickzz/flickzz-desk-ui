@@ -355,7 +355,7 @@ export class GroupRitmComponent implements OnInit {
   }
 
   private loadStatusDefinitions(): void {
-    this.ritmService.getRitmStatuses(String(this.orgId || 0)).subscribe({
+    this.ritmService.getRitmActiveStatuses(String(this.orgId || 0), 'RITM').subscribe({
       next: (response: any) => {
         this.statusDefinitions = this.normalizeList(response?.attributes ?? response ?? []);
       },

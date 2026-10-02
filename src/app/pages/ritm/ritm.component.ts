@@ -140,12 +140,15 @@ export class RitmComponent implements OnInit, OnDestroy {
   private initializePage(): void {
     this.loading = true;
     this.loadUsers();
-    this.loadRitmStatuses();
     this.loadRequestTypes();
 
     const id = this.route.snapshot.queryParamMap.get('id');
     const navigationState = this.router.getCurrentNavigation()?.extras?.state as { ritmData?: any } | undefined;
     const existingRitmData = navigationState?.ritmData || history.state?.ritmData;
+
+    if (!id) {
+      this.loadRitmStatuses();
+    }
 
     this.companyService.getServiceProviderList(Number(this.orgId)).subscribe({
         next: (response) => {
@@ -393,15 +396,41 @@ export class RitmComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadRitmStatuses(): void {
-    this.ritmService.getRitmActiveStatuses(this.orgId).subscribe({
+  private getCurrentRitmStatusId(ritm: any): number | null {
+    const status = ritm?.status;
+    const statusId = ritm?.statusId
+      ?? (status && typeof status === 'object' ? status.statusId ?? status.id : status);
+    const numericStatusId = Number(statusId);
+    return Number.isInteger(numericStatusId) && numericStatusId > 0 ? numericStatusId : null;
+  }
+
+  private loadRitmStatuses(currentStatusId?: number, ritm?: any): void {
+    const orgId = localStorage.getItem('userOrgId') || this.orgId;
+    const statusesRequest = currentStatusId !== undefined
+      ? this.ritmService.getVisibleStatuses(Number(orgId), currentStatusId, 'RITM')
+      : this.ritmService.getRitmActiveStatuses(orgId, 'RITM');
+
+    statusesRequest.subscribe({
       next: (response: any) => {
         const statuses = response?.attributes ?? response ?? [];
         this.ritmStatuses = Array.isArray(statuses) ? statuses : [];
+        if (currentStatusId !== undefined && ritm) {
+          const currentStatus = ritm.status && typeof ritm.status === 'object'
+            ? ritm.status
+            : { statusId: currentStatusId, statusCode: this.getRitmStatusValue(ritm.status ?? ritm.statusCode) };
+          const hasCurrentStatus = this.ritmStatuses.some(status =>
+            String(status.statusId ?? status.id) === String(currentStatusId)
+          );
+          if (!hasCurrentStatus) {
+            this.ritmStatuses = [currentStatus, ...this.ritmStatuses];
+          }
+        }
         this.applyExistingStatusValue();
       },
-      error: () => {
+      error: (err: unknown) => {
         this.ritmStatuses = [];
+        this.submitError = 'Unable to load available statuses for this RITM.';
+        console.error(err);
       }
     });
   }
@@ -602,7 +631,10 @@ export class RitmComponent implements OnInit, OnDestroy {
       otherNotes: ritm.otherNotes || ''
     });
     this.existingStatusValue = ritm.status ?? ritm.statusId ?? ritm.statusCode ?? '';
-    this.applyExistingStatusValue();
+    const currentStatusId = this.getCurrentRitmStatusId(ritm);
+    if (currentStatusId !== null) {
+      this.loadRitmStatuses(currentStatusId, ritm);
+    }
     this.assignmentGroupId = ritm.supportGroupId
       ?? ritm.assignmentGroupId
       ?? ritm.assignmentGroup?.supportGroupId

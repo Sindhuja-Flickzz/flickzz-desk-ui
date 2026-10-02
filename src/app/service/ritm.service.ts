@@ -68,12 +68,21 @@ export class RitmService {
     return this.http.post(`${this.baseUrl}/status/create`, payload);
   }
 
-  getRitmStatuses(orgId: string): Observable<any> {
+  getAllStatuses(orgId: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/status/get/${orgId}`);
   }
 
-  getRitmActiveStatuses(orgId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/status/get/active/${orgId}`);
+  getRitmActiveStatuses(orgId: string, requestType: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/status/get/active/${requestType}/${orgId}`);
+  }  
+
+  getVisibleStatuses(orgId: number, statusId: number, requestType: string): Observable<any> {
+    const params = {
+      companyId: orgId.toString(),
+      statusId: statusId.toString(),
+      requestType: requestType
+    }
+    return this.http.get(`${this.baseUrl}/status/visible`, { params });
   }
 
   deleteRitmStatus(statusId: number): Observable<any> {
