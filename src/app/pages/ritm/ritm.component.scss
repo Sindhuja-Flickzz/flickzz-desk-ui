@@ -35,6 +35,32 @@
   min-height: 64px;
 }
 
+.page-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-heading .header-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px 8px 0 0;
+  background: #f4f4f4;
+  color: #00246b;
+  cursor: pointer;
+}
+
+.page-heading .header-back mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
 .page-title-group {
   display: flex;
   flex-direction: column;

@@ -1,9 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { finalize } from 'rxjs/operators';
 import { AgentService } from '../../service/agent.service';
 import { RitmService } from '../../service/ritm.service';
+import { RequestApproverService } from '../../service/requestapprover.service';
 import { VariantService } from '../../service/variant.service';
+import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-ritm-details',
@@ -20,6 +23,7 @@ export class RitmDetailsComponent implements OnInit {
   slaInfo: any = null;
   commentText = '';
   activeTab: 'details' | 'work-notes' | 'history' | 'sla' = 'details';
+  activeAdditionalTab: 'approvers' | 'catalog-task' | 'effort' = 'approvers';
   loading = false;
   notesLoading = false;
   historyLoading = false;
@@ -29,6 +33,24 @@ export class RitmDetailsComponent implements OnInit {
   templatesLoading = false;
   private fieldTypeMap: Map<number, string> = new Map();
   private ritmTemplateDetails: any[] = [];
+  approverConfigurations: any[] = [];
+  assignedApprovers: any[] = [];
+  activeAgents: any[] = [];
+  approverMode: 'group' | 'individual' = 'group';
+  approverCodeQuery = '';
+  approverSuggestions: any[] = [];
+  selectedApproverConfig: any = null;
+  agentQuery = '';
+  agentSuggestions: any[] = [];
+  selectedAgent: any = null;
+  selectedAgents: any[] = [];
+  showAgentList = false;
+  approverDataLoading = false;
+  assigningApprover = false;
+  editingApprover = false;
+  approverMessage = '';
+  approverError = '';
+  private approverDataLoaded = false;
   pageSize = 5;
   workNotesPage = 1;
   historyPage = 1;
@@ -40,7 +62,9 @@ export class RitmDetailsComponent implements OnInit {
     private router: Router,
     private ritmService: RitmService,
     private agentService: AgentService,
-    private variantService: VariantService
+    private requestApproverService: RequestApproverService,
+    private variantService: VariantService,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -59,6 +83,11 @@ export class RitmDetailsComponent implements OnInit {
   loadRouteState(): void {
     this.route.queryParamMap.subscribe((params) => {
       const ritmId = params.get('ritmId');
+      if (this.ritmId !== ritmId) {
+        this.approverDataLoaded = false;
+        this.assignedApprovers = [];
+        this.editingApprover = false;
+      }
       this.ritmId = ritmId || null;
       this.loadRitm();
     });
@@ -97,6 +126,7 @@ export class RitmDetailsComponent implements OnInit {
           detailPayload?.sla ??
           detailPayload?.serviceLevelAgreement ??
           null;
+        this.loadApproverData();
       },
       error: () => {
         this.ritm = {};
@@ -292,6 +322,373 @@ export class RitmDetailsComponent implements OnInit {
     if (tab === 'history' && this.ritmId) {
       this.loadHistory();
     }
+
+  }
+
+  setActiveAdditionalTab(tab: 'approvers' | 'catalog-task' | 'effort'): void {
+    this.activeAdditionalTab = tab;
+    if (tab === 'approvers' && this.ritmId && !this.loading) this.loadApproverData();
+  }
+
+  private loadApproverData(): void {
+    if (this.approverDataLoaded) {
+      return;
+    }
+
+    this.approverDataLoaded = true;
+    this.approverDataLoading = true;
+    let pendingRequests = 3;
+    const finishRequest = (): void => {
+      pendingRequests -= 1;
+      this.approverDataLoading = pendingRequests > 0;
+    };
+    const companyId = Number(this.ritm?.companyId ?? this.ritm?.company?.companyId ?? this.orgId);
+
+    this.requestApproverService.getApproverConfigurations(companyId).subscribe({
+      next: response => {
+        this.approverConfigurations = this.normalizeList(response?.attributes ?? response?.data ?? response);
+        finishRequest();
+      },
+      error: () => {
+        this.approverConfigurations = [];
+        this.approverError = 'Unable to load approver groups.';
+        finishRequest();
+      }
+    });
+
+    this.agentService.getActiveAgentList(this.orgId).subscribe({
+      next: response => {
+        this.activeAgents = this.normalizeList(response?.attributes ?? response?.data ?? response)
+          .map((item: any) => item?.agent ?? item)
+          .filter((agent: any) => Number(agent?.agentId ?? agent?.id) > 0);
+        finishRequest();
+      },
+      error: () => {
+        this.activeAgents = [];
+        this.approverError = 'Unable to load active agents.';
+        finishRequest();
+      }
+    });
+
+    this.loadAssignedApprovers(finishRequest);
+  }
+
+  private loadAssignedApprovers(onComplete?: () => void): void {
+    if (!this.ritmId) {
+      this.assignedApprovers = [];
+      onComplete?.();
+      return;
+    }
+
+    const companyId = Number(this.ritm?.companyId ?? this.ritm?.company?.companyId ?? this.orgId);
+    this.ritmService.getRitmApprovers(this.ritmId, companyId).pipe(finalize(() => onComplete?.())).subscribe({
+      next: response => {
+        this.assignedApprovers = this.normalizeList(response?.attributes ?? response?.data ?? response);
+        console.log('Assigned Approvers Response:', this.assignedApprovers);
+      },
+      error: () => {
+        this.assignedApprovers = [];
+        this.approverError = 'Unable to load assigned approvers.';
+      }
+    });
+  }
+
+  editApprovers(): void {
+    const currentAssignment = this.assignedApprovers[0] || {};
+    const configurationId = Number(currentAssignment?.approverConfig?.approverConfigId ?? currentAssignment?.approverConfigId ?? currentAssignment?.configId ?? 0);
+    const isGroup = Boolean(currentAssignment?.isGroupApprover ?? currentAssignment?.groupApprover ?? configurationId);
+
+    this.approverMode = isGroup ? 'group' : 'individual';
+    this.selectedApproverConfig = isGroup
+      ? this.approverConfigurations.find(configuration => Number(configuration?.approverConfigId ?? configuration?.configId) === configurationId) || null
+      : null;
+    this.approverCodeQuery = this.selectedApproverConfig?.approverCode || '';
+    this.selectedAgents = isGroup ? [] : this.getAssignedAgentItems();
+    this.selectedAgent = null;
+    this.agentQuery = '';
+    this.approverSuggestions = [];
+    this.agentSuggestions = [];
+    this.editingApprover = true;
+    this.approverMessage = '';
+    this.approverError = '';
+  }
+
+  cancelApproverEdit(): void {
+    this.editingApprover = false;
+    this.onApproverModeChange();
+  }
+
+  getAssignedAgentItems(): any[] {
+    const items = this.assignedApprovers.flatMap((assignment: any) => {
+      if (assignment?.approverAgent) {
+        return [assignment.approverAgent];
+      }
+      const nestedAgents = this.normalizeList(assignment?.approverIds ?? assignment?.approvers ?? assignment?.agents);
+      return nestedAgents.length ? nestedAgents : [assignment];
+    });
+    return items.map((item: any) => {
+      const agent = item?.agent ?? item;
+      const agentId = Number(typeof item === 'object' ? agent?.agentId ?? agent?.id ?? item?.approverId : item);
+      return this.activeAgents.find(candidate => Number(candidate?.agentId ?? candidate?.id) === agentId) || agent;
+    }).filter((agent: any) => Number(agent?.agentId ?? agent?.id) > 0);
+  }
+
+  getGroupedApproverAssignments(): Array<{ code: string; approvers: any[]; followSequence?: boolean; isAnyApprovalSufficient?: boolean }> {
+    const groups = new Map<string, { code: string; approvers: any[]; followSequence?: boolean; isAnyApprovalSufficient?: boolean }>();
+    this.assignedApprovers
+      .filter((assignment: any) => assignment?.isGroupApprover === true)
+      .forEach((assignment: any) => {
+        const assignedConfig = assignment?.approverConfig || {};
+        const configurationId = Number(assignedConfig?.approverConfigId ?? assignment?.approverConfigId ?? assignment?.configId ?? 0);
+        const configuration = this.approverConfigurations.find(item =>
+          Number(item?.approverConfigId ?? item?.configId) === configurationId
+        ) || {};
+        const code = String(assignedConfig?.approverCode || configuration?.approverCode || 'Approver Group');
+        const key = String(configurationId || code);
+        if (!groups.has(key)) {
+          groups.set(key, {
+            code,
+            approvers: [],
+            followSequence: assignedConfig?.followSequence ?? assignment?.followSequence ?? configuration?.followSequence,
+            isAnyApprovalSufficient: assignedConfig?.isAnyApprovalSufficient ?? assignment?.isAnyApprovalSufficient ?? configuration?.isAnyApprovalSufficient
+          });
+        }
+        groups.get(key)!.approvers.push(assignment);
+      });
+    return Array.from(groups.values());
+  }
+
+  getIndividualApproverAssignments(): any[] {
+    return this.assignedApprovers.filter((assignment: any) => assignment?.isGroupApprover === false);
+  }
+
+  getApproverName(approver: any): string {
+    return String(approver?.approverAgent?.agentName ?? approver?.agent?.agentName ?? approver?.agentName ?? approver?.approverName ?? approver?.name ?? approver?.agent?.name ?? approver?.approverCode ?? 'Approver');
+  }
+
+  deleteApprovers(): void {
+    if (!this.ritmId) {
+      return;
+    }
+
+    this.dialog.open(ConfirmationDialogComponent, {
+      width: '420px',
+      data: {
+        title: 'Delete Approvers',
+        message: 'Delete the approver assignment for this RITM?',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        showCancel: true,
+        type: 'delete'
+      }
+    }).afterClosed().subscribe(result => {
+      if (!result) {
+        return;
+      }
+
+      this.assigningApprover = true;
+      const companyId = Number(this.ritm?.companyId ?? this.ritm?.company?.companyId ?? this.orgId);
+      const deletedBy = Number(localStorage.getItem('userId') || 0);
+      const isDeletedByAdmin = localStorage.getItem('isAdmin') === 'true';
+      this.ritmService.deleteRitmApprovers(this.ritmId!, companyId, deletedBy, isDeletedByAdmin)
+        .pipe(finalize(() => this.assigningApprover = false)).subscribe({
+        next: response => {
+          this.assignedApprovers = [];
+          this.editingApprover = false;
+          this.approverMessage = response?.title || 'Approver assignment deleted.';
+          this.approverError = '';
+        setTimeout(() => {
+          this.approverMessage = '';
+        }, 3000);
+        },
+        error: error => {
+          this.approverError = error?.error?.message || error?.error?.description || 'Unable to delete approvers.';
+        setTimeout(() => {
+          this.approverError = '';
+        }, 3000);
+        }
+      });
+    });
+  }
+
+  onApproverModeChange(): void {
+    this.approverError = '';
+    this.approverMessage = '';
+    this.approverCodeQuery = '';
+    this.approverSuggestions = [];
+    this.selectedApproverConfig = null;
+    this.agentQuery = '';
+    this.agentSuggestions = [];
+    this.selectedAgent = null;
+    this.selectedAgents = [];
+    this.showAgentList = false;
+  }
+
+  onApproverCodeInput(): void {
+    this.selectedApproverConfig = null;
+    const query = this.approverCodeQuery.trim().toLowerCase();
+    this.approverSuggestions = query
+      ? this.approverConfigurations.filter(configuration => String(configuration?.approverCode || '').toLowerCase().includes(query))
+      : [];
+  }
+
+  selectApproverConfiguration(configuration: any): void {
+    this.selectedApproverConfig = configuration;
+    this.approverCodeQuery = String(configuration?.approverCode || '');
+    this.approverSuggestions = [];
+  }
+
+  onAgentInput(): void {
+    this.selectedAgent = null;
+    this.showAgentList = true;
+    const query = this.agentQuery.trim().toLowerCase();
+    this.agentSuggestions = this.activeAgents.filter(agent =>
+      !query || `${agent?.agentName || agent?.name || ''} ${agent?.mailId || agent?.email || ''} ${agent?.accessId || ''}`.toLowerCase().includes(query)
+    );
+  }
+
+  selectSuggestedAgent(agent: any): void {
+    this.selectedAgent = agent;
+    this.agentQuery = this.getAgentLabel(agent);
+    this.agentSuggestions = [];
+    this.showAgentList = false;
+  }
+
+  addSelectedAgent(): void {
+    if (!this.selectedAgent) {
+      this.approverError = 'Select an agent before adding.';
+      return;
+    }
+
+    const agentId = Number(this.selectedAgent.agentId ?? this.selectedAgent.id);
+    if (!this.selectedAgents.some(agent => Number(agent.agentId ?? agent.id) === agentId)) {
+      this.selectedAgents = [...this.selectedAgents, this.selectedAgent];
+    }
+    this.selectedAgent = null;
+    this.agentQuery = '';
+    this.agentSuggestions = [];
+    this.approverError = '';
+  }
+
+  removeSelectedAgent(agent: any): void {
+    const agentId = Number(agent.agentId ?? agent.id);
+    this.selectedAgents = this.selectedAgents.filter(item => Number(item.agentId ?? item.id) !== agentId);
+  }
+
+  getAgentLabel(agent: any): string {
+    const name = agent?.agentName || agent?.name || 'Agent';
+    const accessId = agent?.accessId;
+    const email = agent?.mailId || agent?.email;
+    return [name, accessId, email].filter(Boolean).join(' | ');
+  }
+
+  getConfigurationAgents(): any[] {
+    return this.normalizeList(this.selectedApproverConfig?.approvers || [])
+      .map((item: any) => ({
+        ...(item?.agent ?? item),
+        approverSequence: item?.approverSequence ?? item?.agent?.approverSequence
+      }))
+      .filter((agent: any) => agent && (agent.agentName || agent.name || agent.agentId));
+  }
+
+  getCatalogTasks(): any[] {
+    return this.normalizeList(this.ritm?.catalogTasks ?? this.ritm?.catalogTask ?? this.ritm?.tasks ?? []);
+  }
+
+  getEffortEntries(): Array<{ label: string; value: string }> {
+    const effort = this.ritm?.effortCalculation ?? this.ritm?.effortCalculations ?? this.ritm?.effortDetails ?? this.ritm?.effort;
+    if (!effort || typeof effort !== 'object') {
+      return [];
+    }
+
+    const entries = Array.isArray(effort)
+      ? effort.map((item: any, index: number) => [item?.name || item?.fieldName || `Effort ${index + 1}`, item?.value ?? item?.effort ?? item?.hours ?? item])
+      : Object.entries(effort);
+    return entries.map(([label, value]) => ({ label: String(label), value: value == null ? '—' : typeof value === 'object' ? JSON.stringify(value) : String(value) }));
+  }
+
+  assignApprover(): void {
+    this.approverMessage = '';
+    this.approverError = '';
+    const approverIds = this.approverMode === 'group'
+      ? this.normalizeList(this.selectedApproverConfig?.approvers || []).map((item: any) => Number(item?.agentId ?? item?.agent?.agentId)).filter(Boolean)
+      : this.selectedAgents.map(agent => Number(agent.agentId ?? agent.id)).filter(Boolean);
+
+    if (this.approverMode === 'group' && !this.selectedApproverConfig) {
+      this.approverError = 'Select an approver group.';
+      return;
+    }
+    if (this.approverMode === 'group' && approverIds.length === 0) {
+      this.approverError = 'The selected approver group has no agents.';
+      return;
+    }
+    if (this.approverMode === 'individual' && approverIds.length === 0) {
+      this.approverError = 'Add at least one individual approver.';
+      return;
+    }
+
+    const target = this.approverMode === 'group'
+      ? String(this.selectedApproverConfig?.approverCode || 'approver group')
+      : this.selectedAgents.map(agent => agent.agentName || agent.name).join(', ');
+    this.dialog.open(ConfirmationDialogComponent, {
+      width: '480px',
+      disableClose: true,
+      data: {
+        title: 'Confirm Approver Assignment',
+        message: `Assign ${target} to ${this.getNestedValue('ritmNumber', 'this RITM')}? Add a reason to continue.`,
+        confirmText: 'Assign',
+        cancelText: 'Cancel',
+        includeRemarks: true,
+        remarksLabel: 'Reason',
+        remarksPlaceholder: 'Enter the reason for this assignment'
+      }
+    }).afterClosed().subscribe((result: any) => {
+      if (!result?.confirmed) {
+        return;
+      }
+
+      const reason = String(result.remarks || '').trim();
+      if (!reason) {
+        this.approverError = 'A reason is required to assign approvers.';
+        return;
+      }
+
+      const companyId = Number(this.ritm?.companyId ?? this.ritm?.company?.companyId ?? this.orgId);
+      const payload = {
+        // ...this.ritm,
+        ritmId: Number(this.ritm?.ritmId ?? this.ritmId),
+        companyId,
+        reason,
+        assignedBy: Number(localStorage.getItem('userId') || 0),
+        isGroupApprover: this.approverMode === 'group' ? true : false,
+        approverConfigId: this.approverMode === 'group'
+          ? Number(this.selectedApproverConfig?.approverConfigId ?? this.selectedApproverConfig?.configId ?? 0)
+          : null,
+        approverIds :  this.approverMode === 'group' ? null : approverIds,
+        isCreatorAdmin: Boolean(localStorage.getItem('isAdmin') === 'true')
+      };
+
+      this.assigningApprover = true;
+      const saveRequest = this.editingApprover
+        ? this.ritmService.updateApprover(payload)
+        : this.ritmService.assignApprover(payload);
+      saveRequest.pipe(finalize(() => this.assigningApprover = false)).subscribe({
+        next: response => {
+          this.approverMessage = response?.message || response?.description || (this.editingApprover ? 'Approver assignment updated successfully.' : 'Approver assignment submitted successfully.');
+          this.editingApprover = false;
+          this.loadAssignedApprovers();
+          setTimeout(() => {
+            this.approverMessage = '';
+          }, 3000);
+        },
+        error: error => {
+          this.approverError = error?.error?.message || error?.error?.description || 'Unable to assign approver.';
+          setTimeout(() => {
+            this.approverError = '';
+          }, 3000);
+        }
+      });
+    });
   }
 
   private loadWorkNotes(): void {

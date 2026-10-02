@@ -1,16 +1,19 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
+import { RitmApproverResponse } from '../models/approval.model';
 import { UserProfile, NoteItem, ApproverItem, LogEntry, WorkflowStage, CatalogTask, TaskSlaItem, ChangeRequestItem } from '../models/ritm.model';
 import { PriorityMaster } from '../models/priority-master';
 import { AgentMaster } from '../models/agent-master';
 
 export interface RitmStatusCreateRequest {
   companyId: number;
+  requestType: string;
   statusCode: string;
   sequenceNo: number;
   statusColor: string;
+  visibleStatuses: string[];
   createdBy: number;
   isCreatorAdmin: boolean;
 }
@@ -20,6 +23,21 @@ export interface RitmStatusUpdateRequest {
   isActive: boolean;
   updatedBy?: number;
   isUpdaterAdmin?: boolean;
+}
+
+export interface RitmStatusVisibilityUpdateRequest {
+  statusId: number;
+  companyId: number;
+  requestType: string;
+  statusCode: string;
+  sequenceNo: number;
+  statusColor: string;
+  visibleStatuses: string[];
+  isActive: boolean;
+  createdBy: number;
+  isCreatorAdmin: boolean;
+  updatedBy: number;
+  isUpdaterAdmin: boolean;
 }
 
 @Injectable({
@@ -47,23 +65,31 @@ export class RitmService {
   }
 
   createRitmStatus(payload: RitmStatusCreateRequest[]): Observable<any> {
-    return this.http.post(`${this.baseUrl}/ritm/status/create`, payload);
+    return this.http.post(`${this.baseUrl}/status/create`, payload);
   }
 
   getRitmStatuses(orgId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/ritm/get/status/${orgId}`);
+    return this.http.get(`${this.baseUrl}/status/get/${orgId}`);
   }
 
   getRitmActiveStatuses(orgId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/ritm/get/status/active/${orgId}`);
+    return this.http.get(`${this.baseUrl}/status/get/active/${orgId}`);
   }
 
   deleteRitmStatus(statusId: number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/ritm/status/delete`, { body: { statusId } });
+    return this.http.delete(`${this.baseUrl}/status/delete/${statusId}`);
   }
 
   updateRitmStatusActive(request: RitmStatusUpdateRequest): Observable<any> {
-    return this.http.post(`${this.baseUrl}/ritm/status/update`, request);
+    return this.http.post(`${this.baseUrl}/status/update`, request);
+  }
+
+  changeStatusActive(request: RitmStatusUpdateRequest): Observable<any> {
+    return this.http.post(`${this.baseUrl}/status/change`, request);
+  }
+
+  updateRitmStatusVisibility(request: RitmStatusVisibilityUpdateRequest): Observable<any> {
+    return this.http.post(`${this.baseUrl}/status/update`, request);
   }
 
   updateRitm(payload: any): Observable<any> {
@@ -72,6 +98,31 @@ export class RitmService {
 
   assignRitm(payload: { ritmId: number; assignedTo: number; assignedBy: number }): Observable<any> {
     return this.http.put(`${this.baseUrl}/ritm/assign`, payload);
+  }
+
+  assignApprover(payload: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/ritm/approver/assign`, payload);
+  }
+
+  getRitmApprovers(ritmId: string | number, companyId: number): Observable<any> {
+    const params = new HttpParams().set('companyId', companyId);
+    return this.http.get(`${this.baseUrl}/ritm/approver/list/${ritmId}`, { params });
+  }
+
+  getRitmApprover(requestId: number): Observable<RitmApproverResponse> {
+    return this.http.get<RitmApproverResponse>(`${this.baseUrl}/ritm/approver/${requestId}`);
+  }
+
+  updateApprover(payload: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/ritm/approver/update`, payload);
+  }
+
+  deleteRitmApprovers(ritmId: string | number, companyId: number, deletedBy: number, isDeletedByAdmin: boolean): Observable<any> {
+    const params = new HttpParams()
+      .set('companyId', companyId)
+      .set('deletedBy', deletedBy)
+      .set('isDeletedByAdmin', isDeletedByAdmin);
+    return this.http.delete(`${this.baseUrl}/ritm/approver/delete/${ritmId}`, { params });
   }
 
   getNotes(userId: string): Observable<NoteItem[]> {

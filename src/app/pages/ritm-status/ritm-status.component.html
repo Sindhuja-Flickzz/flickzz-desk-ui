@@ -3,58 +3,129 @@
     <button type="button" class="header-back" (click)="backToHome()" aria-label="Back to settings">
       <mat-icon>chevron_left</mat-icon>
     </button>
-    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button *ngIf="!isEditMode" type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button *ngIf="isEditMode" type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Edit</button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
   </div>
 
   <section *ngIf="activeTab === 'create'" class="panel">
-    <h2>{{ pageTitle }}</h2>
+    <div class="page-title-row">
+      <h2>{{ pageTitle }}</h2>
+      <span *ngIf="!isEditMode" class="step-indicator">Step {{ creationStep }} of 2</span>
+    </div>
     <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
     <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
 
     <form [formGroup]="ritmStatusForm" (ngSubmit)="onSave()">
-      <div class="field status-entry-field">
-        <label>Status Details <span class="required">*</span></label>
-        <div class="status-input-row">
-          <input id="statusCode" type="text" formControlName="statusCode" placeholder="Enter status code" />
-          <input id="sequenceNo" type="number" formControlName="sequenceNo" min="0" step="1" placeholder="Sequence" />
-          <input id="statusColor" class="color-code-input" type="text" formControlName="statusColor" placeholder="#00246b" maxlength="7" (input)="onColorCodeInput()" aria-label="Status color code" />
-          <input class="color-picker" type="color" [value]="selectedColor" (input)="onColorPickerChange($event)" aria-label="Pick status color" />
-          <span class="color-preview" [style.background-color]="ritmStatusForm.get('statusColor')?.value"></span>
-          <button type="button" class="add-btn" (click)="addStatus()" aria-label="Add status">
-            <mat-icon>add</mat-icon>
-          </button>
+      <div *ngIf="creationStep === 1" class="wizard-page">
+        <div class="field request-type-field">
+          <label for="requestType">Request Type <span class="required">*</span></label>
+          <select id="requestType" formControlName="requestType" [disabled]="statusList.length > 0 || workItemsLoading">
+            <option value="" disabled>Select request type</option>
+            <option *ngFor="let workItem of workItems" [value]="workItem.code">{{ workItem.code }}</option>
+          </select>
+          <span *ngIf="formError.requestType" class="error-text">{{ formError.requestType }}</span>
         </div>
-        <span *ngIf="formError.statusCode" class="error-text">{{ formError.statusCode }}</span>
-        <span *ngIf="formError.sequenceNo" class="error-text">{{ formError.sequenceNo }}</span>
-        <span *ngIf="formError.statusColor" class="error-text">{{ formError.statusColor }}</span>
-      </div>
 
-      <div *ngIf="statusList.length > 0" class="statuses-added">
-        <h3>Statuses to Create:</h3>
-        <div class="status-table">
-          <div class="status-table-header">
-            <span>Status Code</span>
-            <span>Sequence</span>
-            <span>Color</span>
-            <span>Action</span>
-          </div>
-          <div *ngFor="let status of statusList" class="status-table-row">
-            <span>{{ status.statusCode }}</span>
-            <span>{{ status.sequenceNo }}</span>
-            <span class="status-color-cell"><i [style.background-color]="status.statusColor"></i>{{ status.statusColor }}</span>
-            <button type="button" class="remove-btn" (click)="removeStatus(status)" aria-label="Remove status">
-              <mat-icon>close</mat-icon>
+        <div class="field status-entry-field">
+          <label>Status Details <span class="required">*</span></label>
+          <div class="status-input-row">
+            <input id="statusCode" type="text" formControlName="statusCode" placeholder="Enter status code" />
+            <input id="sequenceNo" type="number" formControlName="sequenceNo" min="0" step="1" placeholder="Sequence" />
+            <input id="statusColor" class="color-code-input" type="text" formControlName="statusColor" placeholder="#00246b" maxlength="7" (input)="onColorCodeInput()" aria-label="Status color code" />
+            <input class="color-picker" type="color" [value]="selectedColor" (input)="onColorPickerChange($event)" aria-label="Pick status color" />
+            <span class="color-preview" [style.background-color]="ritmStatusForm.get('statusColor')?.value"></span>
+            <button type="button" class="add-btn" (click)="addStatus()" aria-label="Add status">
+              <mat-icon>add</mat-icon>
             </button>
           </div>
+          <span *ngIf="formError.statusCode" class="error-text">{{ formError.statusCode }}</span>
+          <span *ngIf="formError.sequenceNo" class="error-text">{{ formError.sequenceNo }}</span>
+          <span *ngIf="formError.statusColor" class="error-text">{{ formError.statusColor }}</span>
+        </div>
+
+        <div *ngIf="statusList.length > 0" class="statuses-added">
+          <h3>Statuses to Create:</h3>
+          <div class="status-table">
+            <div class="status-table-header">
+              <span>Status Code</span>
+              <span>Sequence</span>
+              <span>Color</span>
+              <span>Action</span>
+            </div>
+            <div *ngFor="let status of statusList" class="status-table-row">
+              <span>{{ status.statusCode }}</span>
+              <span>{{ status.sequenceNo }}</span>
+              <span class="status-color-cell"><i [style.background-color]="status.statusColor"></i>{{ status.statusColor }}</span>
+              <button type="button" class="remove-btn" (click)="removeStatus(status)" aria-label="Remove status">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+          <button type="button" class="save-btn" (click)="goToVisibilityStep()">Next</button>
         </div>
       </div>
 
-      <div class="actions">
-        <button type="submit" class="save-btn" [disabled]="isSubmitting">
-          {{ isSubmitting ? 'Saving...' : 'Save Statuses' }}
-        </button>
-        <button type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+      <div *ngIf="creationStep === 2" class="wizard-page visibility-page">
+        <div class="visibility-heading">
+          <div>
+            <h3>{{ isEditMode ? 'Edit Status' : 'Visibility Rules (for all statuses)' }}</h3>
+            <p *ngIf="!isEditMode">You can configure Visibility for all statuses or for specific statuses.<br>
+              Set visibile statuses for each current status.</p>
+            <p *ngIf="isEditMode">Set visible statuses for {{ editingStatus?.statusCode }}.</p>
+          </div>
+        </div>
+
+        <div *ngIf="isEditMode" class="field">
+          <label for="editStatusColor">Status Color <span class="required">*</span></label>
+          <div class="status-input-row">
+            <input id="editStatusColor" class="color-code-input" type="text" formControlName="statusColor" placeholder="#00246b" maxlength="7" (input)="onColorCodeInput()" aria-label="Status color code" />
+            <input class="color-picker" type="color" [value]="selectedColor" (input)="onColorPickerChange($event)" aria-label="Pick status color" />
+            <span class="color-preview" [style.background-color]="ritmStatusForm.get('statusColor')?.value"></span>
+          </div>
+          <span *ngIf="formError.statusColor" class="error-text">{{ formError.statusColor }}</span>
+        </div>
+
+        <div class="table-wrapper visibility-table-wrapper">
+          <table class="visibility-table">
+            <thead>
+              <tr><th>Current Status</th><th>Visible Statuses</th><th>Select All</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let status of getVisibilityStatuses()">
+                <td class="current-status-cell"><span class="status-dot" [style.background-color]="status.statusColor"></span>{{ status.statusCode }}</td>
+                <td class="visible-status-options">
+                  <ng-container *ngFor="let visibleStatus of statusList">
+                    <label *ngIf="visibleStatus.statusCode !== status.statusCode" class="visible-status-option">
+                      <input type="checkbox" [checked]="isStatusVisible(status.statusCode, visibleStatus.statusCode)" (change)="setStatusVisibility(status.statusCode, visibleStatus.statusCode, $event)" />
+                      <span>{{ visibleStatus.statusCode }}</span>
+                    </label>
+                  </ng-container>
+                  <span *ngIf="statusList.length === 1" class="no-other-statuses">No other statuses</span>
+                </td>
+                <td class="visibility-count">
+                  <label class="select-all-option">
+                    <input type="checkbox" [checked]="areAllVisibilityRulesSelected(status.statusCode)" [disabled]="statusList.length < 2" (change)="setAllVisibilityRules(status.statusCode, $event)" [attr.aria-label]="'Select all visible statuses for ' + status.statusCode" />
+                    <span>Select All {{ getVisibleStatusCount(status.statusCode) }} / {{ statusList.length - 1 }}</span>
+                  </label>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="actions">
+          <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="goToStatusStep()">Back</button>
+          <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+          <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="cancelEdit()">Cancel</button>
+          <button type="submit" class="save-btn" [disabled]="isSubmitting">
+            {{ isSubmitting ? (isEditMode ? 'Updating...' : 'Saving...') : (isEditMode ? 'Update Status' : 'Save Statuses') }}
+          </button>
+        </div>
       </div>
     </form>
   </section>
@@ -74,10 +145,34 @@
     <div *ngIf="!loading && statuses.length === 0" class="empty-state">No RITM statuses found.</div>
 
     <div *ngIf="!loading && statuses.length > 0" class="table-wrapper">
+      <div class="list-filters">
+        <label class="list-search">
+          <mat-icon>search</mat-icon>
+          <input type="search" [(ngModel)]="searchValue" (ngModelChange)="onListFilterChange()" placeholder="Search statuses" aria-label="Search statuses" />
+        </label>
+        <label class="request-type-filter">
+          <span>Request Type</span>
+          <select [(ngModel)]="selectedRequestType" (ngModelChange)="onListFilterChange()" aria-label="Filter by request type">
+            <option value="">All request types</option>
+            <option *ngFor="let requestType of getRequestTypes()" [value]="requestType">{{ requestType }}</option>
+          </select>
+        </label>
+        <label class="request-type-filter">
+          <span>Status</span>
+          <select [(ngModel)]="selectedStatusFilter" (ngModelChange)="onListFilterChange()" aria-label="Filter by status activity">
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </label>
+        <button type="button" class="reset-btn clear-filters-btn" (click)="clearListFilters()">Clear filters</button>
+      </div>
       <table>
         <thead>
           <tr>
+            <th>Request Type</th>
             <th>Status Code</th>
+            <th>Visible Statuses</th>
             <th>Sequence</th>
             <th>Status Color</th>
             <th>Active</th>
@@ -85,8 +180,25 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let status of statuses">
-            <td>{{ status.statusCode }}</td>
+          <tr *ngFor="let status of getPaginatedStatuses()">
+            <td>{{ status.requestType || '-' }}</td>
+            <td>
+              {{ status.statusCode }}              
+            </td>
+            <td>
+              <span class="visible-status-view" *ngIf="status.visibleStatuses !== undefined && status.visibleStatuses !== null"
+                (mouseenter)="showVisibleStatuses(status)" (mouseleave)="hideVisibleStatuses(status)">
+                <button type="button" class="visible-status-btn" [attr.aria-expanded]="visibleStatusesPopupId === status.statusId"
+                  [attr.aria-label]="'View visible statuses for ' + status.statusCode" title="View visible statuses"
+                  (click)="toggleVisibleStatuses(status)">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <span class="visible-status-tooltip" *ngIf="visibleStatusesPopupId === status.statusId" role="tooltip">
+                  <strong>Visible statuses</strong>
+                  <span *ngFor="let visibleStatus of status.visibleStatuses">{{ getVisibleStatusCode(visibleStatus) }}</span>
+                  <span *ngIf="!status.visibleStatuses.length">No visible statuses</span>
+                </span>
+              </span></td>
             <td>{{ status.sequenceNo }}</td>
             <td>
               <span
@@ -100,6 +212,7 @@
               <span [class]="getStatusClass(status)">{{ getStatusText(status) }}</span>
             </td>
             <td class="action-buttons">
+              <button type="button" (click)="onEditVisibility(status)" aria-label="Edit status visibility" title="Edit status visibility"><mat-icon>edit</mat-icon></button>
               <button type="button" [class]="status.isActive ? 'active-icon' : 'inactive-icon'" (click)="toggleStatusActive(status)" [title]="status.isActive ? 'Deactivate status' : 'Activate status'" [attr.aria-label]="status.isActive ? 'Deactivate status' : 'Activate status'">
                 <mat-icon>{{ status.isActive ? 'toggle_on' : 'toggle_off' }}</mat-icon>
               </button>
@@ -108,6 +221,15 @@
           </tr>
         </tbody>
       </table>
+      <div *ngIf="!getFilteredStatuses().length" class="empty-state">No statuses match the selected filters.</div>
     </div>
+    <mat-paginator *ngIf="!loading && getFilteredStatuses().length > 0"
+      [length]="getFilteredStatuses().length"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      [pageIndex]="currentPage"
+      (page)="onPageChange($event)"
+      showFirstLastButtons>
+    </mat-paginator>
   </section>
 </div>

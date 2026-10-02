@@ -4,6 +4,9 @@
       <mat-icon>chevron_left</mat-icon>
     </button>
     <h1 class="ritm-number">{{ getNestedValue('ritmNumber', 'RITM') }}</h1>
+    <button *ngIf="canEdit()" type="button" class="header-edit" aria-label="Edit RITM" title="Edit RITM" (click)="editRitm()">
+      <mat-icon>edit</mat-icon>
+    </button>
   </div>
 
   <div *ngIf="loading" class="loading-panel">
@@ -34,6 +37,7 @@
       <button type="button" class="tab-btn" [class.active]="activeTab === 'details'" (click)="setActiveTab('details')">Details</button>
       <button type="button" class="tab-btn" [class.active]="activeTab === 'work-notes'" (click)="setActiveTab('work-notes')">Work Notes</button>
       <button type="button" class="tab-btn" [class.active]="activeTab === 'history'" (click)="setActiveTab('history')">History</button>
+      <!-- <button type="button" class="tab-btn" [class.active]="activeTab === 'sla'" (click)="setActiveTab('sla')">SLA</button> -->
     </div>
 
     <div class="tab-panel" *ngIf="activeTab === 'details'">
@@ -130,9 +134,6 @@
         </div>
       </section>
 
-      <div class="actions" *ngIf="canEdit()">
-        <button type="button" class="primary-action" (click)="editRitm()">Edit RITM</button>
-      </div>
     </div>
 
     <div class="tab-panel" *ngIf="activeTab === 'work-notes'">
@@ -251,6 +252,151 @@
       </ng-template>
     </div>
 
+    
+
+    <div class="tabs supplemental-tabs" role="tablist" aria-label="Additional RITM tabs">
+      <button type="button" class="tab-btn" [class.active]="activeAdditionalTab === 'approvers'" (click)="setActiveAdditionalTab('approvers')">Approvers</button>
+      <button type="button" class="tab-btn" [class.active]="activeAdditionalTab === 'catalog-task'" (click)="setActiveAdditionalTab('catalog-task')">Catalog Task</button>
+      <button type="button" class="tab-btn" [class.active]="activeAdditionalTab === 'effort'" (click)="setActiveAdditionalTab('effort')">Effort Calculation</button>
+    </div>
+  </div>
+  <div class="tab-panel approvers-panel" *ngIf="activeAdditionalTab === 'approvers'">
+
+      <div *ngIf="approverDataLoading" class="loading-panel small">
+        <mat-spinner diameter="28"></mat-spinner>
+      </div>
+      <div *ngIf="approverMessage" class="feedback success-feedback" role="status">{{ approverMessage }}</div>
+      <div *ngIf="approverError" class="feedback error-feedback" role="alert">{{ approverError }}</div>
+
+      <div class="assigned-approvers" *ngIf="assignedApprovers.length && !editingApprover">
+        <section class="approver-agent-list" *ngFor="let group of getGroupedApproverAssignments()">
+          <h3>Approver Code: {{ group.code }}</h3>
+          <div class="approver-config-meta">
+            <div><span>Follow Sequence:</span><strong>{{ group.followSequence ? 'Yes' : 'No' }}</strong></div>
+            <div><span>Is Any Approval Sufficient:</span><strong>{{ group.isAnyApprovalSufficient ? 'Yes' : 'No' }}</strong></div>
+          </div>
+          <div class="approver-column-header"><span>User</span><span>Approver Sequence</span><span>Status</span></div>
+          <div class="approver-agent-row" *ngFor="let approver of group.approvers">
+            <span>{{ getApproverName(approver) }}</span>
+            <span class="agent-meta">{{ approver.approverSequence ?? '—' }}</span>
+            <span class="agent-meta">{{ approver.approvalStatus || '' }}</span>
+          </div>
+        </section>
+        <section class="approver-agent-list" *ngIf="getIndividualApproverAssignments().length">
+          <div class="approver-column-header"><span>User</span><span>Approver Sequence</span><span>Status</span></div>
+          <div class="approver-agent-row" *ngFor="let approver of getIndividualApproverAssignments()">
+            <span>{{ getApproverName(approver) }}</span>
+            <span class="agent-meta">{{ approver.approverSequence ?? '—' }}</span>
+            <span class="agent-meta">{{ approver.approvalStatus || '' }}</span>
+          </div>
+        </section>
+        <div class="empty-state small" *ngIf="!getGroupedApproverAssignments().length && !getIndividualApproverAssignments().length">
+          No approver details are available.
+        </div>
+        <div class="actions">
+          <button type="button" class="secondary-action" (click)="editApprovers()" [disabled]="assigningApprover">Edit</button>
+          <button type="button" class="secondary-action" (click)="deleteApprovers()" [disabled]="assigningApprover">Delete</button>
+        </div>
+      </div>
+
+      <ng-container *ngIf="!assignedApprovers.length || editingApprover">
+      <div class="approver-mode" role="group" aria-label="Approver type">
+        <button type="button" [class.active]="approverMode === 'group'" (click)="approverMode = 'group'; onApproverModeChange()">Approver Group</button>
+        <button type="button" [class.active]="approverMode === 'individual'" (click)="approverMode = 'individual'; onApproverModeChange()">Individual Approver</button>
+      </div>
+
+      <div *ngIf="approverMode === 'group'" class="approver-picker">
+        <label for="approver-code">Approver Code</label>
+        <div class="suggestion-wrap">
+          <input id="approver-code" type="text" [(ngModel)]="approverCodeQuery" [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="onApproverCodeInput()" placeholder="Search approver code" autocomplete="off" />
+          <div class="suggestion-list" *ngIf="approverSuggestions.length">
+            <button type="button" *ngFor="let configuration of approverSuggestions" (click)="selectApproverConfiguration(configuration)">
+              {{ configuration.approverCode }}
+            </button>
+          </div>
+        </div>
+
+        <div class="approver-agent-list" *ngIf="selectedApproverConfig">
+          <h3>Approvers in {{ selectedApproverConfig.approverCode }}</h3>
+          <div class="approver-config-meta">
+            <div><span>Follow Sequence: </span><strong>{{ selectedApproverConfig.followSequence ? 'Yes' : 'No' }}</strong></div>
+            <div><span>One Approval Sufficient:</span><strong>{{ selectedApproverConfig.isAnyApprovalSufficient ? 'Yes' : 'No' }}</strong></div>
+          </div>
+          <div class="approver-agent-row" *ngFor="let agent of getConfigurationAgents()">
+            <span>{{ agent.agentName || agent.name || 'Agent' }}</span>
+            <span class="agent-meta">Approver Sequence: {{ agent.approverSequence ?? '—' }}</span>
+          </div>
+          <div class="empty-state small" *ngIf="getConfigurationAgents().length === 0">This approver group has no agents.</div>
+        </div>
+      </div>
+
+      <div *ngIf="approverMode === 'individual'" class="approver-picker">
+        <label for="approver-agent">Agent</label>
+        <div class="agent-picker-row">
+          <div class="suggestion-wrap">
+            <input id="approver-agent" type="text" [(ngModel)]="agentQuery" [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="onAgentInput()" placeholder="Search name, email, or access ID" autocomplete="off" />
+            <div class="suggestion-list" *ngIf="showAgentList && agentSuggestions.length">
+              <button type="button" *ngFor="let agent of agentSuggestions" (click)="selectSuggestedAgent(agent)">
+                {{ getAgentLabel(agent) }}
+              </button>
+            </div>
+          </div>
+          <button type="button" class="primary-action" (click)="addSelectedAgent()" [disabled]="!selectedAgent">Add Approver</button>
+        </div>
+
+        <div class="selected-agent-list" *ngIf="selectedAgents.length">
+          <div class="approver-agent-row" *ngFor="let agent of selectedAgents">
+            <span>{{ getAgentLabel(agent) }}</span>
+            <button type="button" class="remove-agent" (click)="removeSelectedAgent(agent)" [attr.aria-label]="'Remove ' + getAgentLabel(agent)"><mat-icon>cancel</mat-icon></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="primary-action" (click)="assignApprover()" [disabled]="assigningApprover || approverDataLoading">
+          {{ assigningApprover ? (editingApprover ? 'Updating...' : 'Assigning...') : (editingApprover ? 'Update' : 'Assign') }}
+        </button>
+        <button *ngIf="editingApprover" type="button" class="secondary-action" (click)="cancelApproverEdit()" [disabled]="assigningApprover">Cancel</button>
+      </div>
+      </ng-container>
+    </div>
+
+    <div class="tab-panel" *ngIf="activeAdditionalTab === 'catalog-task'">
+      <div class="section-header">
+        <span class="section-header-icon">▣</span>
+        <span>Catalog Tasks</span>
+      </div>
+      <div class="catalog-task-list" *ngIf="getCatalogTasks().length; else noCatalogTasks">
+        <article class="catalog-task-row" *ngFor="let task of getCatalogTasks()">
+          <strong>{{ task.title || task.taskName || task.catalogTaskName || 'Catalog Task' }}</strong>
+          <span>{{ task.status?.statusCode || task.status || 'Status unavailable' }}</span>
+          <span *ngIf="task.assignedTo">Assigned to {{ task.assignedTo.agentName || task.assignedTo }}</span>
+          <span *ngIf="task.dueDate">Due {{ task.dueDate | date:'mediumDate' }}</span>
+        </article>
+      </div>
+      <ng-template #noCatalogTasks>
+        <div class="empty-state small">No catalog tasks are linked to this RITM.</div>
+      </ng-template>
+    </div>
+
+    <div class="tab-panel" *ngIf="activeAdditionalTab === 'effort'">
+      <div class="section-header">
+        <span class="section-header-icon">◷</span>
+        <span>Effort Calculation</span>
+      </div>
+      <div class="effort-list" *ngIf="getEffortEntries().length; else noEffortDetails">
+        <div class="effort-row" *ngFor="let entry of getEffortEntries()">
+          <span>{{ entry.label }}</span>
+          <strong>{{ entry.value }}</strong>
+        </div>
+      </div>
+      <ng-template #noEffortDetails>
+        <div class="empty-state small">No effort calculation details are available for this RITM.</div>
+      </ng-template>
+    </div>
+
     <div class="tab-panel" *ngIf="activeTab === 'sla'">
       <div class="sla-card" *ngIf="slaInfo; else noSla">
         <div class="sla-row">
@@ -274,5 +420,4 @@
         <button type="button" class="secondary-action" (click)="escalate()">Escalate</button>
       </div>
     </div>
-  </div>
 </div>

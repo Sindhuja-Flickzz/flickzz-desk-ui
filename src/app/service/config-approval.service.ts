@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ConfigChangeApprovalVO, BPConfigurationChangeRequestRemarkVO } from '../models/config-change-approval.model';
+import { ApprovalListResponse, BusinessPartnerChangeRequestResponse } from '../models/approval.model';
 import { APP_CONSTANTS } from '../data/app_constants';
 
 @Injectable({
@@ -19,7 +20,15 @@ export class ConfigApprovalService {
    * @returns Observable of array of ConfigChangeApprovalVO
    */
   getApprovalsList(userId: number): Observable<ConfigChangeApprovalVO[]> {
-    return this.http.get<ConfigChangeApprovalVO[]>(`${this.baseUrl}/bp/config/approval/list/${userId}`);
+    return this.http.get<ConfigChangeApprovalVO[]>(`${this.baseUrl}/approval/list/${userId}`);
+  }
+
+  getUserApprovalsList(userId: number): Observable<ApprovalListResponse> {
+    return this.http.get<ApprovalListResponse>(`${this.baseUrl}/approval/list/${userId}`);
+  }
+
+  getBusinessPartnerChangeRequest(requestId: number): Observable<BusinessPartnerChangeRequestResponse> {
+    return this.http.get<BusinessPartnerChangeRequestResponse>(`${this.baseUrl}/bp/config/change-request/${requestId}`);
   }
 
   /**
@@ -29,7 +38,7 @@ export class ConfigApprovalService {
    * @returns Observable of the response
    */
   applyAction(payload: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/bp/config/approval/action`, payload);
+    return this.http.post(`${this.baseUrl}/approval/action`, payload);
   }
 
   /**
@@ -40,7 +49,7 @@ export class ConfigApprovalService {
    */
   // declineConfiguration(payload: any): Observable<any> {
     // const payload = { approvalId, remark };
-  //   return this.http.post(`${this.baseUrl}/bp/config/approval/action`, { ...payload, action: 'decline' });
+  //   return this.http.post(`${this.baseUrl}/pproval/action`, { ...payload, action: 'decline' });
   // }
 
   /**

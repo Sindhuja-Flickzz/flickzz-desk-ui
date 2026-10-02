@@ -19,24 +19,24 @@ export class ApprovalDialogComponent {
   getDialogTitle(): string {
     switch (this.data.action) {
       case 'approve':
-        return 'Approve Configuration';
+        return 'Approve Request';
       case 'decline':
-        return 'Decline Configuration';
+        return 'Decline Request';
       case 'clarify':
         return 'Request Clarification';
       default:
-        return 'Configuration Action';
+        return 'Approval Action';
     }
   }
 
   getDialogDescription(): string {
     switch (this.data.action) {
       case 'approve':
-        return 'Please provide any additional remarks before approving this configuration change.';
+        return 'Please provide any additional remarks before approving this request.';
       case 'decline':
-        return 'Please provide the reason for declining this configuration change.';
+        return 'Please provide the reason for declining this request.';
       case 'clarify':
-        return 'Please specify what clarification you need for this configuration change.';
+        return 'Please specify what clarification you need for this request.';
       default:
         return '';
     }

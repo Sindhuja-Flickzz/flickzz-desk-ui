@@ -19,7 +19,7 @@ export class HomeComponent {
 
   open(tile: any) {
     // this.router.navigateByUrl('/config-approval').catch(() => {
-      this.router.navigate(['/config-approval']);
+      this.router.navigate(['/approval']);
     // });
   }
 }

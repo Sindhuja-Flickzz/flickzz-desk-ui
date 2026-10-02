@@ -87,6 +87,7 @@ export class ConfigApprovalComponent implements OnInit {
     this.configApprovalService.getApprovalsList(userId).subscribe({
       next: (data: ConfigChangeApprovalVO[]) => {
         this.approvals = (data as any).attributes || [];
+        console.log('Loaded approvals:', this.approvals);
         this.populateApprovalCreatorNames();
         this.calculateKPIs();
         this.lastRefreshed = new Date();

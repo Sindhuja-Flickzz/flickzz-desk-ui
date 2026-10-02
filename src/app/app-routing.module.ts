@@ -5,9 +5,11 @@ import {WelcomeComponent} from "./pages/welcome/welcome.component";
 import {CalendarComponent} from "./pages/calendar/calendar.component/calendar.component";
 import { CalendarTypeComponent } from "./pages/calendar/type/calendar-type.component";
 import {PlantComponent}from "./pages/plant/plant.component";
+import { RequestApproverComponent } from './pages/requestapprover/requestapprover.component';
 import { ProjectBuilderComponent } from './pages/project-builder/project-builder.component';
 // import { ProjectTimelineGanttComponent } from './pages/project-builder/project-timeline-gantt/project-timeline-gantt.component';
 import {SkillComponent} from "./pages/skill/skill.component";
+import { RequestTypeComponent } from './pages/request-type/request-type.component';
 import {CompanyComponent} from "./pages/company/company.component";
 import { BpAssignmentComponent } from './pages/business-partner/bp-assignment/bp-assignment.component';
 import {AgentComponent} from "./pages/agent/agent.component";
@@ -37,6 +39,7 @@ import { MyTicketsComponent } from './pages/my-tickets/my-tickets.component';
 import { RitmDetailsComponent } from './pages/ritm/ritm-details.component';
 import { GroupRitmComponent } from './pages/group-ritm/group-ritm.component';
 import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
+import { ApprovalComponent } from './pages/approval/approval.component';
 
 const routes: Routes = [
   {
@@ -96,6 +99,11 @@ const routes: Routes = [
   {
     path: 'plant',
     component: PlantComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'request-approver',
+    component: RequestApproverComponent,
     canActivate: [authGuard]
   },
   {
@@ -174,6 +182,11 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'request-type',
+    component: RequestTypeComponent,
+    canActivate: [authGuard]
+  },
+  {
     path: 'company',
     component: CompanyComponent,
     canActivate: [authGuard]
@@ -223,6 +236,11 @@ const routes: Routes = [
   {
     path: 'config-approval',
     component: ConfigApprovalComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'approval',
+    component: ApprovalComponent,
     canActivate: [authGuard]
   },
   {

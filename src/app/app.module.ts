@@ -13,7 +13,9 @@ import { CalendarComponent } from './pages/calendar/calendar.component/calendar.
 import { CalendarTypeComponent } from './pages/calendar/type/calendar-type.component';
 import { ConfirmationDialogComponent } from './shared/confirmation-dialog/confirmation-dialog.component';
 import { PlantComponent } from './pages/plant/plant.component';
+import { RequestApproverComponent } from './pages/requestapprover/requestapprover.component';
 import { SkillComponent } from './pages/skill/skill.component';
+import { RequestTypeComponent } from './pages/request-type/request-type.component';
 import { CompanyComponent } from './pages/company/company.component';
 import { BpAssignmentComponent } from './pages/business-partner/bp-assignment/bp-assignment.component';
 import { ManageBpComponent } from './pages/business-partner/manage-bp/manage-bp.component';
@@ -85,6 +87,7 @@ import { RitmDetailsComponent } from './pages/ritm/ritm-details.component';
 import { VariantComponent } from './pages/settings/variant/variant.component';
 import { TemplatecomponentComponent } from './pages/settings/templatecomponent/templatecomponent.component';
 import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
+import { ApprovalComponent } from './pages/approval/approval.component';
 
 @NgModule({
   declarations: [
@@ -97,7 +100,9 @@ import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
     CalendarTypeComponent,
     ConfirmationDialogComponent,
     PlantComponent,
+    RequestApproverComponent,
     SkillComponent,
+    RequestTypeComponent,
     CompanyComponent,
     BpAssignmentComponent,
     ManageBpComponent,
@@ -136,7 +141,8 @@ import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
     NotificationPopupComponent,
     MyTicketsComponent,
     RitmDetailsComponent,
-    RitmStatusComponent
+    RitmStatusComponent,
+    ApprovalComponent
   ],
   imports: [
     BrowserModule,

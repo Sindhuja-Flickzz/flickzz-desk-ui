@@ -1,6 +1,7 @@
 export interface NotificationPayload {
   notificationId?: string | number;
-  changeRequestId?: string | number;
+  requestId?: string | number;
+  requestType?: string;
   title?: string;
   message?: string;
   notificationType?: string;

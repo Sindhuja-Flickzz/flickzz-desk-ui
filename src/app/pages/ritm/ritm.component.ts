@@ -8,7 +8,9 @@ import { ApproverItem, CatalogTask, ChangeRequestItem, LogEntry, NoteItem, TaskS
 import { AgentMaster } from 'src/app/models/agent-master';
 import { CompanyRole } from 'src/app/models/company-master';
 import { CategoryMaster, CategorySubCategory } from '../../models/category-master';
+import { RequestType } from '../../models/request-type.model';
 import { CategoryService } from '../../service/category.service';
+import { RequestTypeService } from '../../service/request-type.service';
 import { SupportGroupService } from '../../service/support-group.service';
 import { VariantService } from '../../service/variant.service';
 import { USER_ROLES } from '../../data/app_constants';  
@@ -44,6 +46,7 @@ export class RitmComponent implements OnInit, OnDestroy {
   orgId = localStorage.getItem('userOrgId') || '';
   bpOptions: CompanyRole[] = [];
   categories: CategoryMaster[] = [];
+  requestTypes: RequestType[] = [];
   subCategories: CategorySubCategory[] = [];
   private currentTimeTimer: ReturnType<typeof setInterval> | null = null;
   watchListSearch = '';
@@ -68,6 +71,7 @@ export class RitmComponent implements OnInit, OnDestroy {
     private ritmService: RitmService,
     private companyService: CompanyService,
     private categoryService: CategoryService,
+    private requestTypeService: RequestTypeService,
     private supportGroupService: SupportGroupService,
     private variantService: VariantService,
     private route: ActivatedRoute,
@@ -98,6 +102,7 @@ export class RitmComponent implements OnInit, OnDestroy {
       location: [{ value: '', disabled: true }],
       availabilityTime: [{ value: '', disabled: true }],
       currentTime: [{ value: '', disabled: true }],
+      requestTypeId: ['', Validators.required],
       category: ['', Validators.required],
       subCategory: ['', Validators.required],
       assignmentGroup: [''],
@@ -136,6 +141,7 @@ export class RitmComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.loadUsers();
     this.loadRitmStatuses();
+    this.loadRequestTypes();
 
     const id = this.route.snapshot.queryParamMap.get('id');
     const navigationState = this.router.getCurrentNavigation()?.extras?.state as { ritmData?: any } | undefined;
@@ -166,6 +172,18 @@ export class RitmComponent implements OnInit, OnDestroy {
         this.loadRitmDetails(id);
       }
     }
+  }
+
+  private loadRequestTypes(): void {
+    this.requestTypeService.getRequestTypes(Number(this.orgId)).subscribe({
+      next: response => {
+        const requestTypes = Array.isArray(response) ? response : response?.attributes || [];
+        this.requestTypes = Array.isArray(requestTypes) ? requestTypes : [];
+      },
+      error: () => {
+        this.requestTypes = [];
+      }
+    });
   }
 
   private loadTemplateDetails(): void {
@@ -570,6 +588,7 @@ export class RitmComponent implements OnInit, OnDestroy {
       location: ritm.location || this.currentUser?.city?.cityName || this.currentUser?.country?.countryName || '',
       availabilityTime: this.formatAvailabilityTime(this.currentUser?.calendar?.workFrom, this.currentUser?.calendar?.workTo),
       currentTime: this.getLocalTime(this.currentUser?.city?.timezone),
+      requestTypeId: ritm.requestTypeId ?? ritm.requestType?.requestTypeId ?? '',
       category: ritm.categoryId ?? ritm.category?.categoryId ?? (ritm.category || ''),
       subCategory: ritm.subCategoryId ?? ritm.subCategory?.subCategoryId ?? ritm.subCategory?.id ?? '',
       assignmentGroup: ritm.assignmentGroup || '',
@@ -786,6 +805,7 @@ export class RitmComponent implements OnInit, OnDestroy {
       openedBy: this.currentUser?.agentId ?? Number(localStorage.getItem('userId') || 0),
       assignmentGroup: this.assignmentGroupId,
       requestType: 'RITM',
+      requestTypeId: Number(rawValues.requestTypeId),
       watchList: this.normalizeWatchListIds(rawValues.watchList),
       orgId: Number(this.orgId),
       createdBy: Number(localStorage.getItem('userId') || 0),
