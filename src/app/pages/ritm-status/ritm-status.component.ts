@@ -1,23 +1,34 @@
 import { Component, OnInit } from '@angular/core';
+import { PageEvent } from '@angular/material/paginator';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
-import { RitmService, RitmStatusCreateRequest } from '../../service/ritm.service';
+import { RitmService, RitmStatusCreateRequest, RitmStatusVisibilityUpdateRequest } from '../../service/ritm.service';
+import { VariantService } from '../../service/variant.service';
+import { WorkItem } from '../../models/variant.model';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { USER_ROLES } from '../../data/app_constants';
 
 interface RitmStatus {
   statusId: number;
   companyId: number;
+  requestType?: string;
   statusCode: string;
   sequenceNo: number;
   statusColor: string;
+  visibleStatuses?: Array<VisibleStatus | string>;
   isActive: boolean;
   createdBy: number;
   isCreatorAdmin: boolean;
 }
 
+interface VisibleStatus {
+  statusId: number;
+  statusCode: string;
+}
+
 interface RitmStatusFormError {
+  requestType?: string;
   statusCode?: string;
   sequenceNo?: string;
   statusColor?: string;
@@ -37,25 +48,40 @@ interface PendingRitmStatus {
 export class RitmStatusComponent implements OnInit {
   ritmStatusForm: FormGroup;
   activeTab: 'create' | 'list' = 'create';
+  creationStep: 1 | 2 = 1;
   pageTitle = 'Create RITM Status';
+  isEditMode = false;
+  editingStatus: RitmStatus | null = null;
 
   statuses: RitmStatus[] = [];
+  workItems: WorkItem[] = [];
   statusList: PendingRitmStatus[] = [];
+  visibilityRules: Record<string, string[]> = {};
   formError: RitmStatusFormError = {};
   submitError = '';
   submitSuccess = '';
   isSubmitting = false;
   loading = false;
+  workItemsLoading = false;
   userOrgId = '';
   selectedColor = '#00246b';
+  searchValue = '';
+  selectedRequestType = '';
+  selectedStatusFilter: 'all' | 'active' | 'inactive' = 'all';
+  currentPage = 0;
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
+  visibleStatusesPopupId: number | null = null;
 
   constructor(
     private fb: FormBuilder,
     private ritmService: RitmService,
+    private variantService: VariantService,
     private dialog: MatDialog,
     private router: Router
   ) {
     this.ritmStatusForm = this.fb.group({
+      requestType: ['', Validators.required],
       statusCode: ['', [Validators.required, Validators.maxLength(100)]],
       sequenceNo: [null, [Validators.required, Validators.min(0), Validators.pattern('^[0-9]+$')]],
       statusColor: [this.selectedColor, [Validators.required]]
@@ -64,6 +90,7 @@ export class RitmStatusComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadWorkItems();
     this.loadStatusList();
   }
 
@@ -81,12 +108,16 @@ export class RitmStatusComponent implements OnInit {
 
   resetForm(): void {
     this.pageTitle = 'Create RITM Status';
+    this.isEditMode = false;
+    this.editingStatus = null;
     this.formError = {};
     this.submitError = '';
     this.submitSuccess = '';
     this.statusList = [];
+    this.visibilityRules = {};
+    this.creationStep = 1;
     this.selectedColor = '#00246b';
-    this.ritmStatusForm.reset({ statusCode: '', sequenceNo: null, statusColor: this.selectedColor });
+    this.ritmStatusForm.reset({ requestType: '', statusCode: '', sequenceNo: null, statusColor: this.selectedColor });
   }
 
   backToHome(): void {
@@ -98,10 +129,14 @@ export class RitmStatusComponent implements OnInit {
     this.submitError = '';
     this.submitSuccess = '';
 
+    const requestType = this.ritmStatusForm.get('requestType')?.value;
     const statusCode = (this.ritmStatusForm.get('statusCode')?.value || '').trim();
     const sequenceNo = this.ritmStatusForm.get('sequenceNo')?.value;
     const statusColor = (this.ritmStatusForm.get('statusColor')?.value || '').trim();
 
+    if (!requestType) {
+      this.formError.requestType = 'Request Type is required';
+    }
     if (!statusCode) {
       this.formError.statusCode = 'Status Code is required';
     }
@@ -141,7 +176,55 @@ export class RitmStatusComponent implements OnInit {
     }
 
     this.statusList.push({ statusCode, sequenceNo: numericSequence, statusColor });
+    this.visibilityRules[statusCode] = [];
     this.ritmStatusForm.patchValue({ statusCode: '', sequenceNo: null, statusColor: this.selectedColor });
+  }
+
+  goToVisibilityStep(): void {
+    this.formError = {};
+    if (!this.ritmStatusForm.get('requestType')?.value) {
+      this.formError.requestType = 'Request Type is required';
+      return;
+    }
+    if (this.statusList.length === 0) {
+      this.formError.statusCode = 'Add at least one status before continuing';
+      return;
+    }
+    this.creationStep = 2;
+  }
+
+  goToStatusStep(): void {
+    this.creationStep = 1;
+  }
+
+  isStatusVisible(currentStatusCode: string, visibleStatusCode: string): boolean {
+    return (this.visibilityRules[currentStatusCode] || []).includes(visibleStatusCode);
+  }
+
+  setStatusVisibility(currentStatusCode: string, visibleStatusCode: string, event: Event): void {
+    const isVisible = (event.target as HTMLInputElement).checked;
+    const visibleStatuses = this.visibilityRules[currentStatusCode] || [];
+    this.visibilityRules[currentStatusCode] = isVisible
+      ? [...new Set([...visibleStatuses, visibleStatusCode])]
+      : visibleStatuses.filter(statusCode => statusCode !== visibleStatusCode);
+  }
+
+  areAllVisibilityRulesSelected(currentStatusCode: string): boolean {
+    const possibleStatuses = this.statusList.length - 1;
+    return possibleStatuses > 0 && this.getVisibleStatusCount(currentStatusCode) === possibleStatuses;
+  }
+
+  setAllVisibilityRules(currentStatusCode: string, event: Event): void {
+    const isVisible = (event.target as HTMLInputElement).checked;
+    this.visibilityRules[currentStatusCode] = isVisible
+      ? this.statusList.filter(status => status.statusCode !== currentStatusCode).map(status => status.statusCode)
+      : [];
+  }
+
+  getVisibleStatusCount(currentStatusCode: string): number {
+    return this.statusList.filter(status =>
+      status.statusCode !== currentStatusCode && this.isStatusVisible(currentStatusCode, status.statusCode)
+    ).length;
   }
 
   onColorCodeInput(): void {
@@ -161,11 +244,20 @@ export class RitmStatusComponent implements OnInit {
 
   removeStatus(status: PendingRitmStatus): void {
     this.statusList = this.statusList.filter(item => item !== status);
+    delete this.visibilityRules[status.statusCode];
+    Object.keys(this.visibilityRules).forEach(statusCode => {
+      this.visibilityRules[statusCode] = this.visibilityRules[statusCode].filter(visibleStatusCode => visibleStatusCode !== status.statusCode);
+    });
     this.submitError = '';
     this.submitSuccess = '';
   }
 
   onSave(): void {
+    if (this.creationStep === 1) {
+      this.goToVisibilityStep();
+      return;
+    }
+
     this.formError = {};
     this.submitError = '';
     this.submitSuccess = '';
@@ -175,15 +267,47 @@ export class RitmStatusComponent implements OnInit {
       return;
     }
 
+    const statusColor = (this.ritmStatusForm.get('statusColor')?.value || '').trim();
+    if (this.isEditMode && !/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(statusColor)) {
+      this.formError.statusColor = 'Enter a valid hex color code';
+      return;
+    }
+
     const isAdmin = localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase();
     const userId = Number(localStorage.getItem('userId') || 0);
     const companyId = Number(this.userOrgId || 0);
     this.isSubmitting = true;
+
+    if (this.isEditMode && this.editingStatus) {
+      const updateRequest: RitmStatusVisibilityUpdateRequest = {
+        statusId: this.editingStatus.statusId,
+        companyId: this.editingStatus.companyId,
+        requestType: this.editingStatus.requestType || '',
+        statusCode: this.editingStatus.statusCode,
+        sequenceNo: this.editingStatus.sequenceNo,
+        statusColor,
+        visibleStatuses: this.visibilityRules[this.editingStatus.statusCode] || [],
+        isActive: this.editingStatus.isActive,
+        createdBy: this.editingStatus.createdBy,
+        isCreatorAdmin: this.editingStatus.isCreatorAdmin,
+        updatedBy: userId,
+        isUpdaterAdmin: isAdmin
+      };
+
+      this.ritmService.updateRitmStatusVisibility(updateRequest).subscribe({
+        next: () => this.finishSave('RITM status updated successfully.'),
+        error: (err) => this.handleSaveError(err, 'Failed to update RITM status.')
+      });
+      return;
+    }
+
     const createRequests: RitmStatusCreateRequest[] = this.statusList.map(status => ({
       companyId,
+      requestType: this.ritmStatusForm.get('requestType')?.value,
       statusCode: status.statusCode,
       sequenceNo: status.sequenceNo,
       statusColor: status.statusColor,
+      visibleStatuses: this.visibilityRules[status.statusCode] || [],
       createdBy: userId,
       isCreatorAdmin: isAdmin
     }));
@@ -192,6 +316,47 @@ export class RitmStatusComponent implements OnInit {
       next: () => this.finishSave('RITM status created successfully.'),
       error: (err) => this.handleSaveError(err, 'Failed to create RITM status.')
     });
+  }
+
+  onEditVisibility(status: RitmStatus): void {
+    this.resetForm();
+    this.isEditMode = true;
+    this.editingStatus = status;
+    this.pageTitle = 'Edit RITM Status';
+    this.activeTab = 'create';
+    this.creationStep = 2;
+    this.selectedColor = status.statusColor || '#00246b';
+    this.ritmStatusForm.patchValue({ statusColor: this.selectedColor });
+
+    const relatedStatuses = this.statuses.filter(candidate =>
+      status.requestType ? candidate.requestType === status.requestType : true
+    );
+    this.statusList = relatedStatuses.map(candidate => ({
+      statusCode: candidate.statusCode,
+      sequenceNo: candidate.sequenceNo,
+      statusColor: candidate.statusColor
+    }));
+
+    relatedStatuses.forEach(candidate => {
+      this.visibilityRules[candidate.statusCode] = (candidate.visibleStatuses || [])
+        .map(visibleStatus => typeof visibleStatus === 'string' ? visibleStatus : visibleStatus.statusCode)
+        .filter(statusCode => this.statusList.some(item => item.statusCode === statusCode));
+    });
+  }
+
+  cancelEdit(): void {
+    this.resetForm();
+    this.activeTab = 'list';
+  }
+
+  getVisibilityStatuses(): PendingRitmStatus[] {
+    return this.isEditMode && this.editingStatus
+      ? this.statusList.filter(status => status.statusCode === this.editingStatus?.statusCode)
+      : this.statusList;
+  }
+
+  getVisibleStatusCode(visibleStatus: VisibleStatus | string): string {
+    return typeof visibleStatus === 'string' ? visibleStatus : visibleStatus.statusCode;
   }
 
   toggleStatusActive(status: RitmStatus): void {
@@ -214,7 +379,7 @@ export class RitmStatusComponent implements OnInit {
         const isAdmin = localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase();
         const userId = Number(localStorage.getItem('userId') || 0);
 
-        this.ritmService.updateRitmStatusActive({
+        this.ritmService.changeStatusActive({
           statusId: status.statusId,
           isActive: !status.isActive,
           updatedBy: userId,
@@ -269,6 +434,65 @@ export class RitmStatusComponent implements OnInit {
     return status.isActive === true ? 'status-pill active' : 'status-pill inactive';
   }
 
+  getRequestTypes(): string[] {
+    return [...new Set([
+      ...this.workItems.map(workItem => workItem.code),
+      ...this.statuses.map(status => status.requestType || '')
+    ].filter(Boolean))].sort((left, right) => left.localeCompare(right));
+  }
+
+  getFilteredStatuses(): RitmStatus[] {
+    const term = this.searchValue.trim().toLowerCase();
+    return this.statuses.filter(status => {
+      const matchesSearch = !term || [
+        status.requestType || '',
+        status.statusCode || '',
+        String(status.sequenceNo ?? '')
+      ].some(value => value.toLowerCase().includes(term));
+      const matchesRequestType = !this.selectedRequestType || status.requestType === this.selectedRequestType;
+      const matchesStatus = this.selectedStatusFilter === 'all'
+        || (this.selectedStatusFilter === 'active' && status.isActive === true)
+        || (this.selectedStatusFilter === 'inactive' && status.isActive === false);
+      return matchesSearch && matchesRequestType && matchesStatus;
+    });
+  }
+
+  getPaginatedStatuses(): RitmStatus[] {
+    const startIndex = this.currentPage * this.pageSize;
+    return this.getFilteredStatuses().slice(startIndex, startIndex + this.pageSize);
+  }
+
+  onListFilterChange(): void {
+    this.currentPage = 0;
+    this.visibleStatusesPopupId = null;
+  }
+
+  clearListFilters(): void {
+    this.searchValue = '';
+    this.selectedRequestType = '';
+    this.selectedStatusFilter = 'all';
+    this.onListFilterChange();
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
+  }
+
+  toggleVisibleStatuses(status: RitmStatus): void {
+    this.visibleStatusesPopupId = this.visibleStatusesPopupId === status.statusId ? null : status.statusId;
+  }
+
+  showVisibleStatuses(status: RitmStatus): void {
+    this.visibleStatusesPopupId = status.statusId;
+  }
+
+  hideVisibleStatuses(status: RitmStatus): void {
+    if (this.visibleStatusesPopupId === status.statusId) {
+      this.visibleStatusesPopupId = null;
+    }
+  }
+
   private loadStatusList(): void {
     this.loading = true;
     this.submitError = '';
@@ -286,12 +510,33 @@ export class RitmStatusComponent implements OnInit {
     });
   }
 
+  private loadWorkItems(): void {
+    if (!this.userOrgId) {
+      this.workItems = [];
+      return;
+    }
+
+    this.workItemsLoading = true;
+    this.variantService.getWorkItemList(this.userOrgId).subscribe({
+      next: (response) => {
+        const data = (response as any)?.attributes || response || [];
+        this.workItems = Array.isArray(data) ? data.filter((item: WorkItem) => item?.code) : [];
+        this.workItemsLoading = false;
+      },
+      error: (err) => {
+        this.workItems = [];
+        this.workItemsLoading = false;
+        this.submitError = err.error?.message || 'Failed to load request types.';
+      }
+    });
+  }
+
   private finishSave(message: string): void {
     this.isSubmitting = false;
-    this.submitSuccess = message;
-    this.loadStatusList();
     this.resetForm();
     this.activeTab = 'list';
+    this.submitSuccess = message;
+    this.loadStatusList();
   }
 
   private handleSaveError(err: any, fallback: string): void {

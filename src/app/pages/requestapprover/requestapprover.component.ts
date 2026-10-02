@@ -64,7 +64,7 @@ export class RequestApproverComponent implements OnInit {
       approverCode: ['', [Validators.required, Validators.maxLength(50)]],
       approvers: this.fb.array([]),
       followSequence: [false],
-      isAnyApprovalSufficient: [false]
+      isAnyApprovalSufficient: [true]
     });
     this.addApprover();
   }
@@ -90,6 +90,13 @@ export class RequestApproverComponent implements OnInit {
     this.approvers.push(this.createApproverRow());
     const index = this.approvers.length - 1;
     this.agentSuggestions[index] = this.getAvailableAgents(index);
+  }
+
+  setApprovalMode(mode: 'sequence' | 'any'): void {
+    this.requestApproverForm.patchValue({
+      followSequence: mode === 'sequence',
+      isAnyApprovalSufficient: mode === 'any'
+    });
   }
 
   removeApprover(index: number): void {
@@ -218,7 +225,7 @@ export class RequestApproverComponent implements OnInit {
   resetForm(): void {
     this.isEditMode = false;
     this.pageTitle = 'Create Request Approver Configuration';
-    this.requestApproverForm.reset({ approverConfigId: null, followSequence: false, isAnyApprovalSufficient: false });
+    this.requestApproverForm.reset({ approverConfigId: null, followSequence: false, isAnyApprovalSufficient: true });
     this.approvers.clear();
     this.agentSuggestions = {};
     this.addApprover();

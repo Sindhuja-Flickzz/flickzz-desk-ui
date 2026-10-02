@@ -433,15 +433,25 @@ export class RitmDetailsComponent implements OnInit {
     }).filter((agent: any) => Number(agent?.agentId ?? agent?.id) > 0);
   }
 
-  getGroupedApproverAssignments(): Array<{ code: string; approvers: any[] }> {
-    const groups = new Map<string, { code: string; approvers: any[] }>();
+  getGroupedApproverAssignments(): Array<{ code: string; approvers: any[]; followSequence?: boolean; isAnyApprovalSufficient?: boolean }> {
+    const groups = new Map<string, { code: string; approvers: any[]; followSequence?: boolean; isAnyApprovalSufficient?: boolean }>();
     this.assignedApprovers
       .filter((assignment: any) => assignment?.isGroupApprover === true)
       .forEach((assignment: any) => {
-        const code = String(assignment?.approverConfig?.approverCode || 'Approver Group');
-        const key = String(assignment?.approverConfig?.approverConfigId ?? code);
+        const assignedConfig = assignment?.approverConfig || {};
+        const configurationId = Number(assignedConfig?.approverConfigId ?? assignment?.approverConfigId ?? assignment?.configId ?? 0);
+        const configuration = this.approverConfigurations.find(item =>
+          Number(item?.approverConfigId ?? item?.configId) === configurationId
+        ) || {};
+        const code = String(assignedConfig?.approverCode || configuration?.approverCode || 'Approver Group');
+        const key = String(configurationId || code);
         if (!groups.has(key)) {
-          groups.set(key, { code, approvers: [] });
+          groups.set(key, {
+            code,
+            approvers: [],
+            followSequence: assignedConfig?.followSequence ?? assignment?.followSequence ?? configuration?.followSequence,
+            isAnyApprovalSufficient: assignedConfig?.isAnyApprovalSufficient ?? assignment?.isAnyApprovalSufficient ?? configuration?.isAnyApprovalSufficient
+          });
         }
         groups.get(key)!.approvers.push(assignment);
       });
@@ -574,7 +584,10 @@ export class RitmDetailsComponent implements OnInit {
 
   getConfigurationAgents(): any[] {
     return this.normalizeList(this.selectedApproverConfig?.approvers || [])
-      .map((item: any) => item?.agent ?? item)
+      .map((item: any) => ({
+        ...(item?.agent ?? item),
+        approverSequence: item?.approverSequence ?? item?.agent?.approverSequence
+      }))
       .filter((agent: any) => agent && (agent.agentName || agent.name || agent.agentId));
   }
 

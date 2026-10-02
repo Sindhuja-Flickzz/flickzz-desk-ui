@@ -48,9 +48,10 @@
   .suggestion-email { font-size: 12px; color: #8898ab; }
   .remove-btn, .action-buttons button { border: 0; background: transparent; color: #eb5757; cursor: pointer; }
   .remove-btn:disabled { color: #b9c2cf; cursor: not-allowed; }
-  .toggle-fields { display: flex; flex-wrap: wrap; gap: 34px; margin: 22px 0; }
-  .toggle-field { display: flex; align-items: center; gap: 14px; }
-  .toggle-field label { margin: 0; }
+  .approval-options { display: flex; flex-wrap: wrap; gap: 20px 34px; margin: 22px 0; padding: 0; border: 0; }
+  .approval-options legend { margin-bottom: 10px; font-weight: 700; color: #1d326d; }
+  .approval-option { display: inline-flex; align-items: center; gap: 9px; margin: 0; cursor: pointer; }
+  input.approval-radio { width: 16px; height: 16px; margin: 0; padding: 0; accent-color: #0f5bba; cursor: pointer; }
   .actions { display: flex; gap: 10px; margin-top: 16px; }
   .save-btn, .reset-btn { border-radius: 10px; padding: 11px 20px; font-size: 15px; cursor: pointer; font-weight: 700; }
   .save-btn { border: 0; background: #00246b; color: #fff; }
@@ -73,6 +74,6 @@
     .section-heading { align-items: flex-start; flex-direction: column; }
     .approver-header { display: none; }
     .approver-row { grid-template-columns: 1fr 70px 42px; padding: 10px; }
-    .toggle-fields { gap: 16px; flex-direction: column; }
+    .approval-options { gap: 14px; flex-direction: column; }
   }
 }

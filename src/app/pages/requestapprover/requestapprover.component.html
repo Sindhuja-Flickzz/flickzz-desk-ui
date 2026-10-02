@@ -40,10 +40,17 @@
         <span *ngIf="formError.approvers" class="error-text">{{ formError.approvers }}</span>
       </div>
 
-      <div class="toggle-fields">
-        <div class="toggle-field"><label for="followSequence">Follow Sequence</label><mat-slide-toggle id="followSequence" formControlName="followSequence"></mat-slide-toggle></div>
-        <div class="toggle-field"><label for="isAnyApprovalSufficient">One Approval is Enough</label><mat-slide-toggle id="isAnyApprovalSufficient" formControlName="isAnyApprovalSufficient"></mat-slide-toggle></div>
-      </div>
+      <fieldset class="approval-options">
+        <legend>Approval Mode</legend>
+        <label class="approval-option" for="followSequence">
+          <input class="approval-radio" id="followSequence" type="radio" name="approvalMode" [checked]="requestApproverForm.get('followSequence')?.value && !requestApproverForm.get('isAnyApprovalSufficient')?.value" (change)="setApprovalMode('sequence')" />
+          <span>Follow Sequence</span>
+        </label>
+        <label class="approval-option" for="isAnyApprovalSufficient">
+          <input class="approval-radio" id="isAnyApprovalSufficient" type="radio" name="approvalMode" [checked]="requestApproverForm.get('isAnyApprovalSufficient')?.value && !requestApproverForm.get('followSequence')?.value" (change)="setApprovalMode('any')" />
+          <span>Group Approval</span>
+        </label>
+      </fieldset>
 
       <div class="actions">
         <button type="submit" class="save-btn" [disabled]="isSubmitting">{{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update' : 'Save') }}</button>

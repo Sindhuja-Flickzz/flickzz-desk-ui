@@ -7,6 +7,7 @@ import { RequestConfigRequest, RequestConfigVO } from '../../models/number-range
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { USER_ROLES } from 'src/app/data/app_constants';
 import { Router } from '@angular/router';
+import { VariantService } from '../../service/variant.service';
 
 @Component({
   selector: 'app-number-range',
@@ -30,7 +31,7 @@ export class NumberRangeComponent implements OnInit {
   submitError = '';
   isSubmitting = false;
 
-  requestTypes = ['RITM', 'INC'];
+  requestTypes: string[] = [];
   alphanumericPattern = '^[a-zA-Z0-9 ]+$';
 
   pageSize = 10;
@@ -41,6 +42,7 @@ export class NumberRangeComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private numberRangeService: NumberRangeService,
+    private variantService: VariantService,
     private dialog: MatDialog,
     private router: Router
   ) {
@@ -58,6 +60,7 @@ export class NumberRangeComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAllData();
+    this.loadRequestTypes();
 
     this.numberRangeForm.valueChanges.subscribe(() => {
       this.calculateCallHorizonPercentage();
@@ -79,6 +82,28 @@ export class NumberRangeComponent implements OnInit {
       
       // Trigger validation on rangeTo control
       rangeToControl?.updateValueAndValidity({ emitEvent: false });
+    });
+  }
+
+  private loadRequestTypes(): void {
+    const orgId = localStorage.getItem('userOrgId') || '';
+    if (!orgId) {
+      this.requestTypes = [];
+      return;
+    }
+
+    this.variantService.getWorkItemList(orgId).subscribe({
+      next: (response) => {
+        const workItems = (response as any)?.attributes || response || [];
+        this.requestTypes = Array.isArray(workItems)
+          ? workItems.map((item: any) => item?.code).filter((code: any): code is string => typeof code === 'string' && code.trim().length > 0)
+          : [];
+      },
+      error: (err) => {
+        console.error('Failed to load request types:', err);
+        this.requestTypes = [];
+        this.submitError = err.error?.message || 'Failed to load request types.';
+      }
     });
   }
 

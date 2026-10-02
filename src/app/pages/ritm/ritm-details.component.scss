@@ -504,7 +504,7 @@
 
 .suggestion-list button:hover,
 .suggestion-list button:focus-visible {
-  background: #f2f6fb;
+  background: #F4F4F4;
 }
 
 .agent-picker-row {
@@ -517,12 +517,36 @@
 .approver-agent-list,
 .selected-agent-list {
   margin-top: 16px;
-  border-top: 1px solid #edf2f7;
+  border-top: 1px solid #F4F4F4;
 }
 
 .approver-agent-list h3 {
   margin: 12px 0 8px;
-  color: #374151;
+  color: #00246B;
+  font-size: 13px;
+}
+
+.approver-config-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 20px;
+  margin: 10px 0;
+}
+
+.approver-config-meta > div {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+}
+
+.approver-config-meta span {
+  color: #00246B;
+  font-size: 12px;
+}
+
+.approver-config-meta strong {
+  color: #00246B;
   font-size: 13px;
 }
 
@@ -535,14 +559,14 @@
   gap: 12px;
   padding: 10px 0;
   border-bottom: 1px solid #edf2f7;
-  color: #374151;
+  color: #00246B;
   font-size: 13px;
 }
 
 .assigned-approvers .approver-column-header,
 .assigned-approvers .approver-agent-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(96px, 180px);
+  grid-template-columns: minmax(0, 1fr) minmax(96px, 140px) minmax(96px, 180px);
   align-items: center;
   gap: 12px;
 }
@@ -562,7 +586,7 @@
   border: 1px solid #dce4f1;
   border-radius: 12px;
   background: #f4f7ff;
-  color: #102a43;
+  color: #00246B;
 }
 
 .assigned-approvers .approver-agent-row {
@@ -585,13 +609,13 @@
   padding: 3px 8px;
   border-radius: 4px;
   background: #eff4fb;
-  color: #084d8f;
+  color: #00246B;
   font-size: 11px;
   font-weight: 700;
 }
 
 .agent-meta {
-  color: #718096;
+  color: #00246B;
   font-size: 12px;
 }
 

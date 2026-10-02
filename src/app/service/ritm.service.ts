@@ -9,9 +9,11 @@ import { AgentMaster } from '../models/agent-master';
 
 export interface RitmStatusCreateRequest {
   companyId: number;
+  requestType: string;
   statusCode: string;
   sequenceNo: number;
   statusColor: string;
+  visibleStatuses: string[];
   createdBy: number;
   isCreatorAdmin: boolean;
 }
@@ -21,6 +23,21 @@ export interface RitmStatusUpdateRequest {
   isActive: boolean;
   updatedBy?: number;
   isUpdaterAdmin?: boolean;
+}
+
+export interface RitmStatusVisibilityUpdateRequest {
+  statusId: number;
+  companyId: number;
+  requestType: string;
+  statusCode: string;
+  sequenceNo: number;
+  statusColor: string;
+  visibleStatuses: string[];
+  isActive: boolean;
+  createdBy: number;
+  isCreatorAdmin: boolean;
+  updatedBy: number;
+  isUpdaterAdmin: boolean;
 }
 
 @Injectable({
@@ -48,23 +65,31 @@ export class RitmService {
   }
 
   createRitmStatus(payload: RitmStatusCreateRequest[]): Observable<any> {
-    return this.http.post(`${this.baseUrl}/ritm/status/create`, payload);
+    return this.http.post(`${this.baseUrl}/status/create`, payload);
   }
 
   getRitmStatuses(orgId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/ritm/get/status/${orgId}`);
+    return this.http.get(`${this.baseUrl}/status/get/${orgId}`);
   }
 
   getRitmActiveStatuses(orgId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/ritm/get/status/active/${orgId}`);
+    return this.http.get(`${this.baseUrl}/status/get/active/${orgId}`);
   }
 
   deleteRitmStatus(statusId: number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/ritm/status/delete`, { body: { statusId } });
+    return this.http.delete(`${this.baseUrl}/status/delete/${statusId}`);
   }
 
   updateRitmStatusActive(request: RitmStatusUpdateRequest): Observable<any> {
-    return this.http.post(`${this.baseUrl}/ritm/status/update`, request);
+    return this.http.post(`${this.baseUrl}/status/update`, request);
+  }
+
+  changeStatusActive(request: RitmStatusUpdateRequest): Observable<any> {
+    return this.http.post(`${this.baseUrl}/status/change`, request);
+  }
+
+  updateRitmStatusVisibility(request: RitmStatusVisibilityUpdateRequest): Observable<any> {
+    return this.http.post(`${this.baseUrl}/status/update`, request);
   }
 
   updateRitm(payload: any): Observable<any> {
