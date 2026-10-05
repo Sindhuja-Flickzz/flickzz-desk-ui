@@ -142,6 +142,13 @@
             <span *ngIf="showRequiredError('priority')" class="error-text">Priority is required.</span>
           </div>
 
+          <div class="field customer-resolution-field">
+            <label for="customerResolution">Customer Resolution Time</label>
+            <input id="customerResolution" type="datetime-local" formControlName="customerResolution" />
+            <span *ngIf="resolutionDateLoading" class="helper-text">Loading resolution date...</span>
+            <span *ngIf="resolutionDateError" class="error-text">{{ resolutionDateError }}</span>
+          </div>
+
           <div class="field watch-list-field">
             <label>Watch List</label>
             <div #watchListDropdown class="watch-list-dropdown" [class.open]="watchListOpen">
@@ -378,7 +385,7 @@
         </button>
 
         <div class="success-action-group">
-          <button mat-flat-button color="primary" type="button" class="primary-action" (click)="onCancel()">
+          <button mat-flat-button color="primary" type="button" class="primary-action" (click)="viewCreatedRitmDetails()">
             View RITM Details
           </button>
         </div>

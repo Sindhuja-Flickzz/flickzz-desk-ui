@@ -120,13 +120,13 @@
       </dl>
 
       <section class="ritm-approval-details" *ngIf="isRitmApproval(approval)">
-        <h3>RITM Approver Details</h3>
+        <h3>RITM Details</h3>
         <div *ngIf="isDetailLoading" class="detail-state"><mat-spinner diameter="28"></mat-spinner></div>
         <p *ngIf="detailLoadError" class="detail-error">{{ detailLoadError }}</p>
         <dl class="details-grid" *ngIf="!isDetailLoading && ritmApprover as approver">
           <div><dt>RITM Number</dt><dd>{{ getRitmNumber(approval, approver) }}</dd></div>
           <div *ngFor="let detail of approver.templateDetails"><dt>{{ detail.fieldName }}</dt><dd>{{ formatRitmValue(detail.value) }}</dd></div>
-          <div><dt>Approval Remark</dt><dd>{{ formatRitmValue(approver.approvalRemark) }}</dd></div>
+          <!-- <div><dt>Approval Remark</dt><dd>{{ formatRitmValue(approver.approvalRemark) }}</dd></div> -->
         </dl>
       </section>
 

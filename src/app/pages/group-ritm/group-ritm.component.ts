@@ -444,7 +444,7 @@ export class GroupRitmComponent implements OnInit {
       next: (response) => {
         const payload = response?.attributes ?? response ?? {};
         const detail = Array.isArray(payload) ? payload[0] ?? {} : payload;
-        this.selectedRequestDetails = detail?.ritm ?? detail;
+        this.selectedRequestDetails = this.normalizeRitmRequest(detail?.ritm ?? detail);
         this.loadDrawerComments();
         this.loadDrawerHistory();
         this.drawerLoading = false;
@@ -482,7 +482,7 @@ export class GroupRitmComponent implements OnInit {
   }
 
   getSelectedRitmId(): number | null {
-    const value = this.selectedRequestDetails?.ritmId ?? this.selectedRequestDetails?.id ?? this.selectedRequest?.ritmId ?? this.selectedRequest?.id ?? this.selectedRequest?.requestId;
+    const value = this.selectedRequestDetails?.ticketId;
     return value == null ? null : Number(value);
   }
 
@@ -586,10 +586,31 @@ export class GroupRitmComponent implements OnInit {
   }
 
   assignSelectedRequest(): void {
-    const ritmId = Number(this.selectedRequest?.ritmId ?? this.selectedRequest?.id ?? this.selectedRequest?.requestId ?? 0);
-    const assignedTo = Number(this.selectedRequest?.assignedTo?.agentId ?? this.selectedRequest?.assignedToId ?? 0);
+    const ritmId = Number(
+      this.selectedRequest?.ticketId
+      ?? this.selectedRequest?.ritmId
+      ?? this.selectedRequest?.id
+      ?? this.selectedRequest?.requestId
+      ?? this.selectedRequestDetails?.ticketId
+      ?? this.selectedRequestDetails?.ritmId
+      ?? this.selectedRequestDetails?.id
+      ?? 0
+    );
+    const assignedTo = Number(
+      this.selectedRequest?.assignedTo?.agentId
+      ?? this.selectedRequest?.assignedTo?.userId
+      ?? this.selectedRequest?.assignedToId
+      ?? 0
+    );
     const assignedBy = Number(localStorage.getItem('userId') || this.agentId || 0);
-    if (!ritmId || !assignedTo || this.assigning) {
+    if (this.assigning) {
+      return;
+    }
+    if (!ritmId) {
+      this.assignmentMessage = 'Unable to assign this RITM because its ticket ID is missing.';
+      return;
+    }
+    if (!assignedTo) {
       this.assignmentMessage = 'Select an agent before assigning.';
       return;
     }
@@ -644,6 +665,20 @@ export class GroupRitmComponent implements OnInit {
     return 'N/A';
   }
 
+  private normalizeRitmRequest(item: any): any {
+    if (!item || typeof item !== 'object') {
+      return item;
+    }
+    return {
+      ...item,
+      ritmNumber: item.ticketNumber ?? item.ritmNumber
+    };
+  }
+
+  private normalizeRitmRequests(items: any): any[] {
+    return (Array.isArray(items) ? items : []).map(item => this.normalizeRitmRequest(item));
+  }
+
   getDrawerStatusCode(): string {
     const status = this.selectedRequestDetails?.status ?? this.selectedRequest?.status;
     return this.getStatusCode(
@@ -674,7 +709,7 @@ export class GroupRitmComponent implements OnInit {
     const status = this.filterStatus.trim().toLowerCase();
     return this.requests.filter((item: any) => {
       const searchable = [
-        item?.ritmNumber,
+        item?.ticketNumber ?? item?.ritmNumber,
         item?.requestNumber,
         item?.requestedBy?.agentName,
         item?.requestedByName,
@@ -1003,7 +1038,7 @@ export class GroupRitmComponent implements OnInit {
 
     this.supportGroupService.getUnassignedRequestsForSupportGroup(group.supportGroupId).subscribe({
       next: (items) => {
-        this.requests = items || [];
+        this.requests = this.normalizeRitmRequests(items);
         this.totalRecords = this.requests.length;
         this.currentPage = 0;
         this.requestsLoading = false;
@@ -1058,7 +1093,7 @@ export class GroupRitmComponent implements OnInit {
 
     this.supportGroupService.getRequestsByStatus(status.statusId, group.supportGroupId).subscribe({
       next: (items) => {
-        this.requests = items || [];
+        this.requests = this.normalizeRitmRequests(items);
         this.totalRecords = this.requests.length;
         this.requestsLoading = false;
       },
@@ -1086,7 +1121,7 @@ export class GroupRitmComponent implements OnInit {
     this.requestsLoading = true;
     this.supportGroupService.getAssignedRequestsForAgent(this.selectedAgentId).subscribe({
       next: (items) => {
-        this.requests = items || [];
+        this.requests = this.normalizeRitmRequests(items);
         this.totalRecords = this.requests.length;
         this.currentPage = 0;
         this.requestsLoading = false;
@@ -1119,7 +1154,7 @@ export class GroupRitmComponent implements OnInit {
 
     this.supportGroupService.getAssignedRequestsForAgent(agentId).subscribe({
       next: (items) => { 
-        this.requests = items || [];
+        this.requests = this.normalizeRitmRequests(items);
         this.totalRecords = this.requests.length;
         this.currentPage = 0;
         this.requestsLoading = false;

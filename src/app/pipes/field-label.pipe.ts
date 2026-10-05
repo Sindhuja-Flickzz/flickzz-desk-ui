@@ -50,3 +50,21 @@ export class JoinPipe implements PipeTransform {
     return Array.isArray(value) ? value.join(separator) : '';
   }
 }
+
+export class formatDatePipe implements PipeTransform {
+  transform(value: unknown): string {
+    if (!value) {
+      return '';
+    }
+
+    const dateValue = new Date(value as string | number | Date);
+
+    return dateValue.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  }
+}

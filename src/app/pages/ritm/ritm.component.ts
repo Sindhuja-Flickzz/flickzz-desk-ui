@@ -65,6 +65,9 @@ export class RitmComponent implements OnInit, OnDestroy {
   private fieldTypeMap = new Map<number, string>();
   private existingTemplateDetails: any[] = [];
   private existingStatusValue: any = null;
+  private resolutionDateRequestId = 0;
+  resolutionDateLoading = false;
+  resolutionDateError = '';
 
   constructor(
     private fb: FormBuilder,
@@ -107,6 +110,7 @@ export class RitmComponent implements OnInit, OnDestroy {
       subCategory: ['', Validators.required],
       assignmentGroup: [''],
       priority: ['', Validators.required],
+      customerResolution: [{ value: '', disabled: true }],
       status: [''],
       assignedTo: [''],
       watchList: [],
@@ -119,8 +123,9 @@ export class RitmComponent implements OnInit, OnDestroy {
       dueDate: ['', Validators.required]
     });
 
-    this.ritmForm.get('priority')?.valueChanges.subscribe(() => {
-      this.selectedPriority = this.priorities.find(priority => priority.priorityId === this.ritmForm.get('priority')?.value);
+    this.ritmForm.get('priority')?.valueChanges.subscribe(priorityId => {
+      this.selectedPriority = this.priorities.find(priority => Number(priority.priorityId) === Number(priorityId));
+      this.loadResolutionDate(priorityId);
     });
 
     this.ritmForm.get('requestedFor')?.valueChanges.subscribe(value => {
@@ -337,17 +342,31 @@ export class RitmComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadSubCategories(categoryId: number | null): void {
+  private loadSubCategories(
+    categoryId: number | null,
+    selectedSubCategoryId?: number | string | null,
+    existingAssignmentGroup?: any
+  ): void {
     this.subCategories = [];
-    this.ritmForm.get('subCategory')?.reset('', { emitEvent: false });
-    this.ritmForm.get('assignmentGroup')?.reset('', { emitEvent: false });
-    this.assignmentGroupId = null;
+    if (selectedSubCategoryId === undefined) {
+      this.ritmForm.get('subCategory')?.reset('', { emitEvent: false });
+      this.ritmForm.get('assignmentGroup')?.reset('', { emitEvent: false });
+      this.assignmentGroupId = null;
+    }
     if (!categoryId) {
       return;
     }
     this.categoryService.getSubCategories(categoryId).subscribe({
       next: response => {
         this.subCategories = this.normalizeArray<CategorySubCategory>(response?.attributes || response);
+        if (selectedSubCategoryId !== undefined && selectedSubCategoryId !== null && selectedSubCategoryId !== '') {
+          const matchedSubCategory = this.subCategories.find(subCategory =>
+            Number(subCategory.subCategoryId) === Number(selectedSubCategoryId)
+          );
+          const resolvedSubCategoryId = matchedSubCategory?.subCategoryId ?? Number(selectedSubCategoryId);
+          this.ritmForm.get('subCategory')?.setValue(resolvedSubCategoryId, { emitEvent: false });
+          this.loadSupportGroup(resolvedSubCategoryId, existingAssignmentGroup);
+        }
       },
       error: () => {
         this.submitError = 'Unable to load sub-category list.';
@@ -355,19 +374,32 @@ export class RitmComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadSupportGroup(subCategoryId: number | null): void {
-    this.ritmForm.get('assignmentGroup')?.reset('', { emitEvent: false });
-    this.assignmentGroupId = null;
+  private loadSupportGroup(subCategoryId: number | null, existingAssignmentGroup?: any): void {
+    if (existingAssignmentGroup === undefined) {
+      this.ritmForm.get('assignmentGroup')?.reset('', { emitEvent: false });
+      this.assignmentGroupId = null;
+    }
     if (!subCategoryId) {
       return;
     }
     this.supportGroupService.getSupportGroupBySubCategory(subCategoryId).subscribe({
       next: response => {
         const supportGroup = response?.attributes || response;
-        const group = Array.isArray(supportGroup) ? supportGroup[0] : supportGroup;
-        this.assignmentGroupId = group?.supportGroupId ?? group?.groupId ?? group?.id ?? null;
+        const existingGroupId = typeof existingAssignmentGroup === 'object'
+          ? existingAssignmentGroup.supportGroupId ?? existingAssignmentGroup.groupId ?? existingAssignmentGroup.id
+          : existingAssignmentGroup;
+        const supportGroups = this.normalizeArray<any>(supportGroup);
+        const group = supportGroups.find(candidate =>
+          existingGroupId != null
+          && Number(candidate?.supportGroupId ?? candidate?.groupId ?? candidate?.id) === Number(existingGroupId)
+        ) ?? supportGroups[0];
+        const resolvedGroupId = group?.supportGroupId ?? group?.groupId ?? group?.id ?? existingGroupId ?? null;
+        this.assignmentGroupId = resolvedGroupId;
         this.ritmForm.get('assignmentGroup')?.setValue(
-          group?.groupName || group?.supportGroupName || group?.name || ''
+          group?.groupName
+            || group?.supportGroupName
+            || group?.name
+            || this.readDisplayName(existingAssignmentGroup, ['groupName', 'supportGroupName', 'name'])
         );
       },
       error: () => {
@@ -607,21 +639,27 @@ export class RitmComponent implements OnInit, OnDestroy {
 
   private populateFormFromRitm(item: any): void {
     const ritm = item?.attributes || item || {};
+    const categoryId = ritm.categoryId ?? ritm.category?.categoryId ?? ritm.category?.id
+      ?? (typeof ritm.category === 'number' || typeof ritm.category === 'string' ? ritm.category : '');
+    const subCategoryId = ritm.subCategoryId ?? ritm.subCategory?.subCategoryId ?? ritm.subCategory?.id
+      ?? (typeof ritm.subCategory === 'number' || typeof ritm.subCategory === 'string' ? ritm.subCategory : '');
+    const existingAssignmentGroup = ritm.supportGroup ?? ritm.assignmentGroup
+      ?? ritm.supportGroupId ?? ritm.assignmentGroupId;
     this.existingTemplateDetails = ritm.templateDetails || ritm.templateFields || [];
     this.applyExistingTemplateValues();
-    console.log('Populating form with RITM data:', ritm);
     this.ritmForm.patchValue({
-      ritmNumber: ritm.ritmNumber || '',
+      ritmNumber: ritm.ticketNumber || ritm.ritmNumber || ritm.requestNumber || '',
       openedBy: ritm.openedBy || this.getCurrentUserDisplayName(),
       requestedFor: ritm.requestedFor.agentId,
       location: ritm.location || this.currentUser?.city?.cityName || this.currentUser?.country?.countryName || '',
       availabilityTime: this.formatAvailabilityTime(this.currentUser?.calendar?.workFrom, this.currentUser?.calendar?.workTo),
       currentTime: this.getLocalTime(this.currentUser?.city?.timezone),
       requestTypeId: ritm.requestTypeId ?? ritm.requestType?.requestTypeId ?? '',
-      category: ritm.categoryId ?? ritm.category?.categoryId ?? (ritm.category || ''),
-      subCategory: ritm.subCategoryId ?? ritm.subCategory?.subCategoryId ?? ritm.subCategory?.id ?? '',
-      assignmentGroup: ritm.assignmentGroup || '',
+      category: categoryId,
+      subCategory: subCategoryId,
+      assignmentGroup: this.readDisplayName(existingAssignmentGroup, ['groupName', 'supportGroupName', 'name']),
       priority: ritm.priority.priorityId || '',
+      customerResolution: this.toDateTimeLocalValue(ritm.customerResolution ?? ritm.customerResolutionDate ?? ''),
       status: '',
       assignedTo: this.getAssignedAgentId(ritm.assignedTo ?? ritm.assignedToId),
       watchList: this.normalizeWatchListIds(ritm.watchlist || []),
@@ -629,22 +667,18 @@ export class RitmComponent implements OnInit, OnDestroy {
       description: ritm.description || '',
       stepsToReproduce: ritm.stepsToReproduce || '',
       otherNotes: ritm.otherNotes || ''
-    });
+    }, { emitEvent: false });
+    this.loadSubCategories(Number(categoryId) || null, subCategoryId, existingAssignmentGroup);
+    this.selectedPriority = this.priorities.find(priority => Number(priority.priorityId) === Number(ritm.priority?.priorityId));
+    this.loadResolutionDate(ritm.priority?.priorityId, ritm.customerResolution ?? ritm.customerResolutionDate ?? '');
     this.existingStatusValue = ritm.status ?? ritm.statusId ?? ritm.statusCode ?? '';
     const currentStatusId = this.getCurrentRitmStatusId(ritm);
     if (currentStatusId !== null) {
       this.loadRitmStatuses(currentStatusId, ritm);
     }
-    this.assignmentGroupId = ritm.supportGroupId
-      ?? ritm.assignmentGroupId
-      ?? ritm.assignmentGroup?.supportGroupId
-      ?? ritm.assignmentGroup?.groupId
-      ?? ritm.assignmentGroup?.id
-      ?? (typeof ritm.assignmentGroup === 'number' ? ritm.assignmentGroup : null);
-
-    if (!ritm.ritmNumber) {
-      this.generateRitmNumber();
-    }
+    this.assignmentGroupId = typeof existingAssignmentGroup === 'object'
+      ? existingAssignmentGroup.supportGroupId ?? existingAssignmentGroup.groupId ?? existingAssignmentGroup.id ?? null
+      : existingAssignmentGroup ?? null;
     this.loading = false;
   }
 
@@ -682,6 +716,56 @@ export class RitmComponent implements OnInit, OnDestroy {
       return assignedTo.agentId ?? assignedTo.id ?? assignedTo.userId ?? '';
     }
     return assignedTo ?? '';
+  }
+
+  private loadResolutionDate(priorityId: number | string | null, existingDate = ''): void {
+    const requestId = ++this.resolutionDateRequestId;
+    const dateControl = this.ritmForm.get('customerResolution');
+    this.resolutionDateError = '';
+
+    if (priorityId === null || priorityId === undefined || priorityId === '') {
+      this.resolutionDateLoading = false;
+      dateControl?.setValue('', { emitEvent: false });
+      dateControl?.disable({ emitEvent: false });
+      return;
+    }
+
+    this.resolutionDateLoading = true;
+    dateControl?.setValue(this.toDateTimeLocalValue(existingDate), { emitEvent: false });
+    dateControl?.disable({ emitEvent: false });
+    this.ritmService.getResolutionDate(Number(priorityId)).subscribe({
+      next: (response: any) => {
+        if (requestId !== this.resolutionDateRequestId) {
+          return;
+        }
+        const resolutionDate = response?.attributes !== undefined ? response.attributes : response;
+        const dateValue = resolutionDate;
+        if (dateValue === null) {
+          dateControl?.enable({ emitEvent: false });
+          dateControl?.setValue(this.toDateTimeLocalValue(existingDate), { emitEvent: false });
+        } else {
+          dateControl?.setValue(this.toDateTimeLocalValue(dateValue), { emitEvent: false });
+        }
+        this.resolutionDateLoading = false;
+      },
+      error: (err: unknown) => {
+        if (requestId !== this.resolutionDateRequestId) {
+          return;
+        }
+        this.resolutionDateLoading = false;
+        this.resolutionDateError = 'Unable to load the customer resolution date.';
+        console.error(err);
+      }
+    });
+  }
+
+  private toDateTimeLocalValue(value: unknown): string {
+    if (value == null || value === '') {
+      return '';
+    }
+    const dateTimeValue = String(value).trim().replace(' ', 'T');
+    const match = dateTimeValue.match(/^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}))?/);
+    return match ? `${match[1]}T${match[2] || '00:00'}` : '';
   }
 
   private loadRitmDetails(ritmId: string): void {
@@ -877,7 +961,11 @@ export class RitmComponent implements OnInit, OnDestroy {
         this.successWasUpdate = wasEditMode;
         const responseData = response?.attributes ?? response ?? {};
         const savedRitmValue = Array.isArray(responseData) ? responseData[0] : responseData;
-        const savedRitm = savedRitmValue?.ritm ?? savedRitmValue?.data ?? savedRitmValue ?? {};
+        const savedRitm = {
+          ...(savedRitmValue?.ritm ?? savedRitmValue?.data ?? savedRitmValue ?? {}),
+          ticketNumber: savedRitmValue?.ticketNumber ?? responseData?.ticketNumber ?? response?.ticketNumber,
+          ticketId: savedRitmValue?.ticketId ?? responseData?.ticketId ?? response?.ticketId
+        };
         this.successRitmDetails = this.buildSuccessRitmDetails(savedRitm, rawValues);
         this.showSuccessScreen = true;
         this.isEditMode = false;
@@ -932,6 +1020,21 @@ export class RitmComponent implements OnInit, OnDestroy {
     this.router.navigate(['/settings']);
   }
 
+  viewCreatedRitmDetails(): void {
+    const ritmId = this.successRitmDetails?.ritmId
+      ?? this.successRitmDetails?.id
+      ?? this.successRitmDetails?.requestId;
+    if (ritmId === null || ritmId === undefined || ritmId === '') {
+      this.submitError = 'Unable to open RITM details because the saved request ID was not returned.';
+      return;
+    }
+
+    const agentId = this.currentUser?.agentId ?? Number(localStorage.getItem('userId') || 0);
+    this.router.navigate(['/agent', agentId, 'requestedByMe'], {
+      queryParams: { ritmId: String(ritmId) }
+    });
+  }
+
   private buildSuccessRitmDetails(createdRitm: any, rawValues: any): any {
     const item = (createdRitm?.ritm ?? createdRitm) || {};
     const status = item.status || 'OPEN';
@@ -947,17 +1050,22 @@ export class RitmComponent implements OnInit, OnDestroy {
 
     return {
       ...item,
-      ritmNumber: item.ritmNumber || item.requestNumber || rawValues.ritmNumber,
+      ritmId: item.ticketId ?? item.ritmId ?? item.id,
+      ritmNumber: item.ticketNumber || item.ritmNumber || item.requestNumber || rawValues.ritmNumber,
       status,
       statusColor: item.statusColor || (status && typeof status === 'object' ? status.statusColor : ''),
       createdOn: item.createdOn || item.createdAt || item.requestedAt || new Date(),
       categoryName: this.readDisplayName(category, ['categoryName', 'name']) || rawValues.category,
       subCategoryName: this.readDisplayName(subCategory, ['subCategoryName', 'name']) || rawValues.subCategory,
       requestedByName: this.readDisplayName(requestedBy, ['agentName', 'name']),
-      requestedForName: this.readDisplayName(requestedFor, ['agentName', 'name']) || this.getRequestedForDisplayName(),
-      assignedToName: this.readDisplayName(assignedTo, ['agentName', 'name']),
+      requestedForName: this.readDisplayName(requestedFor, ['agentName', 'name']) || this.getDisplayName('requestedFor'),
+      requestType: item.requestType || this.requestTypes.find(requestType =>
+        Number(requestType.requestTypeId) === Number(item.requestTypeId ?? rawValues.requestTypeId)
+      ) || { requestTypeName: item.requestTypeName || '' },
+      customerResolution: item.customerResolution ?? rawValues.customerResolution ?? '',
       priorityName: this.readDisplayName(priority, ['code', 'level', 'description']) || item.priorityName || rawValues.priority,
       assignmentGroupName: this.readDisplayName(supportGroup, ['groupName', 'supportGroupName', 'name']) || rawValues.assignmentGroup,
+      assignedToName: this.readDisplayName(assignedTo, ['agentName', 'name']) || rawValues.assignedTo || this.getDisplayName('assignedTo'),
       watchlist,
       ritmAttachments: attachments,
       comments: item.comments || [],
@@ -1001,10 +1109,10 @@ export class RitmComponent implements OnInit, OnDestroy {
     return '';
   }
 
-  private getRequestedForDisplayName(): string {
-    const requestedForId = this.ritmForm.get('requestedFor')?.value;
+  private getDisplayName(type: string): string {
+    const requestedForId = this.ritmForm.get(type)?.value;
     const user = this.users.find(item => item.agentId === Number(requestedForId));
-    return user ? `${user.agentName}`.trim() : `${requestedForId || ''}`;
+    return user ? `${user.agentName}`.trim() : '';
   }
 
   get successCreatedOnLabel(): string {
@@ -1082,27 +1190,30 @@ export class RitmComponent implements OnInit, OnDestroy {
 
   get successRequestFields(): Array<{ label: string; value: string; icon: string; iconClass: string; className?: string }> {
     const data = this.successRitmDetails || {};
-    const requestedFor = this.normalizeSuccessValue(data.requestedForName || data.requestedFor || this.getRequestedForDisplayName());
+    console.log('Building success request fields from data:', data);
+    const requestedFor = this.normalizeSuccessValue(data.requestedForName || data.requestedFor || this.getDisplayName('requestedFor'));
     const category = this.normalizeSuccessValue(data.categoryName || data.category);
     const subCategory = this.normalizeSuccessValue(data.subCategoryName || data.subCategory);
     const priority = this.normalizeSuccessValue(data.priorityName || data.priority);
     const supportGroup = this.normalizeSuccessValue(data.assignmentGroupName || data.assignmentGroup);
     const requestedBy = this.normalizeSuccessValue(data.requestedByName || data.requestedBy || this.currentUser?.agentName);
-    const assignedTo = this.normalizeSuccessValue(data.assignedTo);
-    // const expectedResolution = this.normalizeSuccessValue(data.expectedResolution);
+    const requestType = this.readDisplayName(data.requestType, ['requestTypeName'])
+      || this.normalizeSuccessValue(data.requestTypeName);
+    const expectedResolution = this.formatSuccessDate(data.customerResolution);
+    const assignedTo = this.normalizeSuccessValue(data.assignedToName || data.assignedTo || this.getDisplayName('assignedTo'));
 
     return [
       { label: 'Requested For', value: requestedFor || '—', icon: '◔', iconClass: 'primary', className: '' },
+      { label: 'Requested By', value: requestedBy || '—', icon: '◐', iconClass: 'muted', className: '' },
+      { label: 'Created On', value: this.successCreatedOnLabel, icon: '◧', iconClass: 'primary', className: '' },
       { label: 'Status', value: this.normalizeSuccessValue(data.status?.statusCode || 'OPEN'), icon: '◉', iconClass: 'success', className: 'status-pill' },
       { label: 'Priority', value: priority || '—', icon: '◢', iconClass: 'warning', className: 'priority-pill' },
-      { label: 'Created On', value: this.successCreatedOnLabel, icon: '◧', iconClass: 'primary', className: '' },
-      { label: 'Requested By', value: requestedBy || '—', icon: '◐', iconClass: 'muted', className: '' },
-      { label: 'Assigned To', value: assignedTo || '—', icon: '◍', iconClass: 'soft', className: '' },
       { label: 'Category', value: category || '—', icon: '▣', iconClass: 'muted', className: '' },
       { label: 'Sub Category', value: subCategory || '—', icon: '◎', iconClass: 'soft', className: '' },
-      { label: 'Support Group', value: supportGroup || '—', icon: '◍', iconClass: 'soft', className: '' },
-      { label: 'Requested At', value: this.formatSuccessDate(data.requestedAt || data.createdAt) || '—', icon: '◫', iconClass: 'soft', className: '' },
-      // { label: 'Expected Resolution', value: expectedResolution || '—', icon: '◐', iconClass: 'muted', className: '' },
+      { label: 'Assignment Group', value: supportGroup || '—', icon: '◍', iconClass: 'soft', className: '' },
+      { label: 'Request Type', value: requestType || '—', icon: '◫', iconClass: 'soft', className: '' },
+      { label: 'Expected Resolution', value: expectedResolution || '—', icon: '◐', iconClass: 'muted', className: '' },
+      { label: 'Assigned To', value: assignedTo || '—', icon: '◑', iconClass: 'muted', className: '' }
     ];
   }
 

@@ -13,11 +13,11 @@ export class RequestTypeService {
   constructor(private http: HttpClient) { }
 
   getRequestTypes(userOrgId: number): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/ritm/request/type/list/${userOrgId}`);
+    return this.http.get<any>(`${this.baseUrl}/ticket/request/type/list/${userOrgId}`);
   }
 
   createRequestTypes(requests: RequestTypeRequest[]): Observable<any> {
-    return this.http.post(`${this.baseUrl}/ritm/request/type/create`, requests);
+    return this.http.post(`${this.baseUrl}/ticket/request/type/create`, requests);
   }
 
   deleteRequestType(requestTypeId: number, deletedBy: number, isDeletedByAdmin: boolean): Observable<any> {
@@ -25,6 +25,6 @@ export class RequestTypeService {
       .set('deletedBy', deletedBy)
       .set('isDeletedByAdmin', isDeletedByAdmin);
 
-    return this.http.delete(`${this.baseUrl}/ritm/request/type/${requestTypeId}`, { params });
+    return this.http.delete(`${this.baseUrl}/ticket/request/type/${requestTypeId}`, { params });
   }
 }

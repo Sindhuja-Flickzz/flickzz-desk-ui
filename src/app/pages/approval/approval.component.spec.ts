@@ -157,7 +157,7 @@ describe('ApprovalComponent', () => {
     const approval = { ...component.approvals[0], requestId: 42, requestType: 'RITM', status: 'Pending' };
     ritmService.getRitmApprover.and.returnValue(of({
       attributes: {
-        ritmApproverId: 14,
+        ticketApproverId: 14,
         requestId: 42,
         requestType: 'RITM',
         ritm: null,
