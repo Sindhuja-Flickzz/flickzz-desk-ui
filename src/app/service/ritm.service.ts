@@ -56,12 +56,16 @@ export class RitmService {
     return this.http.get<PriorityMaster[]>(`${this.baseUrl}/bp/config/priority/active/${businessPartnerId}`);
   }
 
+  getResolutionDate(priorityId: number): Observable<unknown> {
+    return this.http.get<unknown>(`${this.baseUrl}/ticket/resolution/date/${priorityId}`);
+  }
+
   getRequestNumber(requestType: string): Observable<{ attributes: string }> {
     return this.http.get<{ attributes: string }>(`${this.baseUrl}/request/number/${requestType}`);
   }
 
   createRitm(payload: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/ritm/create`, payload);
+    return this.http.post(`${this.baseUrl}/ticket/create`, payload);
   }
 
   createRitmStatus(payload: RitmStatusCreateRequest[]): Observable<any> {
@@ -102,28 +106,28 @@ export class RitmService {
   }
 
   updateRitm(payload: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/ritm/update`, payload);
+    return this.http.post(`${this.baseUrl}/ticket/update`, payload);
   }
 
   assignRitm(payload: { ritmId: number; assignedTo: number; assignedBy: number }): Observable<any> {
-    return this.http.put(`${this.baseUrl}/ritm/assign`, payload);
+    return this.http.put(`${this.baseUrl}/ticket/assign`, payload);
   }
 
   assignApprover(payload: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/ritm/approver/assign`, payload);
+    return this.http.post(`${this.baseUrl}/ticket/approver/assign`, payload);
   }
 
   getRitmApprovers(ritmId: string | number, companyId: number): Observable<any> {
     const params = new HttpParams().set('companyId', companyId);
-    return this.http.get(`${this.baseUrl}/ritm/approver/list/${ritmId}`, { params });
+    return this.http.get(`${this.baseUrl}/ticket/approver/list/${ritmId}`, { params });
   }
 
   getRitmApprover(requestId: number): Observable<RitmApproverResponse> {
-    return this.http.get<RitmApproverResponse>(`${this.baseUrl}/ritm/approver/${requestId}`);
+    return this.http.get<RitmApproverResponse>(`${this.baseUrl}/ticket/approver/${requestId}`);
   }
 
   updateApprover(payload: any): Observable<any> {
-    return this.http.put(`${this.baseUrl}/ritm/approver/update`, payload);
+    return this.http.put(`${this.baseUrl}/ticket/approver/update`, payload);
   }
 
   deleteRitmApprovers(ritmId: string | number, companyId: number, deletedBy: number, isDeletedByAdmin: boolean): Observable<any> {
@@ -131,7 +135,7 @@ export class RitmService {
       .set('companyId', companyId)
       .set('deletedBy', deletedBy)
       .set('isDeletedByAdmin', isDeletedByAdmin);
-    return this.http.delete(`${this.baseUrl}/ritm/approver/delete/${ritmId}`, { params });
+    return this.http.delete(`${this.baseUrl}/ticket/approver/delete/${ritmId}`, { params });
   }
 
   getNotes(userId: string): Observable<NoteItem[]> {
@@ -143,58 +147,58 @@ export class RitmService {
   }
 
   getLogs(ritmId: string): Observable<LogEntry[]> {
-    return this.http.get<LogEntry[]>(`${this.baseUrl}/ritm/logs/${ritmId}`);
+    return this.http.get<LogEntry[]>(`${this.baseUrl}/ticket/logs/${ritmId}`);
   }
 
   getWorkflow(ritmId: string): Observable<WorkflowStage[]> {
-    return this.http.get<WorkflowStage[]>(`${this.baseUrl}/ritm/workflow/${ritmId}`);
+    return this.http.get<WorkflowStage[]>(`${this.baseUrl}/ticket/workflow/${ritmId}`);
   }
 
   getTaskSlas(ritmId: string): Observable<TaskSlaItem[]> {
-    return this.http.get<TaskSlaItem[]>(`${this.baseUrl}/ritm/task-slas/${ritmId}`);
+    return this.http.get<TaskSlaItem[]>(`${this.baseUrl}/ticket/task-slas/${ritmId}`);
   }
 
   getChangeRequests(ritmId: string): Observable<ChangeRequestItem[]> {
-    return this.http.get<ChangeRequestItem[]>(`${this.baseUrl}/ritm/change-requests/${ritmId}`);
+    return this.http.get<ChangeRequestItem[]>(`${this.baseUrl}/ticket/change-requests/${ritmId}`);
   }
 
   createCatalogTask(task: CatalogTask): Observable<any> {
-    return this.http.post(`${this.baseUrl}/ritm/tasks/create`, task);
+    return this.http.post(`${this.baseUrl}/ticket/tasks/create`, task);
   }
 
   getRitmById(ritmId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/ritm/${ritmId}`);
+    return this.http.get(`${this.baseUrl}/ticket/${ritmId}`);
   }
 
   getRequestedByMe(agentId: number | null): Observable<any> {
-    return this.http.get(`${this.baseUrl}/ritm/agent/${agentId}/requestedByMe`);
+    return this.http.get(`${this.baseUrl}/ticket/agent/${agentId}/requestedByMe`);
   }
 
   getAssignedToMe(agentId: number | null): Observable<any> {
-    return this.http.get(`${this.baseUrl}/ritm/agent/${agentId}/assignedToMe`);
+    return this.http.get(`${this.baseUrl}/ticket/agent/${agentId}/assignedToMe`);
   }
 
   getRitmWorkNotes(ritmId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/ritm/${ritmId}/comments`);
+    return this.http.get(`${this.baseUrl}/ticket/${ritmId}/comments`);
   }
 
   getRitmHistory(ritmId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/ritm/${ritmId}/audits`);
+    return this.http.get(`${this.baseUrl}/ticket/${ritmId}/audits`);
   }
 
   getRitmSla(ritmId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/ritm/${ritmId}/sla`);
+    return this.http.get(`${this.baseUrl}/ticket/${ritmId}/sla`);
   }
 
   addRitmComment(payload: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/ritm/comment`, payload);
+    return this.http.post(`${this.baseUrl}/ticket/comment`, payload);
   }
 
   updateRitmComment(payload: any): Observable<any> {
-    return this.http.put(`${this.baseUrl}/ritm/comment`, payload);
+    return this.http.put(`${this.baseUrl}/ticket/comment`, payload);
   }
 
   escalateRitm(ritmId: string, reason: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/ritm/${ritmId}/escalate`, { reason });
+    return this.http.post(`${this.baseUrl}/ticket/${ritmId}/escalate`, { reason });
   }
 }

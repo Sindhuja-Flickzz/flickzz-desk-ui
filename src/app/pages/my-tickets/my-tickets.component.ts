@@ -300,7 +300,7 @@ export class MyTicketsComponent implements OnInit {
   }
 
   getRequestNumber(item: any): string {
-    return item?.ritmNumber || item?.requestNumber || item?.requestId || item?.id || 'N/A';
+    return item?.ticketNumber || 'N/A';
   }
 
   getTitle(item: any): string {
@@ -328,7 +328,7 @@ export class MyTicketsComponent implements OnInit {
   }
 
   openTicket(item: any): void {
-    const ritmId = item?.ritmId || item?.id || item?.requestId || item?.ritmNumber || item?.requestNumber;
+    const ritmId = item?.ticketId|| item?.ticketNumber;
     const requestType = this.primaryTab === 'opened-by-me' ? 'requestedByMe' : 'assignedToMe';
     if (!ritmId) {
       return;

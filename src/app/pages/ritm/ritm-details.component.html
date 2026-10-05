@@ -3,7 +3,7 @@
     <button type="button" class="header-back" (click)="back()">
       <mat-icon>chevron_left</mat-icon>
     </button>
-    <h1 class="ritm-number">{{ getNestedValue('ritmNumber', 'RITM') }}</h1>
+    <h1 class="ritm-number">{{ getNestedValue('ticketNumber', 'RITM') }}</h1>
     <button *ngIf="canEdit()" type="button" class="header-edit" aria-label="Edit RITM" title="Edit RITM" (click)="editRitm()">
       <mat-icon>edit</mat-icon>
     </button>
@@ -272,8 +272,9 @@
         <section class="approver-agent-list" *ngFor="let group of getGroupedApproverAssignments()">
           <h3>Approver Code: {{ group.code }}</h3>
           <div class="approver-config-meta">
-            <div><span>Follow Sequence:</span><strong>{{ group.followSequence ? 'Yes' : 'No' }}</strong></div>
-            <div><span>Is Any Approval Sufficient:</span><strong>{{ group.isAnyApprovalSufficient ? 'Yes' : 'No' }}</strong></div>
+            <div *ngIf="group.followSequence"><span>Follow Sequence:</span><strong>{{ group.followSequence ? 'Yes' : 'No' }}</strong></div>
+            <div *ngIf="group.isAnyApprovalSufficient"><span>Group Approval:</span><strong>{{ group.isAnyApprovalSufficient ? 'Yes' : 'No' }}</strong></div>
+            <div *ngIf="group.remark"><span>Remark:</span><strong>{{ group.remark }}</strong></div>
           </div>
           <div class="approver-column-header"><span>User</span><span>Approver Sequence</span><span>Status</span></div>
           <div class="approver-agent-row" *ngFor="let approver of group.approvers">
@@ -282,7 +283,10 @@
             <span class="agent-meta">{{ approver.approvalStatus || '' }}</span>
           </div>
         </section>
-        <section class="approver-agent-list" *ngIf="getIndividualApproverAssignments().length">
+        <section class="approver-agent-list individual-approvers" *ngIf="getIndividualApproverAssignments().length">
+          <div class="approver-config-meta">
+            <div><span>Remark:</span><strong>{{ getApproverRemark(getIndividualApproverAssignments()[0]) }}</strong></div>
+          </div>
           <div class="approver-column-header"><span>User</span><span>Approver Sequence</span><span>Status</span></div>
           <div class="approver-agent-row" *ngFor="let approver of getIndividualApproverAssignments()">
             <span>{{ getApproverName(approver) }}</span>
@@ -320,8 +324,8 @@
         <div class="approver-agent-list" *ngIf="selectedApproverConfig">
           <h3>Approvers in {{ selectedApproverConfig.approverCode }}</h3>
           <div class="approver-config-meta">
-            <div><span>Follow Sequence: </span><strong>{{ selectedApproverConfig.followSequence ? 'Yes' : 'No' }}</strong></div>
-            <div><span>One Approval Sufficient:</span><strong>{{ selectedApproverConfig.isAnyApprovalSufficient ? 'Yes' : 'No' }}</strong></div>
+            <div *ngIf="selectedApproverConfig.followSequence"><span>Follow Sequence: </span><strong>{{ selectedApproverConfig.followSequence ? 'Yes' : 'No' }}</strong></div>
+            <div *ngIf="selectedApproverConfig.isAnyApprovalSufficient"><span>Group Approval:</span><strong>{{ selectedApproverConfig.isAnyApprovalSufficient ? 'Yes' : 'No' }}</strong></div>
           </div>
           <div class="approver-agent-row" *ngFor="let agent of getConfigurationAgents()">
             <span>{{ agent.agentName || agent.name || 'Agent' }}</span>

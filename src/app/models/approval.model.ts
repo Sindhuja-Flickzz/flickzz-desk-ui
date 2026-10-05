@@ -115,10 +115,10 @@ export interface TemplateDetails {
 }
 
 export interface RitmApprover {
-  ritmApproverId: number;
+  ticketApproverId: number;
   requestId: number;
   requestType: string;
-  ritm: unknown | null;
+  ticket: unknown | null;
   isGroupApprover: boolean;
   approverConfig: {
     approverConfigId: number;

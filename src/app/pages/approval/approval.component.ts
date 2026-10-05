@@ -230,7 +230,7 @@ export class ApprovalComponent implements OnInit {
   }
 
   getRitmNumber(approval: ApprovalRecord, approver: RitmApprover): string {
-    const ritm = approver.ritm;
+    const ritm = approver.ticket;
     if (typeof ritm === 'string' || typeof ritm === 'number') return this.formatRitmValue(ritm);
     if (ritm && typeof ritm === 'object') {
       const ritmRecord = ritm as Record<string, unknown>;

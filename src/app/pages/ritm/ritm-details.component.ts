@@ -433,12 +433,13 @@ export class RitmDetailsComponent implements OnInit {
     }).filter((agent: any) => Number(agent?.agentId ?? agent?.id) > 0);
   }
 
-  getGroupedApproverAssignments(): Array<{ code: string; approvers: any[]; followSequence?: boolean; isAnyApprovalSufficient?: boolean }> {
-    const groups = new Map<string, { code: string; approvers: any[]; followSequence?: boolean; isAnyApprovalSufficient?: boolean }>();
+  getGroupedApproverAssignments(): Array<{ code: string; approvers: any[]; followSequence?: boolean; isAnyApprovalSufficient?: boolean; remark?: string }> {
+    const groups = new Map<string, { code: string; approvers: any[]; followSequence?: boolean; isAnyApprovalSufficient?: boolean; remark?: string }>();
     this.assignedApprovers
       .filter((assignment: any) => assignment?.isGroupApprover === true)
       .forEach((assignment: any) => {
         const assignedConfig = assignment?.approverConfig || {};
+        const remark = assignment?.remark || {};
         const configurationId = Number(assignedConfig?.approverConfigId ?? assignment?.approverConfigId ?? assignment?.configId ?? 0);
         const configuration = this.approverConfigurations.find(item =>
           Number(item?.approverConfigId ?? item?.configId) === configurationId
@@ -450,7 +451,8 @@ export class RitmDetailsComponent implements OnInit {
             code,
             approvers: [],
             followSequence: assignedConfig?.followSequence ?? assignment?.followSequence ?? configuration?.followSequence,
-            isAnyApprovalSufficient: assignedConfig?.isAnyApprovalSufficient ?? assignment?.isAnyApprovalSufficient ?? configuration?.isAnyApprovalSufficient
+            isAnyApprovalSufficient: assignedConfig?.isAnyApprovalSufficient ?? assignment?.isAnyApprovalSufficient ?? configuration?.isAnyApprovalSufficient,
+            remark: remark?.remark
           });
         }
         groups.get(key)!.approvers.push(assignment);
@@ -460,6 +462,14 @@ export class RitmDetailsComponent implements OnInit {
 
   getIndividualApproverAssignments(): any[] {
     return this.assignedApprovers.filter((assignment: any) => assignment?.isGroupApprover === false);
+  }
+
+  getApproverRemark(approver: any): string {
+    const remark = approver?.approvalRemark ?? approver?.remark;
+    if (remark && typeof remark === 'object') {
+      return String(remark.remark ?? remark.comments ?? remark.comment ?? '—');
+    }
+    return remark == null || remark === '' ? '—' : String(remark);
   }
 
   getApproverName(approver: any): string {
@@ -635,7 +645,7 @@ export class RitmDetailsComponent implements OnInit {
       disableClose: true,
       data: {
         title: 'Confirm Approver Assignment',
-        message: `Assign ${target} to ${this.getNestedValue('ritmNumber', 'this RITM')}? Add a reason to continue.`,
+        message: `Assign ${target} to ${this.getNestedValue('ticketNumber', 'this RITM')}? Add a reason to continue.`,
         confirmText: 'Assign',
         cancelText: 'Cancel',
         includeRemarks: true,
@@ -1127,18 +1137,42 @@ export class RitmDetailsComponent implements OnInit {
   }
 
   getDetailRows(): Array<{label: string, value: string}> {
+    const createdOn = this.ritm?.createdOn ?? this.ritm?.createdAt ?? this.ritm?.requestedAt;
+    const customerResolution = this.ritm?.customerResolution;
     return [
       { label: 'Requested For', value: this.getNestedValue('requestedFor.agentName', this.getFieldValue('requestedForName', this.getFieldValue('requestedFor', 'N/A'))) },
+      { label: 'Requested By', value: this.getNestedValue('requestedBy.agentName', this.getFieldValue('requestedByName', this.getFieldValue('openedByName', this.getFieldValue('openedBy', 'N/A')))) },
+      { label: 'Created On', value: this.formatDetailDateTime(createdOn) },
       { label: 'Status', value: this.getStatusLabel() },
       { label: 'Priority', value: this.getNestedValue('priority.code', this.getFieldValue('priorityName', this.getFieldValue('priority', 'Normal'))) },
-      { label: 'Created On', value: this.getFieldValue('createdOn', this.getFieldValue('createdAt', this.getFieldValue('requestedAt', 'N/A'))) },
-      { label: 'Requested By', value: this.getNestedValue('requestedBy.agentName', this.getFieldValue('requestedByName', this.getFieldValue('openedByName', this.getFieldValue('openedBy', 'N/A')))) },
-      { label: 'Assigned To', value: this.getAssignedToLabel() },
       { label: 'Category', value: this.getNestedValue('category.categoryName', this.getFieldValue('categoryName', this.getFieldValue('category', 'N/A'))) },
       { label: 'Sub Category', value: this.getNestedValue('subCategory.subCategoryName', this.getFieldValue('subCategoryName', this.getFieldValue('subCategory', 'N/A'))) },
       { label: 'Support Group', value: this.getNestedValue('supportGroup.groupName', this.getFieldValue('assignmentGroupName', this.getFieldValue('assignmentGroup', this.getFieldValue('supportGroupName', 'N/A')))) },
-      { label: 'Requested At', value: this.getFieldValue('requestedAt', this.getFieldValue('requestedOn', this.getFieldValue('createdAt', 'N/A'))) }
+      { label: 'Assigned To', value: this.getAssignedToLabel() },
+      { label: 'Request Type', value: this.getNestedValue('requestType.requestTypeName', this.getFieldValue('requestTypeName', this.getFieldValue('requestType', 'N/A'))) },
+      { label: 'Customer Resolution', value: this.formatDetailDateTime(customerResolution) },
+      {label: 'Assigned To', value: this.getNestedValue('assignedTo.agentName', this.getFieldValue('assignedToName', this.getFieldValue('assignedTo', 'N/A')))}
     ];
+  }
+
+  private formatDetailDateTime(value: unknown): string {
+    if (value === null || value === undefined || value === '') {
+      return 'N/A';
+    }
+
+    const date = new Date(value as string | number | Date);
+    if (Number.isNaN(date.getTime())) {
+      return String(value);
+    }
+
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }).format(date).replace(' at ', ' • ');
   }
 
   getWatchlistItems(): any[] {

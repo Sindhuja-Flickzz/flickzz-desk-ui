@@ -44,26 +44,26 @@ export class SupportGroupService {
 
   getUnassignedRequestsForSupportGroups(supportGroupIds: number[]): Observable<any[]> {
     const payload = { supportGroupIds: this.normalizeNumberList(supportGroupIds) };
-    return this.http.post<any>(`${this.baseUrl}/ritm/assigned`, payload).pipe(
+    return this.http.post<any>(`${this.baseUrl}/ticket/assigned`, payload).pipe(
       map((response: any) => this.extractAttributes(response, true))
     );
   }
 
   getAssignedRequestsForAgent(agentId: number): Observable<any[]> {
     const payload = { agentId : agentId };
-    return this.http.post<any>(`${this.baseUrl}/ritm/assigned`, payload).pipe(
+    return this.http.post<any>(`${this.baseUrl}/ticket/assigned`, payload).pipe(
       map((response: any) => this.extractAttributes(response, true))
     );
   }
 
   getUnassignedRequestsForSupportGroup(supportGroupId: number): Observable<any[]> {
-    return this.http.get<any>(`${this.baseUrl}/ritm/unassigned/${supportGroupId}`).pipe(
+    return this.http.get<any>(`${this.baseUrl}/ticket/unassigned/${supportGroupId}`).pipe(
       map((response: any) => this.extractAttributes(response, true))
     );
   }
 
   getRequestsByStatus(statusId: number, supportGroupId: number): Observable<any[]> {
-    return this.http.get<any>(`${this.baseUrl}/ritm/status/list/${statusId}/${supportGroupId}`).pipe(
+    return this.http.get<any>(`${this.baseUrl}/ticket/status/list/${statusId}/${supportGroupId}`).pipe(
       map((response: any) => this.extractAttributes(response, true))
     );
   }
