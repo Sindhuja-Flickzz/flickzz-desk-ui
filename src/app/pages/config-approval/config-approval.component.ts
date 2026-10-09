@@ -87,7 +87,6 @@ export class ConfigApprovalComponent implements OnInit {
     this.configApprovalService.getApprovalsList(userId).subscribe({
       next: (data: ConfigChangeApprovalVO[]) => {
         this.approvals = (data as any).attributes || [];
-        console.log('Loaded approvals:', this.approvals);
         this.populateApprovalCreatorNames();
         this.calculateKPIs();
         this.lastRefreshed = new Date();
@@ -571,17 +570,9 @@ export class ConfigApprovalComponent implements OnInit {
       updatedBy: Number(localStorage.getItem('userId') || 0),
       isUpdatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
     };
-    console.log('Submitting approval action data:', action);
 
     let request$;
     request$ = this.configApprovalService.applyAction(approvalActionData);
-    // if (action === 'approve') {
-    //   request$ = this.configApprovalService.approveConfiguration(approvalActionData);
-    // } else if (action === 'decline') {
-    //   request$ = this.configApprovalService.declineConfiguration(approvalActionData);
-    // } else {
-    //   request$ = this.configApprovalService.requestClarification(approvalActionData);
-    // }
 
     request$.subscribe({
       next: () => {

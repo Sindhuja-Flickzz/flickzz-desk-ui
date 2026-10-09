@@ -266,7 +266,6 @@ export class MyTicketsComponent implements OnInit {
 
   getPaginatedTickets(): any[] {
     const startIndex = this.currentPage * this.pageSize;
-    console.log('Paginated Tickets:', this.currentList.slice(startIndex, startIndex + this.pageSize));
     return this.currentList.slice(startIndex, startIndex + this.pageSize);
   }
 
@@ -334,8 +333,8 @@ export class MyTicketsComponent implements OnInit {
       return;
     }
 
-    this.router.navigate(['/agent', this.agentId || 0, requestType], {
-      queryParams: { ritmId: String(ritmId) }
+    this.router.navigate(['/agent', this.agentId || 0, 'myTickets'], {
+      queryParams: { ritmId: String(ritmId), from: 'my-tickets' }
     });
   }
 

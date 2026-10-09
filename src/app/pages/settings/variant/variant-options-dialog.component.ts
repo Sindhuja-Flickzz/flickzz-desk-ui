@@ -148,7 +148,6 @@ export class VariantOptionsDialogComponent implements OnInit {
 
   save(): void {
     if (this.optionsForm.invalid) {
-      console.log('this.optionForm', this.optionsForm, this.optionsForm.valid);
       this.optionsControl.controls.forEach((control) => control.markAllAsTouched());
       return;
     }

@@ -947,7 +947,6 @@ export class RitmComponent implements OnInit, OnDestroy {
     this.attachmentFiles.forEach(file => {
       payload.append('files', file, file.name);
     });
-    console.log('Submitting RITM with payload:', payload);
 
     const saveRequest$ = this.isEditMode
       ? this.ritmService.updateRitm(payload)
@@ -970,7 +969,6 @@ export class RitmComponent implements OnInit, OnDestroy {
         this.showSuccessScreen = true;
         this.isEditMode = false;
         if (!wasEditMode) {
-          console.log('RITM created successfully:', this.successRitmDetails);
           this.applyFormDefaults();
           this.ritmForm.get('category')?.reset();
           this.ritmForm.get('subCategory')?.reset();
@@ -1030,8 +1028,8 @@ export class RitmComponent implements OnInit, OnDestroy {
     }
 
     const agentId = this.currentUser?.agentId ?? Number(localStorage.getItem('userId') || 0);
-    this.router.navigate(['/agent', agentId, 'requestedByMe'], {
-      queryParams: { ritmId: String(ritmId) }
+    this.router.navigate(['/agent', agentId, 'ritm'], {
+      queryParams: { ritmId: String(ritmId), from: 'ritm' }
     });
   }
 
@@ -1190,7 +1188,6 @@ export class RitmComponent implements OnInit, OnDestroy {
 
   get successRequestFields(): Array<{ label: string; value: string; icon: string; iconClass: string; className?: string }> {
     const data = this.successRitmDetails || {};
-    console.log('Building success request fields from data:', data);
     const requestedFor = this.normalizeSuccessValue(data.requestedForName || data.requestedFor || this.getDisplayName('requestedFor'));
     const category = this.normalizeSuccessValue(data.categoryName || data.category);
     const subCategory = this.normalizeSuccessValue(data.subCategoryName || data.subCategory);

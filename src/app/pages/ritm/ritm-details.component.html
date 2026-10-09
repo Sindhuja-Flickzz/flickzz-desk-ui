@@ -270,11 +270,12 @@
 
       <div class="assigned-approvers" *ngIf="assignedApprovers.length && !editingApprover">
         <section class="approver-agent-list" *ngFor="let group of getGroupedApproverAssignments()">
-          <h3>Approver Code: {{ group.code }}</h3>
+          <h3>Approver Code: {{ group.code }}
+            <span *ngIf="group.followSequence">Follow Sequence:<strong>{{ group.followSequence ? 'Yes' : 'No' }}</strong></span>
+            <span *ngIf="group.isAnyApprovalSufficient">Group Approval:<strong>{{ group.isAnyApprovalSufficient ? 'Yes' : 'No' }}</strong></span>
+          </h3>
           <div class="approver-config-meta">
-            <div *ngIf="group.followSequence"><span>Follow Sequence:</span><strong>{{ group.followSequence ? 'Yes' : 'No' }}</strong></div>
-            <div *ngIf="group.isAnyApprovalSufficient"><span>Group Approval:</span><strong>{{ group.isAnyApprovalSufficient ? 'Yes' : 'No' }}</strong></div>
-            <div *ngIf="group.remark"><span>Remark:</span><strong>{{ group.remark }}</strong></div>
+            <div *ngIf="group.remark"><strong>{{ group.remark }}</strong></div>
           </div>
           <div class="approver-column-header"><span>User</span><span>Approver Sequence</span><span>Status</span></div>
           <div class="approver-agent-row" *ngFor="let approver of group.approvers">
@@ -285,7 +286,7 @@
         </section>
         <section class="approver-agent-list individual-approvers" *ngIf="getIndividualApproverAssignments().length">
           <div class="approver-config-meta">
-            <div><span>Remark:</span><strong>{{ getApproverRemark(getIndividualApproverAssignments()[0]) }}</strong></div>
+            <div><strong>{{ getApproverRemark(getIndividualApproverAssignments()[0]) }}</strong></div>
           </div>
           <div class="approver-column-header"><span>User</span><span>Approver Sequence</span><span>Status</span></div>
           <div class="approver-agent-row" *ngFor="let approver of getIndividualApproverAssignments()">

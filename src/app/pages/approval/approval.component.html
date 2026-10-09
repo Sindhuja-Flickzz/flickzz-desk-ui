@@ -98,7 +98,7 @@
       <header class="details-header">
         <div>
           <!-- <p class="eyebrow">REQUEST {{ approval.requestId }}</p> -->
-          <h2>{{ approval.requestType }} approval</h2>
+          <h2>Approval Details</h2>
         </div>
         <button mat-icon-button aria-label="Close details" (click)="closeDetails()"><mat-icon>close</mat-icon></button>
       </header>
@@ -119,13 +119,22 @@
         </ng-container>
       </dl>
 
+      <button
+        *ngIf="isRitmApproval(approval) && !isDetailLoading && ritmApprover as approver"
+        type="button"
+        class="ritm-number-link"
+        [attr.aria-label]="'Open RITM details for ' + getRitmNumber(approval, approver)"
+        (click)="openRitmDetails(approval)">
+        {{ getRitmNumber(approval, approver) }}
+      </button>
+
       <section class="ritm-approval-details" *ngIf="isRitmApproval(approval)">
-        <h3>RITM Details</h3>
         <div *ngIf="isDetailLoading" class="detail-state"><mat-spinner diameter="28"></mat-spinner></div>
         <p *ngIf="detailLoadError" class="detail-error">{{ detailLoadError }}</p>
         <dl class="details-grid" *ngIf="!isDetailLoading && ritmApprover as approver">
-          <div><dt>RITM Number</dt><dd>{{ getRitmNumber(approval, approver) }}</dd></div>
-          <div *ngFor="let detail of approver.templateDetails"><dt>{{ detail.fieldName }}</dt><dd>{{ formatRitmValue(detail.value) }}</dd></div>
+          <ng-container *ngFor="let detail of approver.templateDetails">
+            <div *ngIf="!isRitmNumberDetail(detail.fieldName)"><dt>{{ detail.fieldName }}</dt><dd>{{ formatRitmValue(detail.value) }}</dd></div>
+          </ng-container>
           <!-- <div><dt>Approval Remark</dt><dd>{{ formatRitmValue(approver.approvalRemark) }}</dd></div> -->
         </dl>
       </section>

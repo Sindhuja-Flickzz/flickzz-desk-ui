@@ -283,7 +283,6 @@ export class RequestApproverComponent implements OnInit {
       followSequence: configuration.followSequence,
       isAnyApprovalSufficient: configuration.isAnyApprovalSufficient
     });
-    console.log('Loaded configuration for editing:', this.requestApproverForm.getRawValue());
     this.originalFormValue = this.requestApproverForm.getRawValue();
     this.rebuildSuggestions();
   }

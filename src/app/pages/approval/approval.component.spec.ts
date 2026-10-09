@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { ApprovalComponent } from './approval.component';
 import { ConfigApprovalService } from '../../service/config-approval.service';
@@ -29,6 +30,7 @@ describe('ApprovalComponent', () => {
     const supportCategoryServiceSpy = jasmine.createSpyObj('SupportCategoryService', ['getAssignmentById']);
     const authenticationServiceSpy = jasmine.createSpyObj('AuthenticationService', ['getUserInfoById']);
     const ritmServiceSpy = jasmine.createSpyObj('RitmService', ['getRitmApprover']);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     serviceSpy.getUserApprovalsList.and.returnValue(of({
       code: 'GM-205',
       title: 'Fetch Successful',
@@ -82,6 +84,7 @@ describe('ApprovalComponent', () => {
         { provide: SupportCategoryService, useValue: supportCategoryServiceSpy },
         { provide: AuthenticationService, useValue: authenticationServiceSpy },
         { provide: RitmService, useValue: ritmServiceSpy },
+        { provide: Router, useValue: routerSpy },
         { provide: MatDialog, useValue: jasmine.createSpyObj('MatDialog', ['open']) }
       ]
     }).compileComponents();
@@ -160,7 +163,8 @@ describe('ApprovalComponent', () => {
         ticketApproverId: 14,
         requestId: 42,
         requestType: 'RITM',
-        ritm: null,
+        ticket: null,
+        ticketNumber: 'RITM260831',
         templateDetails: [{ fieldId: 8, fieldName: 'Short Description', value: 'Short description test1' }],
         isGroupApprover: true,
         approverConfig: { approverConfigId: 5, approverCode: 'AC003' },
@@ -188,9 +192,15 @@ describe('ApprovalComponent', () => {
 
     fixture.detectChanges();
     const renderedDetails = fixture.nativeElement.querySelector('.ritm-approval-details').textContent;
-    expect(renderedDetails).toContain('RITM260831');
+    expect(renderedDetails).not.toContain('RITM260831');
     expect(renderedDetails).toContain('Short description test1');
-    expect(renderedDetails).toContain('Adding approval for RITM260831');
     expect(fixture.nativeElement.querySelector('.action-buttons')).not.toBeNull();
+
+    const ritmNumberLink: HTMLButtonElement = fixture.nativeElement.querySelector('.ritm-number-link');
+    expect(ritmNumberLink.textContent).toContain('RITM260831');
+    ritmNumberLink.click();
+    expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith(['/agent', 0, 'approval'], {
+      queryParams: { ritmId: '42', from: 'approval' }
+    });
   });
 });

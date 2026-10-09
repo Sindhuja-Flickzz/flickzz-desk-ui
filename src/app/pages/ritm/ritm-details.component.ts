@@ -384,7 +384,6 @@ export class RitmDetailsComponent implements OnInit {
     this.ritmService.getRitmApprovers(this.ritmId, companyId).pipe(finalize(() => onComplete?.())).subscribe({
       next: response => {
         this.assignedApprovers = this.normalizeList(response?.attributes ?? response?.data ?? response);
-        console.log('Assigned Approvers Response:', this.assignedApprovers);
       },
       error: () => {
         this.assignedApprovers = [];
@@ -439,7 +438,12 @@ export class RitmDetailsComponent implements OnInit {
       .filter((assignment: any) => assignment?.isGroupApprover === true)
       .forEach((assignment: any) => {
         const assignedConfig = assignment?.approverConfig || {};
-        const remark = assignment?.remark || {};
+        const remarks = Array.isArray(assignment?.remark)
+          ? assignment.remark
+              .map((item: any) => item)
+              .map((value: any) => String(value.remarkType + ' Remark: ' + value.remark).trim())
+              .join('\n')
+          : assignment?.remark?.remark ?? assignment?.remark?.comments ?? assignment?.remark?.comment ?? assignment?.remark;
         const configurationId = Number(assignedConfig?.approverConfigId ?? assignment?.approverConfigId ?? assignment?.configId ?? 0);
         const configuration = this.approverConfigurations.find(item =>
           Number(item?.approverConfigId ?? item?.configId) === configurationId
@@ -452,7 +456,7 @@ export class RitmDetailsComponent implements OnInit {
             approvers: [],
             followSequence: assignedConfig?.followSequence ?? assignment?.followSequence ?? configuration?.followSequence,
             isAnyApprovalSufficient: assignedConfig?.isAnyApprovalSufficient ?? assignment?.isAnyApprovalSufficient ?? configuration?.isAnyApprovalSufficient,
-            remark: remark?.remark
+            remark: remarks ? String(remarks) : undefined
           });
         }
         groups.get(key)!.approvers.push(assignment);
@@ -465,11 +469,16 @@ export class RitmDetailsComponent implements OnInit {
   }
 
   getApproverRemark(approver: any): string {
-    const remark = approver?.approvalRemark ?? approver?.remark;
-    if (remark && typeof remark === 'object') {
-      return String(remark.remark ?? remark.comments ?? remark.comment ?? '—');
-    }
-    return remark == null || remark === '' ? '—' : String(remark);
+    const remarks = Array.isArray(approver?.remark)
+          ? approver.remark
+              .map((item: any) => item)
+              .map((value: any) => String(value.remarkType + ' Remark: ' + value.remark).trim())
+              .join('\n')
+          : approver?.remark?.remark;
+    // if (remark && typeof remark === 'object') {
+    //   return String(remark.remark ?? remark.comments ?? remark.comment ?? '—');
+    // }
+    return remarks == null || remarks === '' ? '—' : String(remarks);
   }
 
   getApproverName(approver: any): string {
@@ -1217,9 +1226,10 @@ export class RitmDetailsComponent implements OnInit {
   }
 
   back(): void {
-    const returnPath = this.route.snapshot.queryParamMap.get('from') === 'group-ritm'
-      ? '/group-ritm'
-      : '/my-tickets';
+    const fromPath = this.route.snapshot.queryParamMap.get('from');
+    const returnPath = fromPath === 'group-ritm'
+      ? '/group-ritm' : fromPath === 'my-tickets'
+      ? '/my-tickets' : '/approval';
     this.router.navigate([returnPath]);
   }
 }
