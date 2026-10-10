@@ -172,6 +172,10 @@
   padding-bottom: 8px;
 }
 
+.catalog-task-header .primary-action {
+  margin-left: auto;
+}
+
 .section-header-icon {
   color: #00246B;
 }
@@ -568,6 +572,42 @@
   border-bottom: 1px solid #edf2f7;
   color: #00246B;
   font-size: 13px;
+}
+
+.catalog-task-row {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.catalog-ticket-link {
+  color: #1456b8;
+  text-decoration: underline;
+}
+
+.catalog-task-meta,
+.catalog-task-references {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.catalog-task-references {
+  align-items: center;
+  padding-left: 12px;
+  border-left: 2px solid #dce4f1;
+}
+
+.catalog-ticket-link {
+  font-weight: 700;
+}
+
+.reference-error {
+  color: #a12622;
+}
+
+.small-loading {
+  color: #6b7280;
+  font-size: 12px;
 }
 
 .assigned-approvers .approver-column-header,

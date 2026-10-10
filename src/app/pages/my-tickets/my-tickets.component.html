@@ -30,6 +30,10 @@
       <div class="filter-panel" *ngIf="filterOpen">
         <input type="text" [(ngModel)]="filterText" (ngModelChange)="resetPagination()" placeholder="Search tickets, requester, or description" />
         <select [(ngModel)]="filterStatus" (ngModelChange)="resetPagination()"><option value="">All statuses</option><option *ngFor="let status of ritmStatuses" [value]="getStatusCode(status).toLowerCase()">{{ getStatusCode(status) }}</option></select>
+        <select *ngIf="subTab === 'ritm'" [(ngModel)]="filterWorkItemCode" (ngModelChange)="resetPagination()" aria-label="Filter by work item type">
+          <option value="">All work item types</option>
+          <option *ngFor="let code of workItemCodes" [value]="code">{{ code }}</option>
+        </select>
         <div class="column-picker">
           <button type="button" class="column-picker-trigger" [class.active]="columnMenuOpen || selectedTemplateFieldIds.length > 0" (click)="toggleColumnMenu()"><mat-icon>view_column</mat-icon><span>Add column</span><span class="column-count" *ngIf="selectedTemplateFieldIds.length">{{ selectedTemplateFieldIds.length }}</span><mat-icon class="column-chevron">expand_more</mat-icon></button>
           <div class="column-picker-menu" *ngIf="columnMenuOpen"><div class="column-picker-title">Choose columns</div><label class="column-option" *ngFor="let field of templateFields"><input type="checkbox" [checked]="selectedTemplateFieldIds.includes(getTemplateFieldKey(field))" (change)="toggleTemplateField(getTemplateFieldKey(field))" /><span>{{ field.fieldName || field.name }}</span></label><div class="column-picker-empty" *ngIf="!templateFields.length">No template fields available</div></div>

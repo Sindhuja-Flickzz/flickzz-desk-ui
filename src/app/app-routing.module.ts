@@ -172,6 +172,11 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'ritm-subtask',
+    loadChildren: () => import('./pages/ritm/ritm-subtask.module').then(m => m.RitmSubtaskModule),
+    canActivate: [authGuard]
+  },
+  {
     path: 'ritm-status',
     component: RitmStatusComponent,
     canActivate: [authGuard]
