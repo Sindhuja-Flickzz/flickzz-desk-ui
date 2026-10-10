@@ -34,6 +34,7 @@ export class MyTicketsComponent implements OnInit {
   filterOpen = false;
   filterText = '';
   filterStatus = '';
+  filterWorkItemCode = '';
   ritmStatuses: any[] = [];
   templateFields: any[] = [];
   selectedTemplateFieldIds: string[] = [];
@@ -112,6 +113,7 @@ export class MyTicketsComponent implements OnInit {
   clearFilters(): void {
     this.filterText = '';
     this.filterStatus = '';
+    this.filterWorkItemCode = '';
     this.selectedTemplateFieldIds = [];
     this.columnMenuOpen = false;
     this.resetPagination();
@@ -191,7 +193,7 @@ export class MyTicketsComponent implements OnInit {
   }
 
   private loadTemplateFields(): void {
-    this.variantService.getRitmTemplateDetails(String(this.orgId || 0)).subscribe({
+    this.variantService.getRitmTemplateDetails(String(this.orgId || 0), 'RITM').subscribe({
       next: response => {
         const fields = this.flattenTemplateFields(response?.attributes ?? response ?? []);
         const seen = new Set<string>();
@@ -253,20 +255,32 @@ export class MyTicketsComponent implements OnInit {
       : status ?? '').trim();
   }
 
+  get workItemCodes(): string[] {
+    return [...new Set(this.ritmList
+      .map(item => this.getWorkItemCode(item))
+      .filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  }
+
+  getWorkItemCode(item: any): string {
+    return String(item?.workItem?.code ?? '').trim();
+  }
+
   private applyFilters(items: any[]): any[] {
     const text = this.filterText.trim().toLowerCase();
     const status = this.filterStatus.trim().toLowerCase();
+    const workItemCode = this.filterWorkItemCode.trim();
     return items.filter(item => {
       const searchable = [this.getRequestNumber(item), this.getTitle(item), this.getRequestedBy(item), this.getAssignee(item), this.getPriority(item), this.getStatusCode(item?.status)]
         .filter(Boolean).join(' ').toLowerCase();
       const itemStatus = this.getStatusCode(item?.status || 'Open').toLowerCase();
-      return (!text || searchable.includes(text)) && (!status || itemStatus === status);
+      return (!text || searchable.includes(text))
+        && (!status || itemStatus === status)
+        && (!workItemCode || this.getWorkItemCode(item) === workItemCode);
     });
   }
 
   getPaginatedTickets(): any[] {
     const startIndex = this.currentPage * this.pageSize;
-    console.log('Paginated Tickets:', this.currentList.slice(startIndex, startIndex + this.pageSize));
     return this.currentList.slice(startIndex, startIndex + this.pageSize);
   }
 
@@ -334,8 +348,8 @@ export class MyTicketsComponent implements OnInit {
       return;
     }
 
-    this.router.navigate(['/agent', this.agentId || 0, requestType], {
-      queryParams: { ritmId: String(ritmId) }
+    this.router.navigate(['/agent', this.agentId || 0, 'myTickets'], {
+      queryParams: { ritmId: String(ritmId), from: 'my-tickets' }
     });
   }
 

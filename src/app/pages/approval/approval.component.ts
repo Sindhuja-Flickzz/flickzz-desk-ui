@@ -1,6 +1,7 @@
 import { Component, HostListener, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { PageEvent } from '@angular/material/paginator';
+import { Router } from '@angular/router';
 import { forkJoin, Observable, of } from 'rxjs';
 import { ApprovalRecord, BusinessPartnerChangeRequest, RitmApprover } from '../../models/approval.model';
 import { ConfigApprovalService } from '../../service/config-approval.service';
@@ -77,7 +78,8 @@ export class ApprovalComponent implements OnInit {
     private supportCategoryService: SupportCategoryService,
     private authenticationService: AuthenticationService,
     private ritmService: RitmService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -229,18 +231,19 @@ export class ApprovalComponent implements OnInit {
     return String(value);
   }
 
+  isRitmNumberDetail(fieldName: string): boolean {
+    return /^(ritm\s*number|request\s*number)$/i.test(fieldName?.trim() || '');
+  }
+
   getRitmNumber(approval: ApprovalRecord, approver: RitmApprover): string {
-    const ritm = approver.ticket;
+    const ritm = approver;
     if (typeof ritm === 'string' || typeof ritm === 'number') return this.formatRitmValue(ritm);
     if (ritm && typeof ritm === 'object') {
-      const ritmRecord = ritm as Record<string, unknown>;
-      const ritmNumber = ritmRecord['ritmNumber'] ?? ritmRecord['requestNumber'];
+      const ritmNumber = ritm.ticketNumber;
       if (ritmNumber !== undefined && ritmNumber !== null) return this.formatRitmValue(ritmNumber);
     }
 
-    const templateNumber = approver.templateDetails?.find(detail =>
-      /^(ritm\s*number|request\s*number)$/i.test(detail.fieldName?.trim() || '')
-    )?.value;
+    const templateNumber = approver.templateDetails?.find(detail => this.isRitmNumberDetail(detail.fieldName))?.value;
     if (templateNumber) return this.formatRitmValue(templateNumber);
 
     const remarkNumber = approver.approvalRemark?.match(/\bRITM[\w-]*\b/i)?.[0];
@@ -248,6 +251,12 @@ export class ApprovalComponent implements OnInit {
 
     const description = approval.description?.trim();
     return description && /^RITM[\w-]*$/i.test(description) ? description : 'N/A';
+  }
+
+  openRitmDetails(approval: ApprovalRecord): void {
+    this.router.navigate(['/agent', Number(localStorage.getItem('userId') || 0), 'approval'], {
+      queryParams: { ritmId: String(approval.requestId), from: 'approval' }
+    });
   }
 
   formatBusinessPartnerValue(value: string | number | boolean | null | undefined): string {

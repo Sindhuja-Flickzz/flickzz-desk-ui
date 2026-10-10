@@ -119,6 +119,7 @@ export interface RitmApprover {
   requestId: number;
   requestType: string;
   ticket: unknown | null;
+  ticketNumber: string;
   isGroupApprover: boolean;
   approverConfig: {
     approverConfigId: number;

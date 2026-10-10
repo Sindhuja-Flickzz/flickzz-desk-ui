@@ -416,7 +416,6 @@ export class SlaTypeComponent implements OnInit {
     const request$ = this.editingSlaId
       ? this.slaService.updateSlaType(payload)
       : this.slaService.createSlaType(payload);
-    console.log('request payload', request$);
     request$.subscribe({
       next: () => { this.loadSlaList(); this.activeTab = 'list'; },
       error: (err) => {

@@ -552,7 +552,6 @@ export class VariantComponent implements OnInit, OnDestroy {
     this.variantService.getTemplateById(template.templateId).subscribe({
       next: (result) => {
         const templateDetail = (result as any).attributes || template;
-        console.log('Loaded template details for editing:', templateDetail);
         if (!this.dataLoadReady) {
           this.dataLoadPromise.then(() => this.populateEditForm(templateDetail));
         } else {

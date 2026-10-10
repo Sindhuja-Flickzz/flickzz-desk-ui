@@ -1,0 +1,31 @@
+.ritm-subtask-page .form-card {
+  margin-top: 12px;
+}
+
+.ritm-subtask-page .page-header {
+  justify-content: space-between;
+}
+
+.ritm-subtask-page .parent-ritm-link {
+  color: #2457a7;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ritm-subtask-page .parent-ritm-link:hover,
+.ritm-subtask-page .parent-ritm-link:focus-visible {
+  color: #163c7a;
+  text-decoration: underline;
+}
+
+.ritm-subtask-page .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 0 4px;
+}
+
+.ritm-subtask-page .alert {
+  margin: 10px 0;
+}

@@ -66,6 +66,7 @@ export class RitmComponent implements OnInit, OnDestroy {
   private existingTemplateDetails: any[] = [];
   private existingStatusValue: any = null;
   private resolutionDateRequestId = 0;
+  private supportGroupRequestId = 0;
   resolutionDateLoading = false;
   resolutionDateError = '';
 
@@ -210,7 +211,7 @@ export class RitmComponent implements OnInit, OnDestroy {
   }
 
   private fetchRitmTemplateDetails(): void {
-    this.variantService.getRitmTemplateDetails(this.orgId).subscribe({
+    this.variantService.getRitmTemplateDetails(this.orgId, 'RITM').subscribe({
       next: response => {
         const templates = this.normalizeArray<any>(response?.attributes || response);
         this.templates = templates.map(template => ({
@@ -314,6 +315,32 @@ export class RitmComponent implements OnInit, OnDestroy {
     field.templateError = '';
   }
 
+  private normalizeSupportGroups(response: any): any[] {
+    const unwrap = (value: any): any[] => {
+      if (Array.isArray(value)) {
+        return value.flatMap(unwrap);
+      }
+      if (!value || typeof value !== 'object') {
+        return [];
+      }
+
+      const groupKeys = ['supportGroupId', 'groupId', 'id', 'groupName', 'supportGroupName', 'name'];
+      if (groupKeys.some(key => value[key] != null)) {
+        return [value];
+      }
+
+      for (const key of ['attributes', 'data', 'items', 'result', 'supportGroups', 'supportGroup', 'assignmentGroups', 'assignmentGroup', 'groups', 'group']) {
+        if (value[key] != null) {
+          return unwrap(value[key]);
+        }
+      }
+
+      return Object.values(value).flatMap(unwrap);
+    };
+
+    return unwrap(response);
+  }
+
   private validateTemplateFields(): boolean {
     let isValid = true;
     this.templates.forEach(template => this.getTemplateFields(template).forEach(field => {
@@ -374,7 +401,8 @@ export class RitmComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadSupportGroup(subCategoryId: number | null, existingAssignmentGroup?: any): void {
+  private loadSupportGroup(subCategoryId: number | string | null, existingAssignmentGroup?: any): void {
+    const requestId = ++this.supportGroupRequestId;
     if (existingAssignmentGroup === undefined) {
       this.ritmForm.get('assignmentGroup')?.reset('', { emitEvent: false });
       this.assignmentGroupId = null;
@@ -382,27 +410,31 @@ export class RitmComponent implements OnInit, OnDestroy {
     if (!subCategoryId) {
       return;
     }
-    this.supportGroupService.getSupportGroupBySubCategory(subCategoryId).subscribe({
+    this.supportGroupService.getSupportGroupBySubCategory(Number(subCategoryId)).subscribe({
       next: response => {
-        const supportGroup = response?.attributes || response;
+        if (requestId !== this.supportGroupRequestId) {
+          return;
+        }
         const existingGroupId = typeof existingAssignmentGroup === 'object'
           ? existingAssignmentGroup.supportGroupId ?? existingAssignmentGroup.groupId ?? existingAssignmentGroup.id
           : existingAssignmentGroup;
-        const supportGroups = this.normalizeArray<any>(supportGroup);
+        const supportGroups = this.normalizeSupportGroups(response)
+          .map(candidate => candidate?.supportGroup ?? candidate?.assignmentGroup ?? candidate?.group ?? candidate);
         const group = supportGroups.find(candidate =>
           existingGroupId != null
           && Number(candidate?.supportGroupId ?? candidate?.groupId ?? candidate?.id) === Number(existingGroupId)
         ) ?? supportGroups[0];
         const resolvedGroupId = group?.supportGroupId ?? group?.groupId ?? group?.id ?? existingGroupId ?? null;
         this.assignmentGroupId = resolvedGroupId;
-        this.ritmForm.get('assignmentGroup')?.setValue(
-          group?.groupName
-            || group?.supportGroupName
-            || group?.name
-            || this.readDisplayName(existingAssignmentGroup, ['groupName', 'supportGroupName', 'name'])
-        );
+        this.ritmForm.get('assignmentGroup')?.setValue(this.readDisplayName(
+          group ?? existingAssignmentGroup,
+          ['groupName', 'supportGroupName', 'name']
+        ));
       },
       error: () => {
+        if (requestId !== this.supportGroupRequestId) {
+          return;
+        }
         this.submitError = 'Unable to load assignment group.';
       }
     });
@@ -947,7 +979,6 @@ export class RitmComponent implements OnInit, OnDestroy {
     this.attachmentFiles.forEach(file => {
       payload.append('files', file, file.name);
     });
-    console.log('Submitting RITM with payload:', payload);
 
     const saveRequest$ = this.isEditMode
       ? this.ritmService.updateRitm(payload)
@@ -970,7 +1001,6 @@ export class RitmComponent implements OnInit, OnDestroy {
         this.showSuccessScreen = true;
         this.isEditMode = false;
         if (!wasEditMode) {
-          console.log('RITM created successfully:', this.successRitmDetails);
           this.applyFormDefaults();
           this.ritmForm.get('category')?.reset();
           this.ritmForm.get('subCategory')?.reset();
@@ -1030,8 +1060,8 @@ export class RitmComponent implements OnInit, OnDestroy {
     }
 
     const agentId = this.currentUser?.agentId ?? Number(localStorage.getItem('userId') || 0);
-    this.router.navigate(['/agent', agentId, 'requestedByMe'], {
-      queryParams: { ritmId: String(ritmId) }
+    this.router.navigate(['/agent', agentId, 'ritm'], {
+      queryParams: { ritmId: String(ritmId), from: 'ritm' }
     });
   }
 
@@ -1190,7 +1220,6 @@ export class RitmComponent implements OnInit, OnDestroy {
 
   get successRequestFields(): Array<{ label: string; value: string; icon: string; iconClass: string; className?: string }> {
     const data = this.successRitmDetails || {};
-    console.log('Building success request fields from data:', data);
     const requestedFor = this.normalizeSuccessValue(data.requestedForName || data.requestedFor || this.getDisplayName('requestedFor'));
     const category = this.normalizeSuccessValue(data.categoryName || data.category);
     const subCategory = this.normalizeSuccessValue(data.subCategoryName || data.subCategory);

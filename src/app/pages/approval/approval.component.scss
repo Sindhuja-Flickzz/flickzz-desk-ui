@@ -570,3 +570,19 @@ h1 {
 .ritm-approval-details {
   margin-top: 12px;
 }
+
+.ritm-number-link {
+  margin-top: 12px;
+  padding: 0;
+  color: #1d4ed8;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ritm-number-link:hover {
+  color: #00246b;
+}

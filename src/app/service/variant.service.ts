@@ -32,8 +32,8 @@ export class VariantService {
     return this.http.get(`${this.baseUrl}/template/details/${orgId}`);
   }
 
-  getRitmTemplateDetails(orgId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/template/details/RITM/${orgId}`);
+  getRitmTemplateDetails(orgId: string, requestType: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/template/details/${requestType}/${orgId}`);
   }
 
   getWorkItemTemplates(workItemCode: string): Observable<any> {

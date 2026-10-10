@@ -1,0 +1,211 @@
+<div class="ritm-page ritm-subtask-page">
+  <div class="page-header">
+    <div class="page-heading">
+      <button type="button" class="save-btn header-back" (click)="onCancel()" aria-label="Back to RITM details" title="Back to RITM details">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <div class="page-title-group">
+        <h1>{{ isEditMode ? 'Edit RITM Subtask' : 'Create RITM Subtask' }}</h1>
+        <p class="page-subtitle">{{ isEditMode ? 'Update subtask details' : 'Create a subtask for ' + (parentRitm?.ticketNumber || parentRitm?.ritmNumber || 'the selected RITM') }}</p>
+      </div>
+    </div>
+    <a
+      *ngIf="parentRitmId"
+      class="parent-ritm-link"
+      [routerLink]="['/ritm']"
+      [queryParams]="{ id: parentRitmId }"
+      [state]="{ ritmData: parentRitm }"
+      [attr.aria-label]="'View parent RITM ' + (parentRitm?.ticketNumber || parentRitm?.ritmNumber || parentRitmId)">
+      Parent RITM: {{ parentRitm?.ticketNumber || parentRitm?.ritmNumber || parentRitmId }}
+    </a>
+  </div>
+
+  <div *ngIf="submitSuccess" class="alert alert-success">{{ submitSuccess }}</div>
+  <div *ngIf="submitError" class="alert alert-error">{{ submitError }}</div>
+  <div *ngIf="loading" class="loading-panel">
+    <mat-spinner diameter="36"></mat-spinner>
+  </div>
+
+  <mat-card class="form-card">
+    <form [formGroup]="subtaskForm" (ngSubmit)="onSubmit()" aria-label="RITM subtask form">
+      <div class="section-block request-info-block">
+        <div class="section-header">
+          <span class="section-header-icon">✎</span>
+          <span>Request Information</span>
+        </div>
+        <div class="field-grid">
+          <div class="field field-ritm">
+            <label>RITM Subtask Number</label>
+            <input formControlName="ritmSubtaskNumber" readonly />
+          </div>
+          <div class="field field-requested-for">
+            <label>Assign To <span class="mandatory-indicator" aria-hidden="true">*</span></label>
+            <select formControlName="assignedTo">
+              <option value="" disabled>Select agent</option>
+              <option *ngFor="let user of users" [value]="user.agentId">{{ user.agentName }} ({{ user.accessId }})</option>
+            </select>
+            <span *ngIf="showRequiredError('assignedTo')" class="error-text">Assign To is required.</span>
+          </div>
+          <div class="field field-location">
+            <label>Location</label>
+            <input formControlName="location" readonly />
+          </div>
+          <div class="field field-availability">
+            <label>Availability Time</label>
+            <input formControlName="availabilityTime" readonly />
+          </div>
+          <div class="field field-current-time">
+            <label>Current Time</label>
+            <input formControlName="currentTime" readonly />
+          </div>
+          <div class="field field-request-type">
+            <label>Request Type <span class="mandatory-indicator" aria-hidden="true">*</span></label>
+            <select formControlName="requestTypeId">
+              <option value="" disabled>Select request type</option>
+              <option *ngFor="let requestType of requestTypes" [value]="requestType.requestTypeId">{{ requestType.requestTypeName }}</option>
+            </select>
+            <span *ngIf="showRequiredError('requestTypeId')" class="error-text">Request Type is required.</span>
+          </div>
+          <div class="field field-category">
+            <label>Category <span class="mandatory-indicator" aria-hidden="true">*</span></label>
+            <select formControlName="category">
+              <option value="" disabled>Select category</option>
+              <option *ngFor="let category of categories" [value]="category.categoryId">{{ category.categoryName }}</option>
+            </select>
+            <span *ngIf="showRequiredError('category')" class="error-text">Category is required.</span>
+          </div>
+          <div class="field field-sub-category">
+            <label>Sub category <span class="mandatory-indicator" aria-hidden="true">*</span></label>
+            <select formControlName="subCategory">
+              <option value="" disabled>Select sub category</option>
+              <option *ngFor="let subCategory of subCategories" [value]="subCategory.subCategoryId">{{ subCategory.subCategoryName }}</option>
+            </select>
+            <span *ngIf="showRequiredError('subCategory')" class="error-text">Sub category is required.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-block assignment-block">
+        <div class="section-header green-header">
+          <span class="section-header-icon">⚑</span>
+          <span>Assignment &amp; Priority</span>
+        </div>
+        <div class="field-grid assignment-grid">
+          <div class="field assignment-field">
+            <label>Assignment Group</label>
+            <input formControlName="assignmentGroup" readonly />
+          </div>
+          <div class="field priority-field">
+            <label>Priority <span class="mandatory-indicator" aria-hidden="true">*</span></label>
+            <select formControlName="priority">
+              <option value="" disabled>Select priority</option>
+              <option *ngFor="let priority of priorities" [value]="priority.priorityId">{{ priority.code }}</option>
+            </select>
+            <span *ngIf="showRequiredError('priority')" class="error-text">Priority is required.</span>
+          </div>
+          <div class="field customer-resolution-field">
+            <label>Customer Resolution Time</label>
+            <input type="datetime-local" formControlName="customerResolution" readonly />
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="templatesLoading" class="loading-panel small">
+        <mat-spinner diameter="28"></mat-spinner>
+      </div>
+      <div *ngFor="let template of templates; let templateIndex = index" class="section-block request-details-block">
+        <div class="section-header amber-header template-section-header" role="button" tabindex="0"
+          [attr.aria-expanded]="isTemplateExpanded(template, templateIndex)"
+          [attr.aria-label]="isTemplateExpanded(template, templateIndex) ? 'Collapse ' + template.templateName : 'Expand ' + template.templateName"
+          (click)="toggleTemplate(template, templateIndex)"
+          (keydown.enter)="toggleTemplate(template, templateIndex)"
+          (keydown.space)="$event.preventDefault(); toggleTemplate(template, templateIndex)">
+          <span class="section-header-icon">▣</span>
+          <span>{{ template.templateName }}</span>
+          <button type="button" class="section-toggle icon-only" [attr.aria-label]="isTemplateExpanded(template, templateIndex) ? 'Collapse template' : 'Expand template'"
+            (click)="$event.stopPropagation(); toggleTemplate(template, templateIndex)">
+            <mat-icon>{{ isTemplateExpanded(template, templateIndex) ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
+        </div>
+        <div class="template-group" *ngIf="isTemplateExpanded(template, templateIndex)">
+          <div class="field-grid detail-grid">
+            <div class="field full-width-field" *ngFor="let field of getTemplateFields(template)">
+              <div class="field-label-row">
+                <label [attr.for]="'subtask-field-' + field.fieldId">
+                  {{ field.fieldName }}
+                  <span *ngIf="isMandatoryTemplateField(field)" class="mandatory-indicator" aria-hidden="true">*</span>
+                </label>
+                <button *ngIf="hasDefaultValue(field)" type="button" class="default-value-button"
+                  [attr.aria-label]="'Use default value for ' + field.fieldName"
+                  (click)="applyDefaultValue(field)">
+                  <mat-icon>info_outline</mat-icon>
+                </button>
+              </div>
+              <div *ngIf="isFieldLocked(field)" class="default-value-display">
+                <span class="default-value-label">Default</span><span>{{ field.defaultValue }}</span>
+              </div>
+              <textarea *ngIf="getFieldType(field) === 'TEXTAREA' && !isFieldLocked(field)"
+                [id]="'subtask-field-' + field.fieldId" [(ngModel)]="field.userValue"
+                (ngModelChange)="onTemplateFieldChange(field, $event)" [ngModelOptions]="{ standalone: true }" rows="4"></textarea>
+              <input *ngIf="getFieldType(field) !== 'TEXTAREA' && getFieldType(field) !== 'DROPDOWN' && getFieldType(field) !== 'CHECKBOX' && !isFieldLocked(field)"
+                [id]="'subtask-field-' + field.fieldId"
+                [type]="getFieldType(field) === 'NUMBER' ? 'number' : getFieldType(field) === 'DATE_PICKER' ? 'date' : getFieldType(field) === 'EMAIL' ? 'email' : getFieldType(field) === 'URL' ? 'url' : 'text'"
+                [(ngModel)]="field.userValue" (ngModelChange)="onTemplateFieldChange(field, $event)" [ngModelOptions]="{ standalone: true }" />
+              <select *ngIf="getFieldType(field) === 'DROPDOWN' && !isFieldLocked(field)"
+                [id]="'subtask-field-' + field.fieldId" [(ngModel)]="field.userValue"
+                (ngModelChange)="onTemplateFieldChange(field, $event)" [ngModelOptions]="{ standalone: true }">
+                <option value="">Select {{ field.fieldName }}</option>
+                <option *ngFor="let option of getFieldOptions(field)" [value]="option.value">{{ option.label }}</option>
+              </select>
+              <label *ngIf="getFieldType(field) === 'CHECKBOX' && !isFieldLocked(field)" class="checkbox-field">
+                <input [id]="'subtask-field-' + field.fieldId" type="checkbox" [(ngModel)]="field.userValue"
+                  (ngModelChange)="onTemplateFieldChange(field, $event)" [ngModelOptions]="{ standalone: true }" />
+                <span>{{ field.fieldName }}</span>
+              </label>
+              <textarea *ngIf="getFieldType(field) === 'TEXTAREA' && isFieldLocked(field)"
+                [id]="'subtask-field-input-' + field.fieldId" [(ngModel)]="field.userValue"
+                (ngModelChange)="onTemplateFieldChange(field, $event)" [ngModelOptions]="{ standalone: true }" rows="4" placeholder="Enter your value"></textarea>
+              <input *ngIf="getFieldType(field) !== 'TEXTAREA' && getFieldType(field) !== 'DROPDOWN' && getFieldType(field) !== 'CHECKBOX' && isFieldLocked(field)"
+                [id]="'subtask-field-input-' + field.fieldId"
+                [type]="getFieldType(field) === 'NUMBER' ? 'number' : getFieldType(field) === 'DATE_PICKER' ? 'date' : getFieldType(field) === 'EMAIL' ? 'email' : getFieldType(field) === 'URL' ? 'url' : 'text'"
+                [(ngModel)]="field.userValue" (ngModelChange)="onTemplateFieldChange(field, $event)" [ngModelOptions]="{ standalone: true }" placeholder="Enter your value" />
+              <select *ngIf="getFieldType(field) === 'DROPDOWN' && isFieldLocked(field)"
+                [id]="'subtask-field-input-' + field.fieldId" [(ngModel)]="field.userValue"
+                (ngModelChange)="onTemplateFieldChange(field, $event)" [ngModelOptions]="{ standalone: true }">
+                <option value="">Enter your value</option>
+                <option *ngFor="let option of getFieldOptions(field)" [value]="option.value">{{ option.label }}</option>
+              </select>
+              <label *ngIf="getFieldType(field) === 'CHECKBOX' && isFieldLocked(field)" class="checkbox-field">
+                <input [id]="'subtask-field-input-' + field.fieldId" type="checkbox" [(ngModel)]="field.userValue"
+                  (ngModelChange)="onTemplateFieldChange(field, $event)" [ngModelOptions]="{ standalone: true }" />
+                <span>Use your value</span>
+              </label>
+              <span *ngIf="field.templateError" class="error-text">{{ field.templateError }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="!templatesLoading && !templates.length" class="empty-state small">No RITM template available.</div>
+
+      <div class="section-block attachment-block">
+        <div class="section-header amber-header">
+          <span class="section-header-icon">📎</span><span>Attachments</span>
+        </div>
+        <div class="field-grid detail-grid">
+          <div class="field full-width-field attachment-field">
+            <div class="field-label-row"><label>Upload Attachment(s)</label></div>
+            <input type="file" multiple (change)="onFilesSelected($event)" />
+            <small *ngIf="attachmentFiles.length">{{ attachmentFiles.length }} file(s) selected</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button mat-flat-button color="primary" type="submit" [disabled]="submitting || loading || !!submitSuccess">
+          {{ submitting ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update RITM Subtask' : 'Create RITM Subtask') }}
+        </button>
+        <button mat-stroked-button type="button" (click)="onCancel()" [disabled]="submitting">Cancel</button>
+      </div>
+    </form>
+  </mat-card>
+</div>

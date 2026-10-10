@@ -172,6 +172,10 @@
   padding-bottom: 8px;
 }
 
+.catalog-task-header .primary-action {
+  margin-left: auto;
+}
+
 .section-header-icon {
   color: #00246B;
 }
@@ -526,6 +530,12 @@
   font-size: 13px;
 }
 
+.approver-agent-list h3 span{
+  color: #00246B;
+  font-size: 13px;
+  float: right;
+}
+
 .approver-config-meta {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -538,6 +548,7 @@
   align-items: baseline;
   gap: 5px;
   min-width: 0;
+  white-space: pre-line;
 }
 
 .approver-config-meta span {
@@ -561,6 +572,42 @@
   border-bottom: 1px solid #edf2f7;
   color: #00246B;
   font-size: 13px;
+}
+
+.catalog-task-row {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.catalog-ticket-link {
+  color: #1456b8;
+  text-decoration: underline;
+}
+
+.catalog-task-meta,
+.catalog-task-references {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.catalog-task-references {
+  align-items: center;
+  padding-left: 12px;
+  border-left: 2px solid #dce4f1;
+}
+
+.catalog-ticket-link {
+  font-weight: 700;
+}
+
+.reference-error {
+  color: #a12622;
+}
+
+.small-loading {
+  color: #6b7280;
+  font-size: 12px;
 }
 
 .assigned-approvers .approver-column-header,

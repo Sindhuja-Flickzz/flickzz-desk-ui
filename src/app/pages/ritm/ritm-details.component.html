@@ -37,6 +37,7 @@
       <button type="button" class="tab-btn" [class.active]="activeTab === 'details'" (click)="setActiveTab('details')">Details</button>
       <button type="button" class="tab-btn" [class.active]="activeTab === 'work-notes'" (click)="setActiveTab('work-notes')">Work Notes</button>
       <button type="button" class="tab-btn" [class.active]="activeTab === 'history'" (click)="setActiveTab('history')">History</button>
+      <button *ngIf="isRitmSubtask" type="button" class="tab-btn" [class.active]="activeTab === 'effort'" (click)="setActiveTab('effort')">Effort Calculation</button>
       <!-- <button type="button" class="tab-btn" [class.active]="activeTab === 'sla'" (click)="setActiveTab('sla')">SLA</button> -->
     </div>
 
@@ -254,12 +255,15 @@
 
     
 
+    <ng-container *ngIf="!isRitmSubtask">
     <div class="tabs supplemental-tabs" role="tablist" aria-label="Additional RITM tabs">
       <button type="button" class="tab-btn" [class.active]="activeAdditionalTab === 'approvers'" (click)="setActiveAdditionalTab('approvers')">Approvers</button>
       <button type="button" class="tab-btn" [class.active]="activeAdditionalTab === 'catalog-task'" (click)="setActiveAdditionalTab('catalog-task')">Catalog Task</button>
       <button type="button" class="tab-btn" [class.active]="activeAdditionalTab === 'effort'" (click)="setActiveAdditionalTab('effort')">Effort Calculation</button>
     </div>
+    </ng-container>
   </div>
+  <ng-container *ngIf="!isRitmSubtask">
   <div class="tab-panel approvers-panel" *ngIf="activeAdditionalTab === 'approvers'">
 
       <div *ngIf="approverDataLoading" class="loading-panel small">
@@ -270,11 +274,12 @@
 
       <div class="assigned-approvers" *ngIf="assignedApprovers.length && !editingApprover">
         <section class="approver-agent-list" *ngFor="let group of getGroupedApproverAssignments()">
-          <h3>Approver Code: {{ group.code }}</h3>
+          <h3>Approver Code: {{ group.code }}
+            <span *ngIf="group.followSequence">Follow Sequence:<strong>{{ group.followSequence ? 'Yes' : 'No' }}</strong></span>
+            <span *ngIf="group.isAnyApprovalSufficient">Group Approval:<strong>{{ group.isAnyApprovalSufficient ? 'Yes' : 'No' }}</strong></span>
+          </h3>
           <div class="approver-config-meta">
-            <div *ngIf="group.followSequence"><span>Follow Sequence:</span><strong>{{ group.followSequence ? 'Yes' : 'No' }}</strong></div>
-            <div *ngIf="group.isAnyApprovalSufficient"><span>Group Approval:</span><strong>{{ group.isAnyApprovalSufficient ? 'Yes' : 'No' }}</strong></div>
-            <div *ngIf="group.remark"><span>Remark:</span><strong>{{ group.remark }}</strong></div>
+            <div *ngIf="group.remark"><strong>{{ group.remark }}</strong></div>
           </div>
           <div class="approver-column-header"><span>User</span><span>Approver Sequence</span><span>Status</span></div>
           <div class="approver-agent-row" *ngFor="let approver of group.approvers">
@@ -285,7 +290,7 @@
         </section>
         <section class="approver-agent-list individual-approvers" *ngIf="getIndividualApproverAssignments().length">
           <div class="approver-config-meta">
-            <div><span>Remark:</span><strong>{{ getApproverRemark(getIndividualApproverAssignments()[0]) }}</strong></div>
+            <div><strong>{{ getApproverRemark(getIndividualApproverAssignments()[0]) }}</strong></div>
           </div>
           <div class="approver-column-header"><span>User</span><span>Approver Sequence</span><span>Status</span></div>
           <div class="approver-agent-row" *ngFor="let approver of getIndividualApproverAssignments()">
@@ -368,24 +373,46 @@
     </div>
 
     <div class="tab-panel" *ngIf="activeAdditionalTab === 'catalog-task'">
-      <div class="section-header">
+      <div class="section-header catalog-task-header">
         <span class="section-header-icon">▣</span>
         <span>Catalog Tasks</span>
+        <button *ngIf="ritmId" type="button" class="primary-action" (click)="createRitmSubtask()">Create RITM Subtask</button>
       </div>
       <div class="catalog-task-list" *ngIf="getCatalogTasks().length; else noCatalogTasks">
         <article class="catalog-task-row" *ngFor="let task of getCatalogTasks()">
           <strong>{{ task.title || task.taskName || task.catalogTaskName || 'Catalog Task' }}</strong>
-          <span>{{ task.status?.statusCode || task.status || 'Status unavailable' }}</span>
-          <span *ngIf="task.assignedTo">Assigned to {{ task.assignedTo.agentName || task.assignedTo }}</span>
-          <span *ngIf="task.dueDate">Due {{ task.dueDate | date:'mediumDate' }}</span>
+          <div class="catalog-task-meta">
+            <span>{{ task.status?.statusCode || task.status || 'Status unavailable' }}</span>
+            <span *ngIf="task.assignedTo">Assigned to {{ task.assignedTo.agentName || task.assignedTo }}</span>
+            <span *ngIf="task.dueDate">Due {{ task.dueDate | date:'mediumDate' }}</span>
+          </div>
         </article>
       </div>
       <ng-template #noCatalogTasks>
-        <div class="empty-state small">No catalog tasks are linked to this RITM.</div>
+        <div *ngIf="!referencedTicketsLoading && !referencedTicketsError && !referencedTickets.length"
+          class="empty-state small">No catalog tasks are linked to this RITM.</div>
       </ng-template>
+      <div class="catalog-task-references">
+        <div *ngIf="referencedTicketsLoading" class="small-loading">Loading referenced tickets...</div>
+        <div *ngIf="referencedTicketsError" class="reference-error">{{ referencedTicketsError }}</div>
+        <ng-container *ngIf="!referencedTicketsLoading && !referencedTicketsError">
+          <ng-container *ngFor="let ticket of referencedTickets">
+            <a *ngIf="getCatalogTaskTicketId(ticket) as ticketId"
+              [routerLink]="['/agent', agentId || 0, requestType]"
+              [queryParams]="{ ritmId: ticketId, from: getCurrentFrom(), returnRitmId: ritmId }"
+              class="catalog-ticket-link">
+              {{ getCatalogTaskTicketNumber(ticket) }}
+            </a>
+            <span *ngIf="!getCatalogTaskTicketId(ticket)">{{ getCatalogTaskTicketNumber(ticket) }}</span>
+          </ng-container>
+          <span *ngIf="!referencedTickets.length" class="small-loading">No referenced tickets found.</span>
+        </ng-container>
+      </div>
     </div>
 
-    <div class="tab-panel" *ngIf="activeAdditionalTab === 'effort'">
+  </ng-container>
+
+    <div class="tab-panel" *ngIf="(isRitmSubtask && activeTab === 'effort') || (!isRitmSubtask && activeAdditionalTab === 'effort')">
       <div class="section-header">
         <span class="section-header-icon">◷</span>
         <span>Effort Calculation</span>

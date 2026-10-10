@@ -335,7 +335,7 @@ export class GroupRitmComponent implements OnInit {
   }
 
   private loadTemplateFields(): void {
-    this.variantService.getRitmTemplateDetails(String(this.orgId || 0)).subscribe({
+    this.variantService.getRitmTemplateDetails(String(this.orgId || 0), 'RITM').subscribe({
       next: (response: any) => {
         const fields = this.flattenTemplateFields(response?.attributes ?? response ?? []);
         const seen = new Set<string>();

@@ -18,11 +18,12 @@ export class RitmDetailsComponent implements OnInit {
   requestType: string = 'requestedByMe';
   ritmId: string | null = null;
   ritm: any = null;
+  workItemCode: string | null = null;
   workNotes: any[] = [];
   history: any[] = [];
   slaInfo: any = null;
   commentText = '';
-  activeTab: 'details' | 'work-notes' | 'history' | 'sla' = 'details';
+  activeTab: 'details' | 'work-notes' | 'history' | 'effort' | 'sla' = 'details';
   activeAdditionalTab: 'approvers' | 'catalog-task' | 'effort' = 'approvers';
   loading = false;
   notesLoading = false;
@@ -54,6 +55,9 @@ export class RitmDetailsComponent implements OnInit {
   pageSize = 5;
   workNotesPage = 1;
   historyPage = 1;
+  referencedTickets: any[] = [];
+  referencedTicketsLoading = false;
+  referencedTicketsError = '';
   orgId = localStorage.getItem('userOrgId') || '';
   private agentNameMap: Map<number, string> = new Map();
 
@@ -75,7 +79,6 @@ export class RitmDetailsComponent implements OnInit {
     this.orgId = localStorage.getItem('userOrgId') || '';
       this.agentId = agentId ? Number(agentId) : null;
       this.requestType = requestType || 'requestedByMe';
-      this.loadTemplates();
       this.loadRouteState();
     });
   }
@@ -100,15 +103,20 @@ export class RitmDetailsComponent implements OnInit {
       this.history = [];
       this.slaInfo = null;
       this.templates = [];
+      this.templatesLoading = false;
+      this.workItemCode = null;
       return;
     }
 
+    this.workItemCode = null;
     this.loading = true;
     this.ritmService.getRitmById(String(this.ritmId)).pipe(finalize(() => this.loading = false)).subscribe({
       next: (response) => {
         const payload = response?.attributes ?? response ?? {};
         const detailPayload = Array.isArray(payload) ? payload[0] ?? {} : payload;
         this.ritm = detailPayload?.ritm ?? detailPayload;
+        this.workItemCode = response?.workItem?.code ?? detailPayload?.workItem?.code ?? this.ritm?.workItem?.code ?? null;
+        this.loadTemplates(this.workItemCode);
         this.ritmTemplateDetails = this.normalizeTemplateDetails(
           this.ritm?.templateDetails
             ?? this.ritm?.templateFields
@@ -133,11 +141,20 @@ export class RitmDetailsComponent implements OnInit {
         this.workNotes = [];
         this.history = [];
         this.slaInfo = null;
+        this.templates = [];
+        this.templatesLoading = false;
+        this.workItemCode = null;
       }
     });
   }
 
-  private loadTemplates(): void {
+  private loadTemplates(requestType: string | null | undefined): void {
+    if (!requestType) {
+      this.templates = [];
+      this.templatesLoading = false;
+      return;
+    }
+
     this.templatesLoading = true;
     const orgId = localStorage.getItem('userOrgId');
     if (orgId) {
@@ -150,7 +167,7 @@ export class RitmDetailsComponent implements OnInit {
       });
     }
 
-    this.variantService.getRitmTemplateDetails(this.orgId).pipe(finalize(() => this.templatesLoading = false)).subscribe({
+    this.variantService.getRitmTemplateDetails(this.orgId, requestType).pipe(finalize(() => this.templatesLoading = false)).subscribe({
       next: (response) => {
         const templates = this.normalizeList(response?.attributes ?? response ?? {});
         this.templates = templates.map((template: any) => ({
@@ -312,7 +329,11 @@ export class RitmDetailsComponent implements OnInit {
     });
   }
 
-  setActiveTab(tab: 'details' | 'work-notes' | 'history' | 'sla'): void {
+  get isRitmSubtask(): boolean {
+    return this.workItemCode === 'RITM_SUBTASK';
+  }
+
+  setActiveTab(tab: 'details' | 'work-notes' | 'history' | 'effort' | 'sla'): void {
     this.activeTab = tab;
 
     if (tab === 'work-notes' && this.ritmId) {
@@ -328,6 +349,7 @@ export class RitmDetailsComponent implements OnInit {
   setActiveAdditionalTab(tab: 'approvers' | 'catalog-task' | 'effort'): void {
     this.activeAdditionalTab = tab;
     if (tab === 'approvers' && this.ritmId && !this.loading) this.loadApproverData();
+    if (tab === 'catalog-task' && this.ritmId) this.loadReferencedTickets();
   }
 
   private loadApproverData(): void {
@@ -384,7 +406,6 @@ export class RitmDetailsComponent implements OnInit {
     this.ritmService.getRitmApprovers(this.ritmId, companyId).pipe(finalize(() => onComplete?.())).subscribe({
       next: response => {
         this.assignedApprovers = this.normalizeList(response?.attributes ?? response?.data ?? response);
-        console.log('Assigned Approvers Response:', this.assignedApprovers);
       },
       error: () => {
         this.assignedApprovers = [];
@@ -439,7 +460,12 @@ export class RitmDetailsComponent implements OnInit {
       .filter((assignment: any) => assignment?.isGroupApprover === true)
       .forEach((assignment: any) => {
         const assignedConfig = assignment?.approverConfig || {};
-        const remark = assignment?.remark || {};
+        const remarks = Array.isArray(assignment?.remark)
+          ? assignment.remark
+              .map((item: any) => item)
+              .map((value: any) => String(value.remarkType + ' Remark: ' + value.remark).trim())
+              .join('\n')
+          : assignment?.remark?.remark ?? assignment?.remark?.comments ?? assignment?.remark?.comment ?? assignment?.remark;
         const configurationId = Number(assignedConfig?.approverConfigId ?? assignment?.approverConfigId ?? assignment?.configId ?? 0);
         const configuration = this.approverConfigurations.find(item =>
           Number(item?.approverConfigId ?? item?.configId) === configurationId
@@ -452,7 +478,7 @@ export class RitmDetailsComponent implements OnInit {
             approvers: [],
             followSequence: assignedConfig?.followSequence ?? assignment?.followSequence ?? configuration?.followSequence,
             isAnyApprovalSufficient: assignedConfig?.isAnyApprovalSufficient ?? assignment?.isAnyApprovalSufficient ?? configuration?.isAnyApprovalSufficient,
-            remark: remark?.remark
+            remark: remarks ? String(remarks) : undefined
           });
         }
         groups.get(key)!.approvers.push(assignment);
@@ -465,11 +491,16 @@ export class RitmDetailsComponent implements OnInit {
   }
 
   getApproverRemark(approver: any): string {
-    const remark = approver?.approvalRemark ?? approver?.remark;
-    if (remark && typeof remark === 'object') {
-      return String(remark.remark ?? remark.comments ?? remark.comment ?? '—');
-    }
-    return remark == null || remark === '' ? '—' : String(remark);
+    const remarks = Array.isArray(approver?.remark)
+          ? approver.remark
+              .map((item: any) => item)
+              .map((value: any) => String(value.remarkType + ' Remark: ' + value.remark).trim())
+              .join('\n')
+          : approver?.remark?.remark;
+    // if (remark && typeof remark === 'object') {
+    //   return String(remark.remark ?? remark.comments ?? remark.comment ?? '—');
+    // }
+    return remarks == null || remarks === '' ? '—' : String(remarks);
   }
 
   getApproverName(approver: any): string {
@@ -603,6 +634,41 @@ export class RitmDetailsComponent implements OnInit {
 
   getCatalogTasks(): any[] {
     return this.normalizeList(this.ritm?.catalogTasks ?? this.ritm?.catalogTask ?? this.ritm?.tasks ?? []);
+  }
+
+  private loadReferencedTickets(): void {
+    if (!this.ritmId) {
+      return;
+    }
+
+    this.referencedTicketsLoading = true;
+    this.referencedTicketsError = '';
+    this.ritmService.getTicketsByReference(this.ritmId).subscribe({
+      next: (response) => {
+        this.referencedTickets = this.normalizeList(
+          response?.attributes ?? response?.data ?? response?.result ?? response
+        );
+        this.referencedTicketsLoading = false;
+      },
+      error: (error) => {
+        this.referencedTicketsLoading = false;
+        this.referencedTicketsError = 'Unable to load referenced tickets.';
+        console.error('Failed to load tickets by reference', error);
+      }
+    });
+  }
+
+  getCatalogTaskTicketId(ticket: any): string | null {
+    const ticketId = ticket?.ticketId ?? ticket?.ritmId ?? ticket?.requestId ?? ticket?.id ?? ticket?.ticketNumber;
+    return ticketId == null ? null : String(ticketId);
+  }
+
+  getCatalogTaskTicketNumber(ticket: any): string {
+    return String(ticket?.ticketNumber ?? ticket?.ritmNumber ?? ticket?.requestNumber ?? 'Ticket');
+  }
+
+  getCurrentFrom(): string {
+    return this.route.snapshot.queryParamMap.get('from') || '';
   }
 
   getEffortEntries(): Array<{ label: string; value: string }> {
@@ -1042,7 +1108,7 @@ export class RitmDetailsComponent implements OnInit {
 
     this.submittingComment = true;
     const payload = {
-      ritmId: Number(this.ritmId),
+      ticketId: Number(this.ritmId),
       agentId: this.getCurrentUserId(),
       commentText: this.commentText.trim(),
       createdBy: this.getCurrentUserId()
@@ -1209,6 +1275,24 @@ export class RitmDetailsComponent implements OnInit {
 
   editRitm(): void {
     if (this.ritmId) {
+      if (this.isRitmSubtask) {
+        const parentRitmId = this.ritm?.parentRitmId
+          ?? this.ritm?.parentRitm?.ritmId
+          ?? this.ritm?.parentRitm?.ticketId
+          ?? '';
+        this.router.navigate(['/ritm-subtask'], {
+          queryParams: {
+            subtaskId: this.ritmId,
+            parentRitmId,
+            agentId: this.agentId,
+            requestType: this.requestType,
+            from: this.route.snapshot.queryParamMap.get('from') || ''
+          },
+          state: { ritmData: this.ritm, parentRitmData: this.ritm?.parentRitm }
+        });
+        return;
+      }
+
       this.router.navigate(['/ritm'], {
         queryParams: { id: this.ritmId },
         state: { ritmData: this.ritm }
@@ -1216,10 +1300,37 @@ export class RitmDetailsComponent implements OnInit {
     }
   }
 
+  createRitmSubtask(): void {
+    if (!this.ritmId) {
+      return;
+    }
+    this.router.navigate(['/ritm-subtask'], {
+      queryParams: {
+        ritmId: this.ritmId,
+        agentId: this.agentId,
+        requestType: this.requestType,
+        from: this.route.snapshot.queryParamMap.get('from') || ''
+      },
+      state: { ritmData: this.ritm }
+    });
+  }
+
   back(): void {
-    const returnPath = this.route.snapshot.queryParamMap.get('from') === 'group-ritm'
-      ? '/group-ritm'
-      : '/my-tickets';
+    const returnRitmId = this.route.snapshot.queryParamMap.get('returnRitmId');
+    if (returnRitmId) {
+      this.router.navigate(['/agent', this.agentId || 0, this.requestType], {
+        queryParams: {
+          ritmId: returnRitmId,
+          from: this.getCurrentFrom()
+        }
+      });
+      return;
+    }
+
+    const fromPath = this.route.snapshot.queryParamMap.get('from');
+    const returnPath = fromPath === 'group-ritm'
+      ? '/group-ritm' : fromPath === 'my-tickets'
+      ? '/my-tickets' : '/approval';
     this.router.navigate([returnPath]);
   }
 }

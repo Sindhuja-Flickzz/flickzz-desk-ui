@@ -68,6 +68,10 @@ export class RitmService {
     return this.http.post(`${this.baseUrl}/ticket/create`, payload);
   }
 
+  createRitmSubtask(payload: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/ticket/create`, payload);
+  }
+
   createRitmStatus(payload: RitmStatusCreateRequest[]): Observable<any> {
     return this.http.post(`${this.baseUrl}/status/create`, payload);
   }
@@ -164,6 +168,10 @@ export class RitmService {
 
   createCatalogTask(task: CatalogTask): Observable<any> {
     return this.http.post(`${this.baseUrl}/ticket/tasks/create`, task);
+  }
+
+  getTicketsByReference(ticketReferenceId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/ticket/reference/${ticketReferenceId}`);
   }
 
   getRitmById(ritmId: string): Observable<any> {
