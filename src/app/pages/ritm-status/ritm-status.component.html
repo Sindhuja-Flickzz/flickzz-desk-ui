@@ -132,7 +132,7 @@
 
   <section *ngIf="activeTab === 'list'" class="panel">
     <div class="list-heading">
-      <h2>RITM Status List</h2>
+      <h2>Status List</h2>
       <button type="button" class="primary-action" (click)="selectTab('create')">
         <mat-icon>add</mat-icon>
         Add Status
@@ -142,7 +142,7 @@
     <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
 
     <div *ngIf="loading" class="empty-state">Loading statuses...</div>
-    <div *ngIf="!loading && statuses.length === 0" class="empty-state">No RITM statuses found.</div>
+    <div *ngIf="!loading && statuses.length === 0" class="empty-state">No statuses found.</div>
 
     <div *ngIf="!loading && statuses.length > 0" class="table-wrapper">
       <div class="list-filters">

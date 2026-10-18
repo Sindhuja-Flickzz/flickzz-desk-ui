@@ -99,6 +99,12 @@
       </div>
 
       <div class="field">
+        <label for="dailyCapacity">Available capacity per day</label>
+        <input id="dailyCapacity" type="time" formControlName="dailyCapacity" placeholder="HH:MM" step="60" (click)="openDailyCapacityPicker($event)" (change)="formError['dailyCapacity'] = null;" />
+        <span *ngIf="formError.dailyCapacity" class="error-text">{{ formError.dailyCapacity | fieldLabel }}</span>
+      </div>
+
+      <div class="field">
         <label>Language</label>
         <div class="skill-input-row language-input-row">
           <div class="skill-name-container">
@@ -198,6 +204,7 @@
             <!-- <th>Organization</th> -->
             <th>Country</th>
             <th>City</th>
+            <th>Available Capacity / Day</th>
             <th>Language</th>
             <th>Skill</th>
             <th>Calendar</th>
@@ -213,6 +220,7 @@
             <!-- <td>{{ agent.organization.companyName }}</td> -->
             <td>{{ agent.country.countryName }}</td>
             <td>{{ agent.city.cityName }}</td>
+            <td>{{ agent.dailyCapacity }}</td>
             <td class="language-cell">
               <button type="button" 
                       class="language-view-btn" 
