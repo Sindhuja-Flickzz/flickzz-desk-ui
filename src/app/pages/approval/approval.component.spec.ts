@@ -163,7 +163,7 @@ describe('ApprovalComponent', () => {
         ticketApproverId: 14,
         requestId: 42,
         requestType: 'RITM',
-        ticket: null,
+        ticket: { ticketId: 84 },
         ticketNumber: 'RITM260831',
         templateDetails: [{ fieldId: 8, fieldName: 'Short Description', value: 'Short description test1' }],
         isGroupApprover: true,
@@ -200,7 +200,7 @@ describe('ApprovalComponent', () => {
     expect(ritmNumberLink.textContent).toContain('RITM260831');
     ritmNumberLink.click();
     expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith(['/agent', 0, 'approval'], {
-      queryParams: { ritmId: '42', from: 'approval' }
+      queryParams: { ritmId: '84', from: 'approval' }
     });
   });
 });

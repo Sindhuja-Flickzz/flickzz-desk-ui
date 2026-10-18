@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthenticationService } from '../../service/authentication.service';
 import { AgentService } from '../../service/agent.service';
@@ -36,7 +36,7 @@ export class EnquiryRegistrationComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       orgName: ['', [Validators.required, this.alphanumericValidator.bind(this)]],
       countryId: ['', Validators.required],
-      phoneNumber: ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
+      phoneNumber: ['', [Validators.required, this.phoneNumberValidator.bind(this)]],
       employeeSize: ['', [Validators.required, Validators.min(1)]]
     });
   }
@@ -128,16 +128,33 @@ export class EnquiryRegistrationComponent implements OnInit {
       return;
     }
 
-    const validators = [Validators.required, Validators.pattern('^[0-9]+$')];
+    phoneControl.setValidators([Validators.required, this.phoneNumberValidator.bind(this)]);
+    phoneControl.updateValueAndValidity();
+  }
 
-    if (this.selectedCountry?.phoneCode === '91') {
-      validators.push(Validators.minLength(10), Validators.maxLength(10));
-    } else {
-      validators.push(Validators.minLength(7), Validators.maxLength(15));
+  private phoneNumberValidator(control: AbstractControl): ValidationErrors | null {
+    const value = typeof control.value === 'string' ? control.value.trim() : '';
+    if (!value) {
+      return control.value ? { phoneNumberFormat: true } : null;
     }
 
-    phoneControl.setValidators(validators);
-    phoneControl.updateValueAndValidity();
+    const countryCode = this.selectedCountry?.phoneCode.replace(/^\+/, '');
+    const minimumNationalLength = countryCode === '91' ? 10 : 7;
+    const maximumNationalLength = countryCode === '91' ? 10 : 15;
+    let nationalNumber = value;
+
+    if (value.startsWith('+')) {
+      if (!/^\+[1-9]\d{1,14}$/.test(value) || !countryCode || !value.startsWith(`+${countryCode}`)) {
+        return { phoneNumberFormat: true };
+      }
+      nationalNumber = value.slice(countryCode.length + 1);
+    } else if (!/^\d+$/.test(value)) {
+      return { phoneNumberFormat: true };
+    }
+
+    return nationalNumber.length >= minimumNationalLength && nationalNumber.length <= maximumNationalLength
+      ? null
+      : { phoneNumberFormat: true };
   }
 
   saveEnquiry(): void {
@@ -148,6 +165,12 @@ export class EnquiryRegistrationComponent implements OnInit {
       return;
     }
 
+    const phoneNumber = String(this.registrationForm.value.phoneNumber).trim();
+    const callingCode = this.selectedCountry?.phoneCode.replace(/^\+/, '');
+    const nationalPhoneNumber = callingCode && phoneNumber.startsWith(`+${callingCode}`)
+      ? phoneNumber.slice(callingCode.length + 1)
+      : phoneNumber;
+
     const enquiryRequest: EnquiryRegisterRequest = {
       firstName: this.registrationForm.value.firstName,
       middleName: this.registrationForm.value.middleName,
@@ -155,7 +178,7 @@ export class EnquiryRegistrationComponent implements OnInit {
       email: this.registrationForm.value.email,
       orgName: this.registrationForm.value.orgName,
       phoneCode: this.countryCode,
-      phoneNumber: this.registrationForm.value.phoneNumber,
+      phoneNumber: nationalPhoneNumber,
       countryId: Number(this.registrationForm.value.countryId),
       employeeSize: Number(this.registrationForm.value.employeeSize)
     };
@@ -185,11 +208,8 @@ export class EnquiryRegistrationComponent implements OnInit {
       if (key === 'email' && field?.hasError('email')) {
         (this.formError as any)[key] = 'Invalid email format';
       }
-      if (key === 'phoneNumber' && field?.hasError('pattern')) {
-        (this.formError as any)[key] = 'Phone number must contain digits only';
-      }
-      if (key === 'phoneNumber' && (field?.hasError('minlength') || field?.hasError('maxlength'))) {
-        (this.formError as any)[key] = 'Enter a valid phone number for the selected country';
+      if (key === 'phoneNumber' && field?.hasError('phoneNumberFormat')) {
+        (this.formError as any)[key] = 'Enter a valid national or international phone number for the selected country';
       }
       if (key === 'employeeSize' && field?.hasError('min')) {
         (this.formError as any)[key] = 'Employee Size must be at least 1';

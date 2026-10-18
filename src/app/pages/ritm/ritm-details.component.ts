@@ -115,8 +115,13 @@ export class RitmDetailsComponent implements OnInit {
         const payload = response?.attributes ?? response ?? {};
         const detailPayload = Array.isArray(payload) ? payload[0] ?? {} : payload;
         this.ritm = detailPayload?.ritm ?? detailPayload;
-        this.workItemCode = response?.workItem?.code ?? detailPayload?.workItem?.code ?? this.ritm?.workItem?.code ?? null;
-        this.loadTemplates(this.workItemCode);
+        this.workItemCode = response?.workItem?.code
+          ?? detailPayload?.workItem?.code
+          ?? this.ritm?.workItem?.code
+          ?? this.ritm?.workItemCode
+          ?? this.ritm?.requestType?.code
+          ?? (typeof this.ritm?.workItem === 'string' ? this.ritm.workItem : null)
+          ?? null;
         this.ritmTemplateDetails = this.normalizeTemplateDetails(
           this.ritm?.templateDetails
             ?? this.ritm?.templateFields
@@ -124,6 +129,7 @@ export class RitmDetailsComponent implements OnInit {
             ?? detailPayload?.templateFields
             ?? []
         );
+        this.loadTemplates(this.workItemCode);
         this.applyExistingTemplateValues();
 
         this.slaInfo =
@@ -169,10 +175,10 @@ export class RitmDetailsComponent implements OnInit {
 
     this.variantService.getRitmTemplateDetails(this.orgId, requestType).pipe(finalize(() => this.templatesLoading = false)).subscribe({
       next: (response) => {
-        const templates = this.normalizeList(response?.attributes ?? response ?? {});
+        const templates = this.normalizeTemplateCollection(response);
         this.templates = templates.map((template: any) => ({
           ...template,
-          templateDetails: this.normalizeList(template?.templateDetails ?? template?.details ?? []).map((field: any) => ({
+          templateDetails: this.normalizeTemplateDetails(template?.templateDetails ?? template?.templateFields ?? template?.details ?? []).map((field: any) => ({
             ...field,
             templateId: field?.templateId ?? template?.templateId,
             value: this.getExistingTemplateValue(field),
@@ -190,6 +196,28 @@ export class RitmDetailsComponent implements OnInit {
   getTemplateFields(template: any): any[] {
     const fields = this.getRawTemplateFields(template);
     return fields.filter((field: any) => this.hasTemplateValue(field?.value));
+  }
+
+  private normalizeTemplateCollection(response: any): any[] {
+    const collection = response?.attributes ?? response?.data ?? response?.items ?? response?.templates ?? response;
+    if (Array.isArray(collection)) {
+      return collection;
+    }
+    if (!collection || typeof collection !== 'object') {
+      return [];
+    }
+    if (Array.isArray(collection.templates)) {
+      return collection.templates;
+    }
+    if (Array.isArray(collection.items)) {
+      return collection.items;
+    }
+    if (collection.templateDetails || collection.details) {
+      return [collection];
+    }
+    return Object.values(collection).flatMap((item: any) =>
+      Array.isArray(item) ? item : item && typeof item === 'object' ? [item] : []
+    );
   }
 
   private getRawTemplateFields(template: any): any[] {
@@ -214,7 +242,15 @@ export class RitmDetailsComponent implements OnInit {
       }));
     }
 
-    return details.fieldId != null || details.fieldName != null || details.value != null || details.fieldValue != null
+    return details.fieldId != null
+      || details.templateDetailId != null
+      || details.templateFieldId != null
+      || details.fieldName != null
+      || details.value != null
+      || details.fieldValue != null
+      || details.field_value != null
+      || details.userValue != null
+      || details.answer != null
       ? [details]
       : [];
   }
@@ -256,12 +292,13 @@ export class RitmDetailsComponent implements OnInit {
   private getExistingTemplateValue(field: any): any {
     const details = this.ritmTemplateDetails;
     if (Array.isArray(details)) {
-      const fieldId = field?.fieldId == null ? null : Number(field.fieldId);
+      const fieldId = this.getTemplateFieldId(field);
       const templateId = field?.templateId == null ? null : Number(field.templateId);
       const fieldName = this.normalizeFieldName(field?.fieldName);
 
       const existing = details.find((item: any) =>
-        fieldId !== null && item?.fieldId != null && Number(item.fieldId) === fieldId
+        fieldId !== null
+        && this.getTemplateFieldId(item) === fieldId
       ) || details.find((item: any) =>
         templateId !== null
         && item?.templateId != null
@@ -269,10 +306,9 @@ export class RitmDetailsComponent implements OnInit {
         && fieldName !== ''
         && this.normalizeFieldName(item?.fieldName) === fieldName
       ) || details.find((item: any) =>
-        fieldId === null
-        && templateId === null
-        && fieldName !== ''
+        fieldName !== ''
         && this.normalizeFieldName(item?.fieldName) === fieldName
+        && (templateId === null || item?.templateId == null || Number(item.templateId) === templateId)
       );
 
       if (existing) {
@@ -281,12 +317,25 @@ export class RitmDetailsComponent implements OnInit {
           ?? existing?.fieldValue
           ?? existing?.field_value
           ?? existing?.userValue
-          ?? existing?.answer
-        , field);
+          ?? existing?.answer,
+          field
+        );
       }
     }
 
-    return this.normalizeTemplateValue(field?.value ?? field?.fieldValue ?? '', field);
+    return this.normalizeTemplateValue(
+      field?.value ?? field?.fieldValue ?? field?.field_value ?? field?.userValue ?? field?.answer ?? '',
+      field
+    );
+  }
+
+  private getTemplateFieldId(field: any): number | null {
+    const fieldId = field?.fieldId ?? field?.templateDetailId ?? field?.templateFieldId ?? field?.field_id;
+    if (fieldId === null || fieldId === undefined || fieldId === '') {
+      return null;
+    }
+    const parsedFieldId = Number(fieldId);
+    return Number.isFinite(parsedFieldId) ? parsedFieldId : null;
   }
 
   private normalizeFieldName(value: any): string {
@@ -896,6 +945,11 @@ export class RitmDetailsComponent implements OnInit {
     return Array.isArray(details) ? details : details ? [details] : [];
   }
 
+  getAuditFieldName(entry: any): string {
+    const detail = this.getAuditDetails(entry).find((item) => item?.fieldName);
+    return entry?.fieldName || detail?.fieldName || 'Field changes';
+  }
+
   getAuditTitle(entry: any): string {
     const actionType = (entry?.actionType || entry?.type || '').toString();
     const description = (entry?.description || '').toString().trim();
@@ -1028,12 +1082,8 @@ export class RitmDetailsComponent implements OnInit {
         entry?.changedBy,
         entry?.changedAt,
         this.getAuditTitle(entry),
-        this.getAuditByLabel(entry),
-        ...this.getAuditDetails(entry).flatMap((detail) => [
-          detail?.fieldName,
-          detail?.oldValue,
-          detail?.newValue
-        ])
+        this.getAuditFieldName(entry),
+        this.getAuditByLabel(entry)
       ].filter((value) => value !== null && value !== undefined && value !== '').map((value) => String(value).toLowerCase());
 
       return keywords.some((keyword) => keyword.includes(search));
@@ -1214,10 +1264,9 @@ export class RitmDetailsComponent implements OnInit {
       { label: 'Category', value: this.getNestedValue('category.categoryName', this.getFieldValue('categoryName', this.getFieldValue('category', 'N/A'))) },
       { label: 'Sub Category', value: this.getNestedValue('subCategory.subCategoryName', this.getFieldValue('subCategoryName', this.getFieldValue('subCategory', 'N/A'))) },
       { label: 'Support Group', value: this.getNestedValue('supportGroup.groupName', this.getFieldValue('assignmentGroupName', this.getFieldValue('assignmentGroup', this.getFieldValue('supportGroupName', 'N/A')))) },
-      { label: 'Assigned To', value: this.getAssignedToLabel() },
       { label: 'Request Type', value: this.getNestedValue('requestType.requestTypeName', this.getFieldValue('requestTypeName', this.getFieldValue('requestType', 'N/A'))) },
       { label: 'Customer Resolution', value: this.formatDetailDateTime(customerResolution) },
-      {label: 'Assigned To', value: this.getNestedValue('assignedTo.agentName', this.getFieldValue('assignedToName', this.getFieldValue('assignedTo', 'N/A')))}
+      { label: 'Assigned To', value: this.getAssignedToLabel() }
     ];
   }
 

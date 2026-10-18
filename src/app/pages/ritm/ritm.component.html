@@ -17,6 +17,9 @@
 
   <div *ngIf="submitSuccess && !showSuccessScreen" class="alert alert-success">{{ submitSuccess }}</div>
   <div *ngIf="submitError" class="alert alert-error">{{ submitError }}</div>
+  <div *ngIf="!isEditMode && !templatesLoading && !hasAvailableTemplate" class="alert alert-error">
+    <a [routerLink]="['/variant']">Create RITM template</a> to proceed.
+  </div>
 
   <ng-container *ngIf="!showSuccessScreen; else ritmSuccessScreen">
   <mat-card class="form-card">
@@ -121,8 +124,8 @@
             <input formControlName="assignmentGroup" readonly />
           </div>
 
-          <div class="field assigned-to-field" *ngIf="isEditMode">
-            <label>Assign To</label>
+          <div class="field assigned-to-field">
+            <label>Assign to</label>
             <select formControlName="assignedTo">
               <option value="">Not assigned</option>
               <option *ngFor="let user of users" [value]="user.agentId">
@@ -281,8 +284,6 @@
           </div>
         </div>
       </div>
-      <div *ngIf="!templatesLoading && !templates.length" class="empty-state small">No RITM template available.</div>
-
       <div class="section-block attachment-block">
         <div class="section-header amber-header">
           <span class="section-header-icon">📎</span>
@@ -301,7 +302,8 @@
       </div>
 
       <div class="form-actions">
-        <button mat-flat-button color="primary" type="submit" [disabled]="submitting || loading">
+        <button mat-flat-button color="primary" type="submit"
+          [disabled]="submitting || loading || (!isEditMode && (templatesLoading || !hasAvailableTemplate))">
           {{ submitting ? 'Saving...' : (isEditMode ? 'Update RITM' : 'Create RITM') }}
         </button>
         <button mat-stroked-button type="button" (click)="onCancel()">Cancel</button>
@@ -335,7 +337,7 @@
 
       <section class="detail-section" *ngFor="let template of successTemplateGroups">
         <div class="section-heading">{{ template.templateName }}</div>
-        <div class="detail-grid">
+        <div class="detail-grid-template">
           <div class="detail-field" *ngFor="let field of template.fields">
             <span class="field-label">{{ field.fieldName }}</span>
             <span class="field-value">{{ field.value }}</span>
@@ -379,7 +381,7 @@
       </section>
 
       <div class="success-action-row">
-        <button mat-stroked-button type="button" class="secondary-action" (click)="showSuccessScreen = false; submitSuccess = ''; ritmForm.reset()">
+        <button mat-stroked-button type="button" class="secondary-action" (click)="createAnotherRitm()">
           <mat-icon>add</mat-icon>
           Create Another RITM
         </button>

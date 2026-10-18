@@ -225,7 +225,7 @@ export class ApprovalComponent implements OnInit {
   }
 
   formatRitmValue(value: unknown): string {
-    if (value === null || value === undefined || value === '') return 'N/A';
+    if (value === null || value === undefined || value === '') return '';
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     if (typeof value === 'object') return JSON.stringify(value);
     return String(value);
@@ -233,6 +233,10 @@ export class ApprovalComponent implements OnInit {
 
   isRitmNumberDetail(fieldName: string): boolean {
     return /^(ritm\s*number|request\s*number)$/i.test(fieldName?.trim() || '');
+  }
+
+  showInInfoPage(detail: { fieldName: string; showInInfoPage?: boolean }): boolean {
+    return detail.showInInfoPage ?? true;
   }
 
   getRitmNumber(approval: ApprovalRecord, approver: RitmApprover): string {
@@ -253,10 +257,28 @@ export class ApprovalComponent implements OnInit {
     return description && /^RITM[\w-]*$/i.test(description) ? description : 'N/A';
   }
 
-  openRitmDetails(approval: ApprovalRecord): void {
+  openRitmDetails(approval: ApprovalRecord, approver: RitmApprover): void {
+    console.log('Navigating to RITM details for approval:', approval);
+    const ritmId = this.getRitmId(approver) ?? approval.requestId;
     this.router.navigate(['/agent', Number(localStorage.getItem('userId') || 0), 'approval'], {
-      queryParams: { ritmId: String(approval.requestId), from: 'approval' }
+      queryParams: { ritmId: String(ritmId), from: 'approval' }
     });
+  }
+
+  private getRitmId(approver: RitmApprover): string | number | null {
+    const ticket = approver.ticket;
+    if (typeof ticket === 'string' || typeof ticket === 'number') return ticket;
+    if (!ticket || typeof ticket !== 'object') return approver.requestId ?? null;
+
+    const ticketDetails = ticket as Record<string, unknown>;
+    const ticketId = ticketDetails['ticketId']
+      ?? ticketDetails['ritmId']
+      ?? ticketDetails['id']
+      ?? ticketDetails['requestId'];
+
+    return typeof ticketId === 'string' || typeof ticketId === 'number'
+      ? ticketId
+      : approver.requestId ?? null;
   }
 
   formatBusinessPartnerValue(value: string | number | boolean | null | undefined): string {

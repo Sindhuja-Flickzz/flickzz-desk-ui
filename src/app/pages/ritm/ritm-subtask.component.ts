@@ -63,7 +63,7 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subtaskForm = this.fb.group({
       ritmSubtaskNumber: [{ value: '', disabled: true }],
-      assignedTo: ['', Validators.required],
+      assignedTo: [''],
       location: [{ value: '', disabled: true }],
       availabilityTime: [{ value: '', disabled: true }],
       currentTime: [{ value: '', disabled: true }],
@@ -517,6 +517,14 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
     return Array.isArray(template?.templateDetails) ? template.templateDetails : [];
   }
 
+  get hasAvailableTemplate(): boolean {
+    return this.templates.some(template =>
+      (template?.templateId != null && String(template.templateId).trim() !== '')
+      || (typeof template?.templateName === 'string' && template.templateName.trim() !== '')
+      || this.getTemplateFields(template).length > 0
+    );
+  }
+
   getTemplateKey(template: any, index: number): string {
     return `${template?.templateId ?? template?.templateName ?? index}:${index}`;
   }
@@ -605,6 +613,10 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
     this.formSubmitted = true;
     this.submitError = '';
     this.submitSuccess = '';
+    if (!this.isEditMode && (this.templatesLoading || !this.hasAvailableTemplate)) {
+      this.submitError = 'No RITM template available.';
+      return;
+    }
     if (!this.validateTemplateFields() || this.subtaskForm.invalid) {
       this.subtaskForm.markAllAsTouched();
       this.submitError = `Please correct the highlighted fields before ${this.isEditMode ? 'updating' : 'creating'} the subtask.`;
@@ -629,7 +641,7 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
       categoryId: Number(values.category),
       subCategoryId: Number(values.subCategory),
       assignmentGroup: this.assignmentGroupId,
-      assignedTo: Number(values.assignedTo),
+      assignedTo: values.assignedTo ? Number(values.assignedTo) : null,
       priority: Number(values.priority),
       customerResolution: values.customerResolution,
       openedBy: currentUserId,

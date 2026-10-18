@@ -39,6 +39,7 @@
               <th>Field Name</th>
               <th>Field Type</th>
               <th>Mandatory</th>
+              <th>Show in page</th>
               <th>Configure</th>
             </tr>
           </thead>
@@ -61,6 +62,12 @@
                   <label class="toggle-row">
                     <input type="checkbox" formControlName="mandatory" [disabled]="isSubmitting" />
                     Mandatory
+                  </label>
+                </td>
+                <td class="mandatory-cell">
+                  <label class="toggle-row">
+                    <input type="checkbox" formControlName="showInInfoPage" [disabled]="isSubmitting" />
+                    Show in page
                   </label>
                 </td>
                 <td>

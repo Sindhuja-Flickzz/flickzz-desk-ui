@@ -209,7 +209,7 @@
 
 .template-field-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  // grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 14px;
 }
 
@@ -618,6 +618,11 @@
   gap: 12px;
 }
 
+.assigned-approvers .approver-column-header.group-approval,
+.assigned-approvers .approver-agent-row.group-approval {
+  grid-template-columns: minmax(0, 1fr) minmax(96px, 180px);
+}
+
 .approver-column-header {
   padding: 9px 12px;
   background: #00246B;
@@ -815,6 +820,14 @@
   box-shadow: none;
 }
 
+.history-content-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
 .history-date-col {
   min-width: 92px;
   display: flex;
@@ -836,7 +849,6 @@
 }
 
 .history-content {
-  flex: 1;
   position: relative;
   padding-left: 16px;
   border-left: 2px solid #e8edf6;
@@ -962,9 +974,23 @@
 .single-change-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   color: #374151;
   font-size: 12px;
+}
+
+.single-old-change,
+.single-new-value {
+  flex: 1 1 max-content;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.single-old-change {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .single-field-name {
@@ -973,6 +999,10 @@
   border-radius: 18px;
   padding: 5px 8px;
   font-weight: 600;
+}
+
+.single-old-value {
+  color: #6b7280;
 }
 
 .single-arrow {
@@ -1064,6 +1094,10 @@
   .history-date-col {
     align-items: flex-start;
     min-width: auto;
+  }
+
+  .history-content-list {
+    width: 100%;
   }
 
   .history-content {

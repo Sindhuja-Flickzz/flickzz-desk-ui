@@ -60,8 +60,10 @@ export class VariantService {
     return this.http.put(`${this.baseUrl}/template/update`, request);
   }
 
-  deleteTemplate(templateId: number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/template/${templateId}`);
+  deleteTemplate(templateId: number, companyId: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/template/${templateId}`, {
+      params: { companyId: String(companyId) }
+    });
   }
   
   getDefaultTemplateList(orgId: string): Observable<any> {

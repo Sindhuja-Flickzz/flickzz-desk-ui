@@ -112,6 +112,7 @@ export interface TemplateDetails {
   fieldId: number;
   fieldName: string;
   value: string;
+  showInInfoPage: boolean;
 }
 
 export interface RitmApprover {

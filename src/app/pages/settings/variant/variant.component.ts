@@ -155,6 +155,7 @@ export class VariantComponent implements OnInit, OnDestroy {
       fieldName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100), this.trimValidator]],
       fieldType: ['', Validators.required],
       mandatory: [false],
+      showInInfoPage: [false],
       options: this.fb.array([])
     });
   }
@@ -428,6 +429,7 @@ export class VariantComponent implements OnInit, OnDestroy {
           fieldName: row.get('fieldName')?.value.trim(),
           fieldTypeId: fieldTypeItem ? fieldTypeItem.typeId : 0,
           mandatory: row.get('mandatory')?.value || false,
+          showInInfoPage: row.get('showInInfoPage')?.value || false,
           ...(this.isOptionFieldType(fieldTypeCode) ? { options } : {})
         };
       })
@@ -590,6 +592,7 @@ export class VariantComponent implements OnInit, OnDestroy {
             fieldName: [detail.fieldName, [Validators.required, Validators.minLength(2), Validators.maxLength(100), this.trimValidator]],
             fieldType: [fieldTypeCode, Validators.required],
             mandatory: [detail.mandatory || false],
+            showInInfoPage: [detail.showInInfoPage || false],
             options: this.fb.array(
               (detail.options || []).map((option) => this.createOptionGroup(option))
             )
@@ -640,7 +643,7 @@ export class VariantComponent implements OnInit, OnDestroy {
         return;
       }
       this.subscriptions.add(
-        this.variantService.deleteTemplate(template.templateId).subscribe({
+        this.variantService.deleteTemplate(template.templateId, Number(this.orgId)).subscribe({
           next: () => {
             this.submitSuccess = 'Template deleted successfully.';
             this.loadTemplateList();
