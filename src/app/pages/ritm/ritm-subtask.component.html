@@ -22,6 +22,9 @@
 
   <div *ngIf="submitSuccess" class="alert alert-success">{{ submitSuccess }}</div>
   <div *ngIf="submitError" class="alert alert-error">{{ submitError }}</div>
+  <div *ngIf="!isEditMode && !templatesLoading && !hasAvailableTemplate" class="alert alert-error">
+    <a [routerLink]="['/variant']">Create template</a> to proceed.
+  </div>
   <div *ngIf="loading" class="loading-panel">
     <mat-spinner diameter="36"></mat-spinner>
   </div>
@@ -39,12 +42,11 @@
             <input formControlName="ritmSubtaskNumber" readonly />
           </div>
           <div class="field field-requested-for">
-            <label>Assign To <span class="mandatory-indicator" aria-hidden="true">*</span></label>
+            <label>Assign To</label>
             <select formControlName="assignedTo">
-              <option value="" disabled>Select agent</option>
+              <option value="">Select agent</option>
               <option *ngFor="let user of users" [value]="user.agentId">{{ user.agentName }} ({{ user.accessId }})</option>
             </select>
-            <span *ngIf="showRequiredError('assignedTo')" class="error-text">Assign To is required.</span>
           </div>
           <div class="field field-location">
             <label>Location</label>
@@ -185,8 +187,6 @@
           </div>
         </div>
       </div>
-      <div *ngIf="!templatesLoading && !templates.length" class="empty-state small">No RITM template available.</div>
-
       <div class="section-block attachment-block">
         <div class="section-header amber-header">
           <span class="section-header-icon">📎</span><span>Attachments</span>
@@ -201,7 +201,8 @@
       </div>
 
       <div class="form-actions">
-        <button mat-flat-button color="primary" type="submit" [disabled]="submitting || loading || !!submitSuccess">
+        <button mat-flat-button color="primary" type="submit"
+          [disabled]="submitting || loading || !!submitSuccess || (!isEditMode && (templatesLoading || !hasAvailableTemplate))">
           {{ submitting ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update RITM Subtask' : 'Create RITM Subtask') }}
         </button>
         <button mat-stroked-button type="button" (click)="onCancel()" [disabled]="submitting">Cancel</button>

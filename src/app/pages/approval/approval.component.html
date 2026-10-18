@@ -97,7 +97,6 @@
     <aside class="details-panel" *ngIf="selectedApproval as approval" aria-label="Approval details">
       <header class="details-header">
         <div>
-          <!-- <p class="eyebrow">REQUEST {{ approval.requestId }}</p> -->
           <h2>Approval Details</h2>
         </div>
         <button mat-icon-button aria-label="Close details" (click)="closeDetails()"><mat-icon>close</mat-icon></button>
@@ -124,7 +123,7 @@
         type="button"
         class="ritm-number-link"
         [attr.aria-label]="'Open RITM details for ' + getRitmNumber(approval, approver)"
-        (click)="openRitmDetails(approval)">
+        (click)="openRitmDetails(approval, approver)">
         {{ getRitmNumber(approval, approver) }}
       </button>
 
@@ -133,9 +132,8 @@
         <p *ngIf="detailLoadError" class="detail-error">{{ detailLoadError }}</p>
         <dl class="details-grid" *ngIf="!isDetailLoading && ritmApprover as approver">
           <ng-container *ngFor="let detail of approver.templateDetails">
-            <div *ngIf="!isRitmNumberDetail(detail.fieldName)"><dt>{{ detail.fieldName }}</dt><dd>{{ formatRitmValue(detail.value) }}</dd></div>
+            <div *ngIf="!isRitmNumberDetail(detail.fieldName) && detail.showInInfoPage && detail.value"><dt>{{ detail.fieldName }}</dt><dd>{{ formatRitmValue(detail.value) }}</dd></div>
           </ng-container>
-          <!-- <div><dt>Approval Remark</dt><dd>{{ formatRitmValue(approver.approvalRemark) }}</dd></div> -->
         </dl>
       </section>
 

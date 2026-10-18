@@ -78,7 +78,7 @@
 
       <div *ngIf="!templatesLoading && !getAvailableTemplates().length" class="empty-state small">No populated request template information available.</div>
 
-      <div class="section-block" *ngIf="getNestedValue('description', '') !== ''">
+      <!-- <div class="section-block" *ngIf="getNestedValue('description', '') !== ''">
         <div class="section-header amber-header">
           <span class="section-header-icon">☰</span>
           <span>Request Description</span>
@@ -106,7 +106,7 @@
         <div class="description-block">
           <p>{{ getNestedValue('otherNotes') }}</p>
         </div>
-      </div>
+      </div> -->
 
       <section class="section-block" *ngIf="getWatchlistItems().length">
         <div class="section-header">
@@ -183,7 +183,7 @@
         <div class="history-toolbar">
           <div class="history-search-wrap">
             <input type="text" [(ngModel)]="historySearchTerm" placeholder="Search history..." />
-            <mat-icon>search</mat-icon>
+            <!-- <mat-icon>search</mat-icon> -->
           </div>
         </div>
 
@@ -194,46 +194,48 @@
               <span class="history-time">{{ getAuditTime(entry) }}</span>
             </div>
 
-            <div class="history-content">
-              <div class="history-card-header">
-                <div class="history-icon-wrap" [ngClass]="getHistoryIconClass(entry)">
-                  <mat-icon>{{ getHistoryIcon(entry) }}</mat-icon>
-                </div>
-                <div class="history-title-wrap">
-                  <div class="history-title-row">
-                    <h4>{{ getAuditTitle(entry) }}</h4>
-                    <span class="history-change-count" *ngIf="getAuditDetails(entry).length > 1">{{ getAuditDetails(entry).length }} changes</span>
+            <div class="history-content-list">
+              <ng-container *ngIf="getAuditDetails(entry).length; else auditDescription">
+              <div class="history-content" *ngFor="let detail of getAuditDetails(entry)">
+                <div class="history-card-header">
+                  <div class="history-icon-wrap" [ngClass]="getHistoryIconClass(entry)">
+                    <mat-icon>{{ getHistoryIcon(entry) }}</mat-icon>
                   </div>
-                  <div class="history-meta">Updated by {{ getAuditByLabel(entry) }}</div>
+                  <div class="history-title-wrap">
+                    <div class="history-title-row">
+                      <h4>{{ detail?.fieldName || entry?.fieldName || 'Field changes' }}</h4>
+                    </div>
+                    <div class="history-meta">Updated by {{ getAuditByLabel(entry) }}</div>
+                  </div>
+                </div>
+
+                <div class="history-single-change">
+                  <div class="single-change-row">
+                    <span class="single-old-change">
+                      <span class="single-old-value">{{ formatAuditValue(detail?.oldValue) }}</span>
+                      <span class="single-arrow">→</span>
+                    </span>
+                    <span class="single-new-value">{{ formatAuditValue(detail?.newValue) }}</span>
+                  </div>
                 </div>
               </div>
-
-              <div class="history-details-box" *ngIf="getAuditDetails(entry).length > 1">
-                <table class="history-table">
-                  <thead>
-                    <tr>
-                      <th>Field</th>
-                      <th>Old value</th>
-                      <th>New value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let detail of getAuditDetails(entry)">
-                      <td>{{ detail?.fieldName || 'Field' }}</td>
-                      <td>{{ formatAuditValue(detail?.oldValue) }}</td>
-                      <td>{{ formatAuditValue(detail?.newValue) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="history-single-change" *ngIf="getAuditDetails(entry).length === 1">
-                <div class="single-change-row" *ngFor="let detail of getAuditDetails(entry)">
-                  <span class="single-field-name">{{ detail?.fieldName || 'Field' }}</span>
-                  <span class="single-arrow">→</span>
-                  <span class="single-new-value">{{ formatAuditValue(detail?.newValue) }}</span>
+              </ng-container>
+              <ng-template #auditDescription>
+                <div class="history-content" *ngIf="entry?.description">
+                  <div class="history-card-header">
+                    <div class="history-icon-wrap" [ngClass]="getHistoryIconClass(entry)">
+                      <mat-icon>{{ getHistoryIcon(entry) }}</mat-icon>
+                    </div>
+                    <div class="history-title-wrap">
+                      <div class="history-title-row">
+                        <h4>Description</h4>
+                      </div>
+                      <div class="history-meta">Updated by {{ getAuditByLabel(entry) }}</div>
+                    </div>
+                  </div>
+                  <div class="history-single-change">{{ entry.description }}</div>
                 </div>
-              </div>
+              </ng-template>
             </div>
           </div>
         </div>
@@ -281,10 +283,14 @@
           <div class="approver-config-meta">
             <div *ngIf="group.remark"><strong>{{ group.remark }}</strong></div>
           </div>
-          <div class="approver-column-header"><span>User</span><span>Approver Sequence</span><span>Status</span></div>
-          <div class="approver-agent-row" *ngFor="let approver of group.approvers">
+          <div class="approver-column-header" [class.group-approval]="group.isAnyApprovalSufficient">
+            <span>User</span>
+            <span *ngIf="!group.isAnyApprovalSufficient">Approver Sequence</span>
+            <span>Status</span>
+          </div>
+          <div class="approver-agent-row" [class.group-approval]="group.isAnyApprovalSufficient" *ngFor="let approver of group.approvers">
             <span>{{ getApproverName(approver) }}</span>
-            <span class="agent-meta">{{ approver.approverSequence ?? '—' }}</span>
+            <span class="agent-meta" *ngIf="!group.isAnyApprovalSufficient">{{ approver.approverSequence ?? '—' }}</span>
             <span class="agent-meta">{{ approver.approvalStatus || '' }}</span>
           </div>
         </section>
@@ -405,7 +411,6 @@
             </a>
             <span *ngIf="!getCatalogTaskTicketId(ticket)">{{ getCatalogTaskTicketNumber(ticket) }}</span>
           </ng-container>
-          <span *ngIf="!referencedTickets.length" class="small-loading">No referenced tickets found.</span>
         </ng-container>
       </div>
     </div>

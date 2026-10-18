@@ -237,6 +237,14 @@ export class RitmComponent implements OnInit, OnDestroy {
     return Array.isArray(template?.templateDetails) ? template.templateDetails : [];
   }
 
+  get hasAvailableTemplate(): boolean {
+    return this.templates.some(template =>
+      (template?.templateId != null && String(template.templateId).trim() !== '')
+      || (typeof template?.templateName === 'string' && template.templateName.trim() !== '')
+      || this.getTemplateFields(template).length > 0
+    );
+  }
+
   getTemplateKey(template: any, index: number): string {
     return String(template?.templateId ?? template?.templateName ?? index) + ':' + index;
   }
@@ -444,8 +452,12 @@ export class RitmComponent implements OnInit, OnDestroy {
     const orgId = localStorage.getItem('userOrgId') || '';
     this.ritmService.getAgents(orgId).subscribe({
       next: (users: AgentMaster[] | any) => {
-        this.users = (users as any).attributes || [];
+        const userList = (users as any)?.attributes ?? users;
+        this.users = Array.isArray(userList) ? userList : [];
         this.setCurrentUser();
+        this.ritmForm.patchValue({
+          openedBy: this.getOpenedByDisplayName(this.ritmForm.get('openedBy')?.value)
+        }, { emitEvent: false });
         this.setRequestedForDefault();
         this.setRequestedForLocation(this.ritmForm.get('requestedFor')?.value);
         if (!this.isEditMode) {
@@ -681,7 +693,9 @@ export class RitmComponent implements OnInit, OnDestroy {
     this.applyExistingTemplateValues();
     this.ritmForm.patchValue({
       ritmNumber: ritm.ticketNumber || ritm.ritmNumber || ritm.requestNumber || '',
-      openedBy: ritm.openedBy || this.getCurrentUserDisplayName(),
+      openedBy: this.getOpenedByDisplayName(
+        ritm.openedByName ?? ritm.requestedByName ?? ritm.openedBy ?? ritm.requestedBy
+      ),
       requestedFor: ritm.requestedFor.agentId,
       location: ritm.location || this.currentUser?.city?.cityName || this.currentUser?.country?.countryName || '',
       availabilityTime: this.formatAvailabilityTime(this.currentUser?.calendar?.workFrom, this.currentUser?.calendar?.workTo),
@@ -846,6 +860,31 @@ export class RitmComponent implements OnInit, OnDestroy {
     return localStorage.getItem('userId') || 'Unknown User';
   }
 
+  private getOpenedByDisplayName(openedBy: any): string {
+    if (openedBy && typeof openedBy === 'object') {
+      const name = openedBy.agentName || openedBy.name || openedBy.userName || openedBy.fullName;
+      if (name) {
+        return openedBy.accessId ? `${name} (${openedBy.accessId})` : String(name);
+      }
+      openedBy = openedBy.agentId ?? openedBy.id ?? openedBy.userId ?? '';
+    }
+
+    const value = String(openedBy ?? '').trim();
+    if (!value) {
+      return this.getCurrentUserDisplayName();
+    }
+
+    const agentId = Number(value);
+    if (Number.isInteger(agentId) && agentId > 0) {
+      const agent = this.users.find(user => Number(user.agentId) === agentId);
+      if (agent) {
+        return `${agent.agentName} (${agent.accessId})`.trim();
+      }
+    }
+
+    return value;
+  }
+
   private normalizeArray<T>(value: T[] | any): T[] {
     if (Array.isArray(value)) {
       return value;
@@ -925,7 +964,7 @@ export class RitmComponent implements OnInit, OnDestroy {
       if (this.ritmStatuses.length === 0) {
         unavailableDependencies.push('status');
       }
-      if (this.templates.length === 0) {
+      if (!this.hasAvailableTemplate) {
         unavailableDependencies.push('template');
       }
 
@@ -1005,6 +1044,7 @@ export class RitmComponent implements OnInit, OnDestroy {
           this.ritmForm.get('category')?.reset();
           this.ritmForm.get('subCategory')?.reset();
           this.ritmForm.get('assignmentGroup')?.reset();
+          this.ritmForm.get('assignedTo')?.reset('');
           this.ritmForm.get('priority')?.reset();
           this.ritmForm.get('watchList')?.reset([]);
           this.ritmForm.get('shortDescription')?.reset();
@@ -1294,5 +1334,50 @@ export class RitmComponent implements OnInit, OnDestroy {
 
   get requestedForControl() {
     return this.ritmForm.get('requestedFor');
+  }
+
+  createAnotherRitm() {
+    this.router.navigate(['/ritm'], { queryParams: {}, replaceUrl: true });
+    this.isEditMode = false;
+    this.ritmId = '';
+    this.showSuccessScreen = false;
+    this.submitError = '';
+    this.submitSuccess = '';
+    this.successRitmDetails = null;
+    this.successWasUpdate = false;
+    this.formSubmitted = false;
+    this.attachmentFiles = [];
+    this.assignmentGroupId = null;
+    this.existingTemplateDetails = [];
+    this.expandedTemplates = {};
+    this.templates.forEach(template => this.getTemplateFields(template).forEach(field => {
+      field.value = '';
+      field.userValue = '';
+      field.defaultApplied = false;
+      field.templateError = '';
+    }));
+    this.ritmForm.reset({
+      ritmNumber: '',
+      openedBy: '',
+      requestedFor: '',
+      location: '',
+      availabilityTime: '',
+      currentTime: '',
+      requestTypeId: '',
+      category: '',
+      subCategory: '',
+      assignmentGroup: '',
+      priority: '',
+      customerResolution: '',
+      status: '',
+      assignedTo: '',
+      watchList: [],
+      attachments: []
+    }, { emitEvent: false });
+    this.ritmForm.get('customerResolution')?.disable({ emitEvent: false });
+    this.ritmForm.markAsPristine();
+    this.ritmForm.markAsUntouched();
+    this.applyFormDefaults();
+    this.setRequestedForLocation(this.ritmForm.get('requestedFor')?.value);
   }
 }

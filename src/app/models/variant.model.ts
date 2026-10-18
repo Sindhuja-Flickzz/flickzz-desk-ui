@@ -29,6 +29,7 @@ export interface TemplateDetail {
   fieldName: string;
   fieldTypeId: number;
   mandatory: boolean;
+  showInInfoPage?: boolean;
   isEditable?: boolean;
   options?: DropdownOption[];
 }

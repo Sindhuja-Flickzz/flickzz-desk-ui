@@ -73,11 +73,8 @@
         <span *ngIf="phoneNumberControl?.touched && phoneNumberControl?.hasError('required')" class="error-text">
           Phone Number is required
         </span>
-        <span *ngIf="phoneNumberControl?.touched && phoneNumberControl?.hasError('pattern')" class="error-text">
-          Phone number must contain digits only
-        </span>
-        <span *ngIf="phoneNumberControl?.touched && (phoneNumberControl?.hasError('minlength') || phoneNumberControl?.hasError('maxlength'))" class="error-text">
-          Enter a valid phone number for the selected country
+        <span *ngIf="phoneNumberControl?.touched && phoneNumberControl?.hasError('phoneNumberFormat')" class="error-text">
+          Enter a valid national number or an international number beginning with the selected country code
         </span>
       </div>
     </div>
