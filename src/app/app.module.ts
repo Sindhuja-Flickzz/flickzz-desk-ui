@@ -83,7 +83,6 @@ import { NotificationComponent } from './notification/notification.component';
 import { NotificationPopupComponent } from './shared/notification-popup/notification-popup.component';
 import { NotificationDropdownComponent } from './notification-dropdown/notification-dropdown.component';
 import { MyTicketsComponent } from './pages/my-tickets/my-tickets.component';
-import { RitmDetailsComponent } from './pages/ritm/ritm-details.component';
 import { VariantComponent } from './pages/settings/variant/variant.component';
 import { TemplatecomponentComponent } from './pages/settings/templatecomponent/templatecomponent.component';
 import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
@@ -140,7 +139,6 @@ import { ApprovalComponent } from './pages/approval/approval.component';
     NotificationDropdownComponent,
     NotificationPopupComponent,
     MyTicketsComponent,
-    RitmDetailsComponent,
     RitmStatusComponent,
     ApprovalComponent
   ],
