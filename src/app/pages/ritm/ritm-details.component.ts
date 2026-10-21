@@ -984,13 +984,13 @@ export class RitmDetailsComponent implements OnInit {
     this.effortSuccess = '';
     const ticketId = Number(this.ritmId);
     const orgId = Number(this.orgId);
-    const hours = Number(this.effortDraft.effortHours);
-    const minutes = Number(this.effortDraft.effortMinutes);
-    if (!this.effortDraft.date || this.effortDraft.effortHours == null || !Number.isInteger(hours) || hours < 0 ||
-        this.effortDraft.effortMinutes == null || !Number.isInteger(minutes) || minutes < 0 || minutes > 59 ||
+    const hours = Number(this.effortDraft.effortHours ?? 0);
+    const minutes = Number(this.effortDraft.effortMinutes ?? 0);
+    if (!this.effortDraft.date || !Number.isInteger(hours) || hours < 0 ||
+        !Number.isInteger(minutes) || minutes < 0 || minutes > 59 ||
         (hours === 0 && minutes === 0) ||
         this.effortDraft.effortTypeId == null) {
-      this.effortError = 'Enter the date, valid effort hours and minutes (minutes must be between 0 and 59), and an effort type.';
+      this.effortError = 'Enter a date, at least one non-zero effort value (hours or minutes), whole-number hours, minutes between 0 and 59, and an effort type.';
       return;
     }
     if (!Number.isFinite(ticketId) || !Number.isFinite(orgId)) {
