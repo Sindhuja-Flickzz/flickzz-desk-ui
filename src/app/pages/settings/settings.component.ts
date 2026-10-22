@@ -19,6 +19,7 @@ export class SettingsComponent {
     {title: 'RITM', route: '/ritm'},
     {title: 'RITM Status', route: '/ritm-status'},
     { title: 'Request Types', route: '/request-type' },
+    { title: 'Effort Types', route: '/effort-type' },
     {'title': 'My Tickets', 'route': '/my-tickets'},
     {'title': 'Group RITM', 'route': '/group-ritm'},
     {'title': 'Variant', 'route': '/variant'},

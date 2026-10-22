@@ -15,6 +15,7 @@ export interface AgentRequest {
   orgId: number;
   skills: SkillMaster[];
   calendarId: number;
+  dailyCapacity: number;
   countryId: number;
   cityId: number;
   languageId?: number;
@@ -41,6 +42,7 @@ export interface AgentMaster {
   phone: string;
   phoneCode: string;
   phoneNumber: string;
+  dailyCapacity?: string | number;
   organization: CompanyMaster;
   calendar: CalendarMasterVO;
   country: CountryMaster;

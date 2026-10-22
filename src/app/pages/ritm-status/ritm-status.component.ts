@@ -49,7 +49,7 @@ export class RitmStatusComponent implements OnInit {
   ritmStatusForm: FormGroup;
   activeTab: 'create' | 'list' = 'create';
   creationStep: 1 | 2 = 1;
-  pageTitle = 'Create RITM Status';
+  pageTitle = 'Create Status';
   isEditMode = false;
   editingStatus: RitmStatus | null = null;
 
@@ -107,7 +107,7 @@ export class RitmStatusComponent implements OnInit {
   }
 
   resetForm(): void {
-    this.pageTitle = 'Create RITM Status';
+    this.pageTitle = 'Create Status';
     this.isEditMode = false;
     this.editingStatus = null;
     this.formError = {};
@@ -314,7 +314,7 @@ export class RitmStatusComponent implements OnInit {
 
     this.ritmService.createRitmStatus(createRequests).subscribe({
       next: () => this.finishSave('RITM status created successfully.'),
-      error: (err) => this.handleSaveError(err, 'Failed to create RITM status.')
+      error: (err) => this.handleSaveError(err, 'Failed to create status.')
     });
   }
 
@@ -322,7 +322,7 @@ export class RitmStatusComponent implements OnInit {
     this.resetForm();
     this.isEditMode = true;
     this.editingStatus = status;
-    this.pageTitle = 'Edit RITM Status';
+    this.pageTitle = 'Edit Status';
     this.activeTab = 'create';
     this.creationStep = 2;
     this.selectedColor = status.statusColor || '#00246b';
@@ -386,14 +386,14 @@ export class RitmStatusComponent implements OnInit {
           isUpdaterAdmin: isAdmin
         }).subscribe({
           next: () => {
-            this.submitSuccess = status.isActive ? 'RITM status deactivated successfully.' : 'RITM status activated successfully.';
+            this.submitSuccess = status.isActive ? 'Status deactivated successfully.' : 'Status activated successfully.';
             this.loadStatusList();
             setTimeout(() => {
               this.submitSuccess = '';
             }, 3000);
           },
           error: (err) => {
-            this.submitError = err.error?.description || `Failed to ${action.toLowerCase()} RITM status.`;
+            this.submitError = err.error?.description || `Failed to ${action.toLowerCase()} status.`;
           }
         });
       });
@@ -401,7 +401,7 @@ export class RitmStatusComponent implements OnInit {
 
   onDelete(status: RitmStatus): void {
     const dialogData: ConfirmationDialogData = {
-      title: 'Delete RITM Status',
+      title: 'Delete Status',
       message: `Are you sure you want to delete status "${status.statusCode}"?`,
       confirmText: 'Delete',
       cancelText: 'Cancel',
@@ -416,11 +416,11 @@ export class RitmStatusComponent implements OnInit {
         }
         this.ritmService.deleteRitmStatus(status.statusId).subscribe({
           next: () => {
-            this.submitSuccess = 'RITM status deleted successfully.';
+            this.submitSuccess = 'Status deleted successfully.';
             this.loadStatusList();
           },
           error: (err) => {
-            this.submitError = err.error?.message || 'Failed to delete RITM status.';
+            this.submitError = err.error?.message || 'Failed to delete status.';
           }
         });
       });
@@ -505,7 +505,7 @@ export class RitmStatusComponent implements OnInit {
       error: (err) => {
         this.statuses = [];
         this.loading = false;
-        this.submitError = err.error?.message || 'Failed to load RITM statuses.';
+        this.submitError = err.error?.message || 'Failed to load statuses.';
       }
     });
   }

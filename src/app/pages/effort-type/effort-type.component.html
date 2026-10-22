@@ -1,0 +1,102 @@
+<div class="effort-type-page">
+  <div class="tabs">
+    <button type="button" class="save-btn header-back" (click)="backToSettings()"><mat-icon>chevron_left</mat-icon></button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <div *ngIf="activeTab === 'create'" class="create-panel">
+    <h2>Create Effort Type</h2>
+    <form [formGroup]="effortTypeForm" (ngSubmit)="onSave()">
+      <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+      <div class="effort-type-row effort-type-header" aria-hidden="true">
+        <div>Type name <span class="required">*</span></div>
+        <div>Sequence <span class="required">*</span></div>
+        <div></div>
+      </div>
+      <div formArrayName="rows" class="effort-type-rows">
+        <div class="effort-type-row" *ngFor="let row of effortTypeRows.controls; let i = index" [formGroupName]="i">
+          <div class="field">
+            <input [id]="'typeName-' + i" type="text" formControlName="typeName" aria-label="Type name" placeholder="Enter type name" maxlength="100" (input)="validateEffortTypeUniqueness()" />
+            <span *ngIf="rowErrors[i]?.typeName" class="error-text">{{ rowErrors[i].typeName }}</span>
+          </div>
+          <div class="field">
+            <input [id]="'sequence-' + i" type="number" formControlName="sequence" aria-label="Sequence" placeholder="Enter sequence" min="0" step="1" (input)="validateEffortTypeUniqueness()" />
+            <span *ngIf="rowErrors[i]?.sequence" class="error-text">{{ rowErrors[i].sequence }}</span>
+          </div>
+          <div class="row-actions">
+            <button *ngIf="i === effortTypeRows.length - 1" type="button" class="add-row-btn" title="Add row" aria-label="Add effort type row" (click)="addEffortTypeRow()" [disabled]="isSubmitting">+</button>
+            <button *ngIf="effortTypeRows.length > 1" type="button" class="remove-row-btn" title="Remove row" aria-label="Remove effort type row" (click)="removeEffortTypeRow(i)" [disabled]="isSubmitting"><mat-icon>close</mat-icon></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="save-btn" [disabled]="isSubmitting || loading">{{ isSubmitting ? 'Saving Effort Types...' : 'Save Effort Types' }}</button>
+        <button type="button" class="reset-btn" (click)="resetForm()" [disabled]="isSubmitting">Reset</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="activeTab === 'list'" class="list-panel">
+    <h2>Effort Type List</h2>
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+    <div class="search-container">
+      <input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by type name..." class="search-input" />
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Type Name</th>
+            <th>Sequence</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let effortType of getPaginatedEffortTypes()">
+            <td>{{ effortType.typeName }}</td>
+            <td>{{ effortType.sequence }}</td>
+            <td>
+              <span [class]="effortType.isActive === true ? 'status-pill active' : 'status-pill inactive'">
+                {{ effortType.isActive === true ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td class="action-buttons">
+              <button type="button" [class]="effortType.isActive === true ? 'active-icon' : 'inactive-icon'"
+                (click)="toggleEffortTypeStatus(effortType)"
+                [disabled]="updatingEffortTypeId !== null"
+                [title]="effortType.isActive === true ? 'Deactivate effort type' : 'Activate effort type'"
+                [attr.aria-label]="effortType.isActive === true ? 'Deactivate effort type' : 'Activate effort type'">
+                <mat-icon>{{ effortType.isActive === true ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+              </button>
+              <button type="button" class="delete-action" title="Delete effort type" (click)="onDeleteEffortType(effortType)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && effortTypes.length === 0" class="empty-state">No Effort Types found.</div>
+    <div class="pagination-controls">
+      <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" (page)="onPageChange($event)" showFirstLastButtons></mat-paginator>
+    </div>
+  </div>
+
+  <div *ngIf="pendingDelete" class="confirmation-backdrop" role="presentation">
+    <div class="confirmation-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-effort-type-title">
+      <h2 id="delete-effort-type-title">Delete Effort Type</h2>
+      <p>Are you sure you want to delete "{{ pendingDelete.typeName }}"?</p>
+      <div class="actions">
+        <button type="button" class="reset-btn" (click)="cancelDelete()">Cancel</button>
+        <button type="button" class="delete-confirm-btn" (click)="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
