@@ -28,7 +28,7 @@ export class ApprovalWorkflowService {
     return this.http.post(`${this.baseUrl}/ticket/approval/workflow/update`, request);
   }
 
-  deleteWorkflow(configId: number, orgId: number): Observable<unknown> {
-    return this.http.delete(`${this.baseUrl}/ticket/approval/workflow/delete/${configId}/${orgId}`);
+  deleteWorkflow(request: any): Observable<unknown> {
+    return this.http.delete(`${this.baseUrl}/ticket/approval/workflow/delete`, { body: request });
   }
 }

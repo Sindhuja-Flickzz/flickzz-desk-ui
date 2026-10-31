@@ -212,7 +212,12 @@ export class ApprovalWorkflowSettingsComponent implements OnInit {
       }
       this.submitError = '';
       this.submitSuccess = '';
-      this.workflowService.deleteWorkflow(workflow.configId, Number(this.userOrgId)).subscribe({
+      const request ={
+        configId: workflow.configId,
+        companyId: Number(this.userOrgId),
+        deletedBy: Number(localStorage.getItem('userId') || 0)
+      };
+      this.workflowService.deleteWorkflow(request).subscribe({
         next: () => {
           this.submitSuccess = 'Approval workflow deleted successfully.';
           this.loadWorkflows();
