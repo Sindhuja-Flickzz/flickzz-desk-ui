@@ -94,6 +94,38 @@ describe('RitmStatusComponent', () => {
     expect(component.getFilteredStatuses().map(status => status.statusCode)).toEqual(['OPEN', 'CLOSED', 'PENDING']);
   });
 
+  it('allows the same status code for a different request type', () => {
+    component.statuses = [
+      { statusId: 1, requestType: 'INC', statusCode: 'OPEN', sequenceNo: 1 } as any
+    ];
+    component.ritmStatusForm.patchValue({
+      requestType: 'RITM',
+      statusCode: 'OPEN',
+      sequenceNo: 2
+    });
+
+    component.addStatus();
+
+    expect(component.statusList.map(status => status.statusCode)).toEqual(['OPEN']);
+    expect(component.formError.statusCode).toBeUndefined();
+  });
+
+  it('rejects a duplicate status code for the same request type', () => {
+    component.statuses = [
+      { statusId: 1, requestType: 'RITM', statusCode: 'OPEN', sequenceNo: 1 } as any
+    ];
+    component.ritmStatusForm.patchValue({
+      requestType: 'RITM',
+      statusCode: 'open',
+      sequenceNo: 2
+    });
+
+    component.addStatus();
+
+    expect(component.statusList).toEqual([]);
+    expect(component.formError.statusCode).toBe('Status Code already added for this request type');
+  });
+
   it('clears all list filters and resets pagination', () => {
     component.searchValue = 'closed';
     component.selectedRequestType = 'INC';

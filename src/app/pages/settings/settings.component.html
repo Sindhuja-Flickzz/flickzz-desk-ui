@@ -1,6 +1,16 @@
 <div class="settings-container">
   <header class="settings-header">
-    <h1>Settings</h1>
+    <div class="settings-title-row">
+      <button
+        *ngIf="canGoBack"
+        type="button"
+        class="back-button"
+        (click)="goBack()"
+        aria-label="Back to previous page">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <h1>Settings</h1>
+    </div>
     <p>Select an option below to configure.</p>
   </header>
 

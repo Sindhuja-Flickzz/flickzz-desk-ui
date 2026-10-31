@@ -13,8 +13,17 @@ import { RequestApproverService } from '../../service/requestapprover.service';
 import { VariantService } from '../../service/variant.service';
 import { EffortTypeService } from '../../service/effort-type.service';
 import { EffortType } from '../../models/effort-type.model';
+import { EffortSummary, EffortSummaryResponse } from '../../models/effort-summary.model';
 import { USER_ROLES } from '../../data/app_constants';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog.component';
+
+type EffortSummarySegment = {
+  key: 'plannedEffort' | 'ticketLoggedEffort' | 'subtasksLoggedEffort';
+  label: string;
+  minutes: number;
+  formatted: string;
+  width: number;
+};
 
 @Component({
   selector: 'app-ritm-details',
@@ -72,6 +81,9 @@ export class RitmDetailsComponent implements OnInit {
   private agentNameMap: Map<number, string> = new Map();
   effortTypes: EffortType[] = [];
   effortEntries: any[] = [];
+  effortSummary: EffortSummary | null = null;
+  effortSummaryLoading = false;
+  effortSummaryError = '';
   effortCalculationLoading = false;
   plannedHoursLoading = false;
   effortTypesLoading = false;
@@ -154,6 +166,13 @@ export class RitmDetailsComponent implements OnInit {
         const payload = response?.attributes ?? response ?? {};
         const detailPayload = Array.isArray(payload) ? payload[0] ?? {} : payload;
         this.ritm = detailPayload?.ritm ?? detailPayload;
+        this.loadEffortSummary(
+          this.ritm?.ticketId
+            ?? this.ritm?.id
+            ?? detailPayload?.ticketId
+            ?? detailPayload?.id
+            ?? this.ritmId
+        );
         this.workItemCode = response?.workItem?.code
           ?? detailPayload?.workItem?.code
           ?? this.ritm?.workItem?.code
@@ -186,11 +205,110 @@ export class RitmDetailsComponent implements OnInit {
         this.workNotes = [];
         this.history = [];
         this.slaInfo = null;
+        this.effortSummary = null;
+        this.effortSummaryLoading = false;
+        this.effortSummaryError = '';
         this.templates = [];
         this.templatesLoading = false;
         this.workItemCode = null;
       }
     });
+  }
+
+  private loadEffortSummary(ticketId: string | number | null | undefined): void {
+    this.effortSummary = null;
+    this.effortSummaryError = '';
+
+    if (ticketId === null || ticketId === undefined || ticketId === '' || !this.orgId) {
+      this.effortSummaryLoading = false;
+      return;
+    }
+
+    this.effortSummaryLoading = true;
+    this.ritmService.getEffortSummary(ticketId, this.orgId)
+      .pipe(finalize(() => this.effortSummaryLoading = false))
+      .subscribe({
+        next: (response: EffortSummaryResponse) => {
+          this.effortSummary = response?.attributes ?? null;
+          if (!this.effortSummary) {
+            this.effortSummaryError = 'Effort summary data is unavailable.';
+          }
+        },
+        error: () => {
+          this.effortSummaryError = 'Unable to load the effort summary.';
+        }
+      });
+  }
+
+  getEffortSummarySegments(): EffortSummarySegment[] {
+    if (!this.effortSummary) {
+      return [];
+    }
+
+    const entries = [
+      { key: 'ticketLoggedEffort' as const, label: 'Ticket logged effort', effort: this.effortSummary.ticketLoggedEffort },
+      { key: 'subtasksLoggedEffort' as const, label: 'Subtasks logged effort', effort: this.effortSummary.subtasksLoggedEffort },
+      { key: 'plannedEffort' as const, label: 'Planned effort', effort: this.effortSummary.plannedEffort }
+    ];
+    const minutesTotal = entries.reduce((total, entry) => total + this.getEffortMinutes(entry.effort), 0);
+
+    return entries.map((entry) => {
+      const minutes = this.getEffortMinutes(entry.effort);
+      return {
+        key: entry.key,
+        label: entry.label,
+        minutes,
+        formatted: this.getFormattedEffort(entry.effort),
+        width: minutesTotal > 0 ? (minutes / minutesTotal) * 100 : 100 / entries.length
+      };
+    });
+  }
+
+  getEffortSummaryTooltip(segment: EffortSummarySegment): string {
+    if (!this.effortSummary) {
+      return `${segment.label}: ${segment.formatted}`;
+    }
+
+    if (segment.key === 'ticketLoggedEffort') {
+      const agents = this.effortSummary.agents ?? [];
+      return [
+        `${segment.label}: ${segment.formatted}`,
+        ...(agents.length
+          ? agents.map((agent) => `${agent.agentName}: ${this.getFormattedEffort(agent.effort)}`)
+          : ['No agent effort recorded'])
+      ].join('\n');
+    }
+
+    if (segment.key === 'subtasksLoggedEffort') {
+      const subtasks = this.effortSummary.subtasks ?? [];
+      return [
+        `${segment.label}: ${segment.formatted}`,
+        ...(subtasks.length
+          ? subtasks.flatMap((subtask) => [
+            `${subtask.subtaskNumber} (${this.getFormattedEffort(subtask.totalLoggedEffort)})`,
+            ...(subtask.agents?.length
+              ? subtask.agents.map((agent) => `  ${agent.agentName}: ${this.getFormattedEffort(agent.effort)}`)
+              : ['  No agent effort recorded'])
+          ])
+          : ['No subtask effort recorded'])
+      ].join('\n');
+    }
+
+    return `${segment.label}: ${segment.formatted}`;
+  }
+
+  private getEffortMinutes(effort: { hours?: number; minutes?: number } | null | undefined): number {
+    return (Number(effort?.hours) || 0) * 60 + (Number(effort?.minutes) || 0);
+  }
+
+  private getFormattedEffort(effort: { hours?: number; minutes?: number; formatted?: string } | null | undefined): string {
+    if (effort?.formatted) {
+      return effort.formatted;
+    }
+
+    const hours = Number(effort?.hours) || 0;
+    const minutes = Number(effort?.minutes) || 0;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   }
 
   private loadTemplates(requestType: string | null | undefined): void {
@@ -889,6 +1007,7 @@ export class RitmDetailsComponent implements OnInit {
         this.totalHoursPlanned = hours + minutes / 60;
         this.isEditingPlannedHours = false;
         this.effortSuccess = 'Planned hours saved successfully.';
+        this.loadEffortSummary(ticketId);
       },
       error: error => {
         console.error('Save planned hours error', error);
@@ -1039,6 +1158,7 @@ export class RitmDetailsComponent implements OnInit {
         this.editingEffortId = null;
         this.effortSuccess = 'Effort saved successfully.';
         this.loadEffortCalculation();
+        this.loadEffortSummary(ticketId);
       },
       error: error => {
         console.error('Save effort error', error);

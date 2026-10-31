@@ -484,7 +484,7 @@ export class RitmComponent implements OnInit, OnDestroy {
     const orgId = localStorage.getItem('userOrgId') || this.orgId;
     const statusesRequest = currentStatusId !== undefined
       ? this.ritmService.getVisibleStatuses(Number(orgId), currentStatusId, 'RITM')
-      : this.ritmService.getRitmActiveStatuses(orgId, 'RITM');
+      : this.ritmService.getActiveStatuses(orgId, 'RITM');
 
     statusesRequest.subscribe({
       next: (response: any) => {

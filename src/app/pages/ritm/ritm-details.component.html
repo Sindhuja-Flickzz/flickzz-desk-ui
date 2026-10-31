@@ -33,6 +33,33 @@
       </div>
     </section>
 
+    <section class="effort-summary-card section-block" aria-label="Effort summary">
+      <div class="section-header">
+        <span class="section-header-icon">◷</span>
+        <span>Effort Summary</span>
+      </div>
+
+      <div *ngIf="effortSummaryLoading" class="small-loading" role="status">Loading effort summary…</div>
+      <div *ngIf="!effortSummaryLoading && effortSummaryError" class="effort-summary-error" role="alert">
+        {{ effortSummaryError }}
+      </div>
+
+      <div *ngIf="!effortSummaryLoading && effortSummary" class="effort-summary-progress">
+        <div class="effort-chart-track" role="group" aria-label="Effort progress: ticket logged, subtasks logged, and planned">
+          <button
+            *ngFor="let segment of getEffortSummarySegments()"
+            type="button"
+            class="effort-chart-segment"
+            [ngClass]="'effort-chart-' + segment.key"
+            [style.flex-basis.%]="segment.width"
+            [attr.aria-label]="getEffortSummaryTooltip(segment)"
+            [attr.tabindex]="segment.minutes > 0 ? 0 : -1">
+            <span class="effort-chart-tooltip" aria-hidden="true">{{ getEffortSummaryTooltip(segment) }}</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
     <div class="tabs" role="tablist" aria-label="RITM tabs">
       <button type="button" class="tab-btn" [class.active]="activeTab === 'details'" (click)="setActiveTab('details')">Details</button>
       <button type="button" class="tab-btn" [class.active]="activeTab === 'work-notes'" (click)="setActiveTab('work-notes')">Work Notes</button>

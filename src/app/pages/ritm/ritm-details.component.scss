@@ -99,6 +99,105 @@
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
 }
 
+.effort-summary-card {
+  min-width: 0;
+}
+
+.effort-summary-progress {
+  padding: 34px 0 2px;
+}
+
+.effort-chart-track {
+  display: flex;
+  width: 100%;
+  height: 12px;
+  overflow: visible;
+}
+
+.effort-chart-segment {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.85);
+  cursor: default;
+  transition: flex-basis 180ms ease;
+}
+
+.effort-chart-segment:first-child {
+  border-radius: 999px 0 0 999px;
+}
+
+.effort-chart-segment:last-child {
+  border-right: 0;
+  border-radius: 0 999px 999px 0;
+}
+
+.effort-chart-segment:first-child:last-child {
+  border-radius: 999px;
+}
+
+.effort-chart-tooltip {
+  position: absolute;
+  z-index: 2;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  width: max-content;
+  max-width: min(320px, 80vw);
+  padding: 8px 10px;
+  transform: translate(-50%, 4px);
+  border-radius: 6px;
+  background: #172b4d;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  white-space: pre-line;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.effort-chart-segment:hover,
+.effort-chart-segment:focus-visible {
+  z-index: 1;
+}
+
+.effort-chart-segment:hover .effort-chart-tooltip,
+.effort-chart-segment:focus-visible .effort-chart-tooltip {
+  transform: translate(-50%, 0);
+  visibility: visible;
+  opacity: 1;
+}
+
+.effort-chart-segment:focus-visible {
+  outline: 2px solid #111827;
+  outline-offset: -2px;
+}
+
+.effort-chart-plannedEffort {
+  background: #315caa;
+}
+
+.effort-chart-ticketLoggedEffort {
+  background: #17866b;
+}
+
+.effort-chart-subtasksLoggedEffort {
+  background: #d97706;
+}
+
+.effort-summary-error {
+  color: #a12622;
+  font-size: 13px;
+}
+
 .summary-header {
   display: flex;
   justify-content: space-between;

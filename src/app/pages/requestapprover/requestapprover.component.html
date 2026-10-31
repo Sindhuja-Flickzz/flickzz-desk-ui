@@ -61,7 +61,7 @@
   </div>
 
   <div *ngIf="activeTab === 'list'" class="list-panel">
-    <h2>Request Approver Configuration List</h2>
+    <h2>Approver Configuration List</h2>
     <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
     <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
     <div class="search-container"><input type="text" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()" placeholder="Search by approver code..." class="search-input" /></div>

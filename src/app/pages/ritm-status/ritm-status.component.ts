@@ -157,6 +157,7 @@ export class RitmStatusComponent implements OnInit {
     const duplicateStatusCode = this.statusList.some(status =>
       status.statusCode.toLowerCase() === normalizedStatusCode
     ) || this.statuses.some(status =>
+      status.requestType === requestType &&
       status.statusCode.toLowerCase() === normalizedStatusCode
     );
     const duplicateSequence = this.statusList.some(status =>
@@ -166,7 +167,7 @@ export class RitmStatusComponent implements OnInit {
     );
 
     if (duplicateStatusCode) {
-      this.formError.statusCode = 'Status Code already added';
+      this.formError.statusCode = 'Status Code already added for this request type';
     }
     if (duplicateSequence) {
       this.formError.sequenceNo = 'Sequence already added';
