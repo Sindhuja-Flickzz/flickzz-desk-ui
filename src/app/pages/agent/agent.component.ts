@@ -81,6 +81,7 @@ export class AgentComponent implements OnInit {
       phoneNumber: ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
       // orgId: [null, Validators.required],
       calendarId: [null, Validators.required],
+      dailyCapacity: ['', Validators.required],
       countryId: [null, Validators.required],
       cityId: [null, Validators.required],
       languageName: [''],
@@ -587,6 +588,7 @@ export class AgentComponent implements OnInit {
       orgId: Number(this.userOrgId),
       skills,
       calendarId: Number(this.agentForm.value.calendarId),
+      dailyCapacity: this.getDailyCapacityDecimal(),
       countryId: Number(this.agentForm.value.countryId),
       cityId: Number(this.agentForm.value.cityId),
       languageIds: Array.isArray(this.agentForm.value.languageIds)
@@ -659,6 +661,7 @@ export class AgentComponent implements OnInit {
         currentValue.phoneNumber !== this.originalFormValue.phoneNumber ||
         // currentValue.orgId !== this.originalFormValue.orgId ||
         currentValue.calendarId !== this.originalFormValue.calendarId ||
+        currentValue.dailyCapacity !== this.originalFormValue.dailyCapacity ||
         currentValue.countryId !== this.originalFormValue.countryId ||
         currentValue.cityId !== this.originalFormValue.cityId ||
         !this.areArraysEqual(currentValue.languageIds, this.originalFormValue.languageIds)) {
@@ -688,11 +691,40 @@ export class AgentComponent implements OnInit {
       phoneNumber: formValue.phoneNumber,
       orgId: formValue.orgId,
       calendarId: formValue.calendarId,
+      dailyCapacity: formValue.dailyCapacity,
       countryId: formValue.countryId,
       cityId: formValue.cityId,
       languageIds: Array.isArray(formValue.languageIds) ? formValue.languageIds : [],
       skills: JSON.parse(JSON.stringify(this.skillsList))
     };
+  }
+
+  private formatDailyCapacity(value: string | number | undefined): string {
+    if (value == null || value === '') {
+      return '';
+    }
+
+    if (typeof value === 'string' && /^\d{1,2}:\d{1,2}$/.test(value)) {
+      const [hours, minutes] = value.split(':');
+      return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+    }
+
+    const capacityInMinutes = Math.round(Number(value) * 60);
+    const hours = Math.floor(capacityInMinutes / 60);
+    const minutes = capacityInMinutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  private getDailyCapacityDecimal(): number {
+    const [hours, minutes] = String(this.agentForm.value.dailyCapacity).split(':').map(Number);
+    return hours + minutes / 60;
+  }
+
+  openDailyCapacityPicker(event: MouseEvent): void {
+    const input = event.currentTarget as HTMLInputElement;
+    if (typeof input.showPicker === 'function') {
+      input.showPicker();
+    }
   }
 
   onViewAgent(agent: AgentMaster): void {
@@ -719,6 +751,7 @@ export class AgentComponent implements OnInit {
           phone: agent.phone,
           // orgId: agent.organization?.companyId || null,
           calendarId: agent.calendar?.calendarId || null,
+          dailyCapacity: this.formatDailyCapacity(agent.dailyCapacity),
           countryId: agent.country?.countryId || null,
           cityId: agent.city?.cityId || null,
           languageIds: agent.languages?.map(l => l.language?.languageId).filter((id): id is number => id !== undefined) || [],

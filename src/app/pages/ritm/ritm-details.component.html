@@ -33,6 +33,33 @@
       </div>
     </section>
 
+    <section class="effort-summary-card section-block" aria-label="Effort summary">
+      <div class="section-header">
+        <span class="section-header-icon">◷</span>
+        <span>Effort Summary</span>
+      </div>
+
+      <div *ngIf="effortSummaryLoading" class="small-loading" role="status">Loading effort summary…</div>
+      <div *ngIf="!effortSummaryLoading && effortSummaryError" class="effort-summary-error" role="alert">
+        {{ effortSummaryError }}
+      </div>
+
+      <div *ngIf="!effortSummaryLoading && effortSummary" class="effort-summary-progress">
+        <div class="effort-chart-track" role="group" aria-label="Effort progress: ticket logged, subtasks logged, and planned">
+          <button
+            *ngFor="let segment of getEffortSummarySegments()"
+            type="button"
+            class="effort-chart-segment"
+            [ngClass]="'effort-chart-' + segment.key"
+            [style.flex-basis.%]="segment.width"
+            [attr.aria-label]="getEffortSummaryTooltip(segment)"
+            [attr.tabindex]="segment.minutes > 0 ? 0 : -1">
+            <span class="effort-chart-tooltip" aria-hidden="true">{{ getEffortSummaryTooltip(segment) }}</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
     <div class="tabs" role="tablist" aria-label="RITM tabs">
       <button type="button" class="tab-btn" [class.active]="activeTab === 'details'" (click)="setActiveTab('details')">Details</button>
       <button type="button" class="tab-btn" [class.active]="activeTab === 'work-notes'" (click)="setActiveTab('work-notes')">Work Notes</button>
@@ -417,20 +444,168 @@
 
   </ng-container>
 
-    <div class="tab-panel" *ngIf="(isRitmSubtask && activeTab === 'effort') || (!isRitmSubtask && activeAdditionalTab === 'effort')">
+    <div class="tab-panel effort-calculation-panel" *ngIf="(isRitmSubtask && activeTab === 'effort') || (!isRitmSubtask && activeAdditionalTab === 'effort')">
       <div class="section-header">
         <span class="section-header-icon">◷</span>
         <span>Effort Calculation</span>
       </div>
-      <div class="effort-list" *ngIf="getEffortEntries().length; else noEffortDetails">
-        <div class="effort-row" *ngFor="let entry of getEffortEntries()">
-          <span>{{ entry.label }}</span>
-          <strong>{{ entry.value }}</strong>
+
+      <div *ngIf="effortCalculationLoading || plannedHoursLoading" class="small-loading">Loading effort details...</div>
+      <div *ngIf="effortError" class="error-feedback">{{ effortError }}</div>
+      <div *ngIf="effortSuccess" class="success-feedback">{{ effortSuccess }}</div>
+
+      <div *ngIf="totalHoursPlanned == null && !effortCalculationLoading && !plannedHoursLoading" class="planned-hours-prompt">
+        <label for="total-hours-planned">Estimated effort</label>
+        <div class="planned-hours-input">
+          <input id="total-hours-planned" type="number" min="0" step="1"
+            [(ngModel)]="plannedHoursInput" [ngModelOptions]="{ standalone: true }"
+            (keydown.enter)="$event.preventDefault(); savePlannedHours()" placeholder="Hours" aria-label="Planned hours" />
+          <input type="number" min="0" max="59" step="1" [(ngModel)]="plannedMinutesInput"
+            [ngModelOptions]="{ standalone: true }"
+            (keydown.enter)="$event.preventDefault(); savePlannedHours()" placeholder="Minutes" aria-label="Planned minutes" />
+          <button type="button" class="icon-action save-effort-action" title="Save estimated effort"
+            aria-label="Save estimated effort" (click)="savePlannedHours()" [disabled]="isSavingPlannedHours">
+            <mat-icon>{{ isSavingPlannedHours ? 'hourglass_top' : 'check' }}</mat-icon>
+          </button>
         </div>
       </div>
-      <ng-template #noEffortDetails>
-        <div class="empty-state small">No effort calculation details are available for this RITM.</div>
-      </ng-template>
+
+      <ng-container *ngIf="totalHoursPlanned != null">
+        <div class="effort-summary">
+          <div class="effort-summary-values">
+            <div class="effort-summary-item">
+              <span>Estimated effort</span>
+              <ng-container *ngIf="!isEditingPlannedHours; else plannedHoursEditor">
+                <div class="effort-summary-value">
+                  <strong>{{ getPlannedDurationLabel() }}</strong>
+                  <button type="button" class="icon-action" title="Edit estimated effort"
+                    aria-label="Edit estimated effort" (click)="editPlannedHours()">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                </div>
+              </ng-container>
+              <ng-template #plannedHoursEditor>
+                <div class="planned-hours-input inline-planned-hours-input">
+                  <input type="number" min="0" step="1" [(ngModel)]="plannedHoursInput"
+                    [ngModelOptions]="{ standalone: true }"
+                    (keydown.enter)="$event.preventDefault(); savePlannedHours()" aria-label="Planned hours" placeholder="Hours" />
+                  <input type="number" min="0" max="59" step="1" [(ngModel)]="plannedMinutesInput"
+                    [ngModelOptions]="{ standalone: true }"
+                    (keydown.enter)="$event.preventDefault(); savePlannedHours()" aria-label="Planned minutes" placeholder="Minutes" />
+                  <button type="button" class="icon-action save-effort-action" title="Save estimated effort"
+                    aria-label="Save estimated effort" (click)="savePlannedHours()" [disabled]="isSavingPlannedHours">
+                    <mat-icon>{{ isSavingPlannedHours ? 'hourglass_top' : 'check' }}</mat-icon>
+                  </button>
+                  <button type="button" class="icon-action" title="Cancel editing estimated effort"
+                    aria-label="Cancel editing estimated effort" (click)="cancelPlannedHoursEdit()" [disabled]="isSavingPlannedHours">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              </ng-template>
+            </div>
+            <div class="effort-summary-item">
+              <span>Used hours</span>
+              <strong>{{ usedHours ?? 0 }}</strong>
+            </div>
+          </div>
+
+          <div class="effort-summary-chart">
+            <div class="effort-summary-chart-heading">
+              <span class="effort-summary-chart-title">Effort Summary</span>
+              <strong>{{ getEffortUsagePercent() }}%</strong>
+            </div>
+            <div class="effort-summary-bar" role="progressbar"
+              [attr.aria-label]="'Effort used: ' + (usedHours ?? 0) + ' of ' + totalHoursPlanned + ' hours'"
+              aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="getEffortUsagePercent()">
+              <span [style.width.%]="getEffortUsagePercent()"></span>
+            </div>
+            <div class="effort-summary-chart-labels">
+              <span>Used <strong>{{ usedHours ?? 0 }}h</strong></span>
+              <span>Planned <strong>{{ getPlannedDurationLabel() }}</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="effort-table-toolbar">
+          <h3>Effort Entries</h3>
+          <button type="button" class="primary-action add-effort-action" title="Add effort" aria-label="Add effort"
+            (click)="addEffort()" [disabled]="showEffortForm || effortTypesLoading">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
+
+        <div class="effort-form" *ngIf="showEffortForm">
+          <label>
+            Date
+            <input type="date" [(ngModel)]="effortDraft.date" [ngModelOptions]="{ standalone: true }" />
+          </label>
+          <label>
+            Effort
+            <div class="effort-duration-input">
+              <input type="number" min="0" step="1" [(ngModel)]="effortDraft.effortHours"
+                [ngModelOptions]="{ standalone: true }" placeholder="Hours" aria-label="Effort hours" />
+              <input type="number" min="0" max="59" step="1" [(ngModel)]="effortDraft.effortMinutes"
+                [ngModelOptions]="{ standalone: true }" placeholder="Minutes" aria-label="Effort minutes" />
+            </div>
+          </label>
+          <label>
+            Type
+            <select [(ngModel)]="effortDraft.effortTypeId" [ngModelOptions]="{ standalone: true }" [disabled]="effortTypesLoading">
+              <option [ngValue]="null" disabled>Select effort type</option>
+              <option *ngFor="let effortType of effortTypes" [ngValue]="effortType.effortTypeId ?? effortType.id">
+                {{ effortType.typeName }}
+              </option>
+            </select>
+          </label>
+          <label class="effort-remark-field">
+            Remark
+            <input type="text" [(ngModel)]="effortDraft.remark" [ngModelOptions]="{ standalone: true }" placeholder="Enter remark" />
+          </label>
+          <div class="effort-form-actions">
+            <button type="button" class="primary-action" (click)="saveEffort()" [disabled]="isSavingEffort">
+              {{ isSavingEffort ? 'Saving...' : (editingEffortId != null ? 'Update' : 'Save') }}
+            </button>
+            <button type="button" class="secondary-action" (click)="cancelEffortEdit()" [disabled]="isSavingEffort">Cancel</button>
+          </div>
+        </div>
+
+        <div class="effort-table-wrapper">
+          <table class="effort-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Effort</th>
+                <th>Type</th>
+                <th>Remark</th>
+                <th>User Worked</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let entry of effortEntries">
+                <td>{{ entry.date || entry.effortDate | date:'mediumDate' }}</td>
+                <td>{{ getEffortDurationLabel(entry.effortHours ?? entry.hours ?? entry.effort, entry.effortMinutes ?? entry.minutes) }}</td>
+                <td>{{ getEffortTypeName(entry) }}</td>
+                <td>{{ entry.remark || entry.remarks || '—' }}</td>
+                <td>{{ entry.agentName }}</td>
+                <td class="effort-row-actions">
+                  <button type="button" class="icon-action" title="Edit effort" aria-label="Edit effort"
+                    (click)="editEffort(entry)" [disabled]="showEffortForm || deletingEffortId != null">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button type="button" class="icon-action delete-effort-action" title="Delete effort" aria-label="Delete effort"
+                    (click)="deleteEffort(entry)" [disabled]="deletingEffortId != null">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="!effortEntries.length && !effortCalculationLoading">
+                <td colspan="6" class="empty-state small">No effort entries yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
     </div>
 
     <div class="tab-panel" *ngIf="activeTab === 'sla'">

@@ -8,6 +8,12 @@
   margin-bottom: 20px;
 }
 
+.settings-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .settings-header h1 {
   margin: 0;
   font-size: 2rem;
@@ -17,6 +23,17 @@
 .settings-header p {
   margin: 6px 0 0;
   color: rgba(0, 36, 107, 0.9);
+}
+
+.back-button {
+  padding: 8px 5px;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  background: #f4f4f4;
+  color: #00246b;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
 }
 
 .tile-grid {

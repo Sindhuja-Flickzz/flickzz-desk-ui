@@ -109,6 +109,19 @@
             <label>Customer Resolution Time</label>
             <input type="datetime-local" formControlName="customerResolution" readonly />
           </div>
+          <div class="field field-status" *ngIf="isEditMode">
+            <label for="subtaskStatus">Status</label>
+            <select id="subtaskStatus" formControlName="status" (change)="onStatusChange($event)"
+              [disabled]="statusLoading || workflowLoading || statusUpdating || statusSetupFailed || !ritmStatuses.length">
+              <option value="" disabled>Select status</option>
+              <option *ngFor="let status of ritmStatuses" [value]="status.statusId">
+                {{ status.statusCode }}
+              </option>
+            </select>
+            <span *ngIf="statusLoading || workflowLoading" class="hint-text">Loading status settings...</span>
+            <span *ngIf="statusUpdating" class="hint-text">Updating status...</span>
+            <span *ngIf="statusError" class="error-text">{{ statusError }}</span>
+          </div>
         </div>
       </div>
 

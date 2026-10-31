@@ -221,7 +221,7 @@ export class ApprovalComponent implements OnInit {
   }
 
   isRitmApproval(approval: ApprovalRecord): boolean {
-    return approval.requestType?.trim().toUpperCase() === 'RITM';
+    return approval.requestType?.trim().toUpperCase() !== 'BP';
   }
 
   formatRitmValue(value: unknown): string {

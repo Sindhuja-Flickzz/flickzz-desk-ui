@@ -6,6 +6,7 @@ import { RitmApproverResponse } from '../models/approval.model';
 import { UserProfile, NoteItem, ApproverItem, LogEntry, WorkflowStage, CatalogTask, TaskSlaItem, ChangeRequestItem } from '../models/ritm.model';
 import { PriorityMaster } from '../models/priority-master';
 import { AgentMaster } from '../models/agent-master';
+import { EffortSummaryResponse } from '../models/effort-summary.model';
 
 export interface RitmStatusCreateRequest {
   companyId: number;
@@ -38,6 +39,16 @@ export interface RitmStatusVisibilityUpdateRequest {
   isCreatorAdmin: boolean;
   updatedBy: number;
   isUpdaterAdmin: boolean;
+}
+
+export interface SubtaskStatusUpdateRequest {
+  ticketId: number;
+  statusId: number;
+  remarks: string;
+  workItemId: number;
+  updatedBy: number;
+  isUpdaterAdmin: boolean;
+  orgId: number;
 }
 
 @Injectable({
@@ -80,7 +91,7 @@ export class RitmService {
     return this.http.get(`${this.baseUrl}/status/get/${orgId}`);
   }
 
-  getRitmActiveStatuses(orgId: string, requestType: string): Observable<any> {
+  getActiveStatuses(orgId: string, requestType: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/status/get/active/${requestType}/${orgId}`);
   }  
 
@@ -111,6 +122,10 @@ export class RitmService {
 
   updateRitm(payload: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/ticket/update`, payload);
+  }
+
+  updateSubtaskStatus(payload: SubtaskStatusUpdateRequest): Observable<any> {
+    return this.http.post(`${this.baseUrl}/ticket/update/subtask/status`, payload);
   }
 
   assignRitm(payload: { ritmId: number; assignedTo: number; assignedBy: number }): Observable<any> {
@@ -196,6 +211,59 @@ export class RitmService {
 
   getRitmSla(ritmId: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/ticket/${ritmId}/sla`);
+  }
+
+  getAgentTicketEffort(agentId: string | number, ticketId: string | number, orgId: string | number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/ticket/effort/agent/${agentId}/${ticketId}/${orgId}`);
+  }
+
+  getTicketEffort(ticketId: string | number, orgId: string | number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/ticket/effort/${ticketId}/${orgId}`);
+  }
+
+  getEffortSummary(ticketId: string | number, orgId: string | number): Observable<EffortSummaryResponse> {
+    return this.http.get<EffortSummaryResponse>(`${this.baseUrl}/ticket/effort/summary/${ticketId}/${orgId}`);
+  }
+
+  getPlannedHours(orgId: string | number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/ticket/list/hours/planned/${orgId}`);
+  }
+
+  updatePlannedHours(payload: {
+    ticketId: number;
+    orgId: number;
+    hoursPlanned: number;
+    minutesPlanned: number;
+    updatedBy: number;
+    isUpdatedByAdmin: boolean;
+  }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/ticket/update/hours/planned`, payload);
+  }
+
+  updateTicketEffort(payload: {
+    effortId?: number;
+    ticketId: number;
+    orgId: number;
+    date: string;
+    effortHours: number;
+    effortMinutes: number;
+    effortTypeId: number;
+    remark: string;
+    userWorked: number;
+    createdBy: number;
+    updatedBy: number;
+    isCreatedByAdmin: boolean;
+    isUpdatedByAdmin: boolean;
+  }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/ticket/update/effort`, payload);
+  }
+
+  deleteTicketEffort(effortId: number, ticketId: number, orgId: number): Observable<any> {
+    const params = new HttpParams()
+      .set('effortId', effortId)
+      .set('ticketId', ticketId)
+      .set('orgId', orgId);
+    return this.http.delete(`${this.baseUrl}/ticket/delete/effort`, { params });
   }
 
   addRitmComment(payload: any): Observable<any> {

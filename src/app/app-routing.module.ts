@@ -36,10 +36,10 @@ import { ConfigApprovalComponent } from './pages/config-approval/config-approval
 import { authGuard } from './service/auth/auth.guard';
 import { HomeComponent } from './pages/home/home.component';
 import { MyTicketsComponent } from './pages/my-tickets/my-tickets.component';
-import { RitmDetailsComponent } from './pages/ritm/ritm-details.component';
 import { GroupRitmComponent } from './pages/group-ritm/group-ritm.component';
 import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
 import { ApprovalComponent } from './pages/approval/approval.component';
+import { ApprovalWorkflowSettingsComponent } from './pages/approval-workflow-settings/approval-workflow-settings.component';
 
 const routes: Routes = [
   {
@@ -192,6 +192,11 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'effort-type',
+    loadComponent: () => import('./pages/effort-type/effort-type.component').then(m => m.EffortTypeComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'company',
     component: CompanyComponent,
     canActivate: [authGuard]
@@ -249,6 +254,11 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'approval-workflow',
+    component: ApprovalWorkflowSettingsComponent,
+    canActivate: [authGuard]
+  },
+  {
     path: 'notifications',
     loadComponent: () => import('./pages/notification-center/notification-center.component').then(m => m.NotificationCenterComponent),
     canActivate: [authGuard]
@@ -265,7 +275,7 @@ const routes: Routes = [
   },
   {
     path: 'agent/:agentId/:requestType',
-    component: RitmDetailsComponent,
+    loadComponent: () => import('./pages/ritm/ritm-details.component').then(m => m.RitmDetailsComponent),
     canActivate: [authGuard]
   },
   

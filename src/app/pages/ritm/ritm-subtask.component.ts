@@ -1,10 +1,16 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { AgentMaster } from '../../models/agent-master';
+import { ApprovalWorkflow } from '../../models/approval-workflow.model';
 import { CategoryMaster, CategorySubCategory } from '../../models/category-master';
 import { PriorityMaster } from '../../models/priority-master';
 import { RequestType } from '../../models/request-type.model';
+import { WorkItem } from '../../models/variant.model';
+import { ApprovalWorkflowService } from '../../service/approval-workflow.service';
 import { AgentService } from '../../service/agent.service';
 import { CategoryService } from '../../service/category.service';
 import { CompanyService } from '../../service/company.service';
@@ -13,6 +19,13 @@ import { RitmService } from '../../service/ritm.service';
 import { SupportGroupService } from '../../service/support-group.service';
 import { VariantService } from '../../service/variant.service';
 import { USER_ROLES } from '../../data/app_constants';
+import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
+
+interface SubtaskStatus {
+  statusId: number;
+  statusCode: string;
+  statusColor?: string;
+}
 
 @Component({
   selector: 'app-ritm-subtask',
@@ -22,6 +35,7 @@ import { USER_ROLES } from '../../data/app_constants';
 export class RitmSubtaskComponent implements OnInit, OnDestroy {
   subtaskForm!: FormGroup;
   users: AgentMaster[] = [];
+  ritmStatuses: SubtaskStatus[] = [];
   priorities: PriorityMaster[] = [];
   categories: CategoryMaster[] = [];
   requestTypes: RequestType[] = [];
@@ -35,6 +49,11 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
   templatesLoading = false;
   submitError = '';
   submitSuccess = '';
+  statusError = '';
+  statusLoading = false;
+  workflowLoading = false;
+  statusUpdating = false;
+  statusSetupFailed = false;
   assignmentGroupId: number | null = null;
   parentRitmId = '';
   subtaskId = '';
@@ -46,18 +65,24 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
   private fieldTypeMap = new Map<number, string>();
   private businessPartnerId: number | null = null;
   private supportGroupRequestId = 0;
+  private approvalWorkflow: ApprovalWorkflow | null = null;
+  private persistedStatusId: number | null = null;
 
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
+    private location: Location,
+    private snackBar: MatSnackBar,
     private ritmService: RitmService,
     private agentService: AgentService,
     private companyService: CompanyService,
     private categoryService: CategoryService,
     private requestTypeService: RequestTypeService,
     private supportGroupService: SupportGroupService,
-    private variantService: VariantService
+    private variantService: VariantService,
+    private workflowService: ApprovalWorkflowService,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -72,12 +97,17 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
       subCategory: ['', Validators.required],
       assignmentGroup: [{ value: '', disabled: true }],
       priority: ['', Validators.required],
-      customerResolution: [{ value: '', disabled: true }]
+      customerResolution: [{ value: '', disabled: true }],
+      status: ['']
     });
 
     this.parentRitmId = this.route.snapshot.queryParamMap.get('ritmId') || '';
     this.subtaskId = this.route.snapshot.queryParamMap.get('subtaskId') || '';
     this.isEditMode = !!this.subtaskId;
+    if (this.isEditMode) {
+      this.loadSubtaskStatuses();
+      this.loadSubtaskApprovalWorkflow();
+    }
     const navigationState = this.router.getCurrentNavigation()?.extras?.state as {
       ritmData?: any;
       parentRitmData?: any;
@@ -187,9 +217,19 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
       subCategory: subCategoryId,
       assignmentGroup: this.getDisplayName(assignmentGroup, ['groupName', 'supportGroupName', 'name']),
       priority: this.getPriorityId(subtask?.priority ?? subtask?.priorityId),
-      customerResolution: this.toDateTimeLocalValue(subtask?.customerResolution ?? subtask?.customerResolutionDate ?? '')
+      customerResolution: this.toDateTimeLocalValue(subtask?.customerResolution ?? subtask?.customerResolutionDate ?? ''),
+      status: this.getSubtaskStatusId(subtask) ?? ''
     }, { emitEvent: false });
 
+    this.persistedStatusId = this.getSubtaskStatusId(subtask);
+    if (this.persistedStatusId !== null && !this.ritmStatuses.some(status => status.statusId === this.persistedStatusId)) {
+      const currentStatus = subtask?.status && typeof subtask.status === 'object' ? subtask.status : {};
+      this.ritmStatuses = [{
+        statusId: this.persistedStatusId,
+        statusCode: String(currentStatus.statusCode ?? currentStatus.statusName ?? currentStatus.name ?? this.persistedStatusId),
+        statusColor: currentStatus.statusColor
+      }, ...this.ritmStatuses];
+    }
     this.assignmentGroupId = this.getAssignmentGroupId(assignmentGroup);
     if (categoryId) {
       this.loadSubCategories(categoryId, subCategoryId, assignmentGroup);
@@ -258,6 +298,174 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
         console.error(error);
       }
     });
+  }
+
+  private loadSubtaskStatuses(): void {
+    if (!this.orgId) {
+      this.statusSetupFailed = true;
+      this.statusError = 'Organization information is unavailable; subtask status cannot be changed.';
+      return;
+    }
+
+    this.statusLoading = true;
+    this.ritmService.getActiveStatuses(this.orgId, 'RITM_SUBTASK').subscribe({
+      next: response => {
+        this.ritmStatuses = this.normalizeArray<any>(response?.attributes ?? response)
+          .map(status => ({
+            ...status,
+            statusId: Number(status.statusId ?? status.id),
+            statusCode: String(status.statusCode ?? '')
+          }))
+          .filter(status => Number.isInteger(status.statusId) && status.statusId > 0);
+        this.statusLoading = false;
+      },
+      error: error => {
+        this.statusLoading = false;
+        this.statusSetupFailed = true;
+        this.statusError = 'Unable to load available subtask statuses.';
+        console.error('Subtask status load error:', error);
+      }
+    });
+  }
+
+  private loadSubtaskApprovalWorkflow(): void {
+    if (!this.orgId) {
+      this.statusSetupFailed = true;
+      this.statusError = 'Organization information is unavailable; subtask approval settings cannot be loaded.';
+      return;
+    }
+
+    this.workflowLoading = true;
+    this.variantService.getWorkItemList(this.orgId).subscribe({
+      next: response => {
+        const workItems = this.normalizeArray<WorkItem>(response?.attributes ?? response);
+        const workItem = workItems.find(item => item.code === 'RITM_SUBTASK');
+        if (!workItem) {
+          this.workflowLoading = false;
+          this.statusSetupFailed = true;
+          this.statusError = 'The RITM subtask work item is unavailable; status changes are disabled.';
+          return;
+        }
+
+        this.workflowService.getWorkflowsForWorkItem(workItem.itemId, this.orgId).subscribe({
+          next: workflowResponse => {
+            const result = (workflowResponse as any)?.attributes ?? workflowResponse;
+            const workflows = Array.isArray(result) ? result : result ? [result] : [];
+            this.approvalWorkflow = workflows.find(
+              (workflow: ApprovalWorkflow) => Number(workflow.workItemId) === Number(workItem.itemId)
+            ) ?? workflows[0] ?? null;
+            this.workflowLoading = false;
+          },
+          error: error => {
+            this.workflowLoading = false;
+            this.statusSetupFailed = true;
+            this.statusError = 'Unable to load subtask approval settings; status changes are disabled.';
+            console.error('Subtask approval workflow load error:', error);
+          }
+        });
+      },
+      error: error => {
+        this.workflowLoading = false;
+        this.statusSetupFailed = true;
+        this.statusError = 'Unable to load the RITM subtask work item; status changes are disabled.';
+        console.error('Subtask work-item load error:', error);
+      }
+    });
+  }
+
+  onStatusChange(event: Event): void {
+    const selectedStatusId = (event.target as HTMLSelectElement).value;
+    const statusId = Number(selectedStatusId);
+    if (!Number.isInteger(statusId) || statusId <= 0 || statusId === this.persistedStatusId) {
+      return;
+    }
+
+    const pendingStatusId = this.approvalWorkflow?.isApprovalRequired
+      ? Number(this.approvalWorkflow.approvalPendingStatusId)
+      : null;
+    if (pendingStatusId === statusId) {
+      this.requestRemarkAndUpdateStatus(statusId);
+      return;
+    }
+
+    this.updateSubtaskStatus(statusId, '');
+  }
+
+  private requestRemarkAndUpdateStatus(statusId: number): void {
+    const dialogData: ConfirmationDialogData = {
+      title: 'Approval required',
+      message: 'Add a remark before moving this subtask to the approval-pending status.',
+      confirmText: 'Continue',
+      cancelText: 'Cancel',
+      showCancel: true,
+      includeRemarks: true,
+      remarksLabel: 'Remark',
+      remarksPlaceholder: 'Enter a remark'
+    };
+
+    this.dialog.open(ConfirmationDialogComponent, {
+      width: '480px',
+      data: dialogData
+    }).afterClosed().subscribe(result => {
+      const remarks = typeof result?.remarks === 'string' ? result.remarks.trim() : '';
+      if (!result?.confirmed) {
+        this.restorePersistedStatus();
+        return;
+      }
+      if (!remarks) {
+        this.restorePersistedStatus();
+        this.statusError = 'A remark is required to move the subtask to approval pending.';
+        return;
+      }
+      this.updateSubtaskStatus(statusId, remarks);
+    });
+  }
+
+  private updateSubtaskStatus(statusId: number, remarks: string): void {
+    if (!this.subtaskId) {
+      this.restorePersistedStatus();
+      this.statusError = 'Unable to identify the subtask for this status change.';
+      return;
+    }
+
+    this.statusUpdating = true;
+    this.statusError = '';
+    this.ritmService.updateSubtaskStatus({
+      ticketId: Number(this.subtaskId),
+      statusId,
+      remarks,
+      workItemId: this.approvalWorkflow?.workItemId ?? 0,
+      updatedBy: Number(localStorage.getItem('userId') || 0),
+      isUpdaterAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      orgId: Number(this.orgId)
+    }).subscribe({
+      next: () => {
+        this.persistedStatusId = statusId;
+        this.subtaskForm.get('status')?.setValue(String(statusId), { emitEvent: false });
+        this.statusUpdating = false;
+        this.submitSuccess = 'RITM subtask status updated successfully.';
+      },
+      error: error => {
+        this.restorePersistedStatus();
+        this.statusUpdating = false;
+        this.statusError = error?.error?.message || error?.error?.description || 'Failed to update RITM subtask status.';
+        console.error('Subtask status update error:', error);
+      }
+    });
+  }
+
+  private restorePersistedStatus(): void {
+    this.subtaskForm.get('status')?.setValue(
+      this.persistedStatusId === null ? '' : String(this.persistedStatusId),
+      { emitEvent: false }
+    );
+  }
+
+  private getSubtaskStatusId(subtask: any): number | null {
+    const status = subtask?.status;
+    const id = subtask?.statusId ?? (status && typeof status === 'object' ? status.statusId ?? status.id : status);
+    const statusId = Number(id);
+    return Number.isInteger(statusId) && statusId > 0 ? statusId : null;
   }
 
   private loadAgents(): void {
@@ -662,10 +870,14 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
       : this.ritmService.createRitmSubtask(payload);
     saveRequest$.subscribe({
       next: () => {
-        this.submitSuccess = this.isEditMode
-          ? 'RITM subtask updated successfully.'
-          : 'RITM subtask created successfully.';
         this.submitting = false;
+        if (this.isEditMode) {
+          this.submitSuccess = 'RITM subtask updated successfully.';
+          this.snackBar.open(this.submitSuccess, 'Close', { duration: 3000 });
+          this.location.back();
+          return;
+        }
+        this.submitSuccess = 'RITM subtask created successfully.';
       },
       error: error => {
         this.submitError = error?.error?.description

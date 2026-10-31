@@ -32,7 +32,7 @@ interface RequestApproverConfiguration {
 export class RequestApproverComponent implements OnInit {
   requestApproverForm: FormGroup;
   activeTab: 'create' | 'list' = 'create';
-  pageTitle = 'Create Request Approver Configuration';
+  pageTitle = 'Create Approver Configuration';
   isEditMode = false;
   originalFormValue: any = null;
 
@@ -207,7 +207,7 @@ export class RequestApproverComponent implements OnInit {
     request.subscribe({
       next: () => {
         this.isSubmitting = false;
-        this.submitSuccess = `Request approver configuration ${this.isEditMode ? 'updated' : 'created'} successfully.`;
+        this.submitSuccess = `Approver configuration ${this.isEditMode ? 'updated' : 'created'} successfully.`;
         setTimeout(() => {
           this.loadConfigurationList();
           this.resetForm();
@@ -216,15 +216,15 @@ export class RequestApproverComponent implements OnInit {
       },
       error: (err) => {
         this.isSubmitting = false;
-        console.error('Request approver save error:', err);
-        this.submitError = err.error?.message || err.error?.description || 'Failed to save request approver configuration.';
+        console.error('Approver save error:', err);
+        this.submitError = err.error?.message || err.error?.description || 'Failed to save approver configuration.';
       }
     });
   }
 
   resetForm(): void {
     this.isEditMode = false;
-    this.pageTitle = 'Create Request Approver Configuration';
+    this.pageTitle = 'Create Approver Configuration';
     this.requestApproverForm.reset({ approverConfigId: null, followSequence: false, isAnyApprovalSufficient: true });
     this.approvers.clear();
     this.agentSuggestions = {};
@@ -268,7 +268,7 @@ export class RequestApproverComponent implements OnInit {
   onViewConfiguration(configuration: RequestApproverConfiguration): void {
     this.isEditMode = true;
     this.activeTab = 'create';
-    this.pageTitle = 'Edit Request Approver Configuration';
+    this.pageTitle = 'Edit Approver Configuration';
     this.formError = {};
     this.approvers.clear();
     configuration.approvers.forEach((approver, index) => {
@@ -289,7 +289,7 @@ export class RequestApproverComponent implements OnInit {
 
   onDeleteConfiguration(configuration: RequestApproverConfiguration): void {
     const dialogData: ConfirmationDialogData = {
-      title: 'Delete Request Approver Configuration',
+      title: 'Delete Approver Configuration',
       message: `Are you sure you want to delete configuration "${configuration.approverCode}"?`,
       confirmText: 'Delete', cancelText: 'Cancel', showCancel: true, type: 'delete'
     };
@@ -299,8 +299,8 @@ export class RequestApproverComponent implements OnInit {
       const isDeletedByAdmin = localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase();
       
       this.requestApproverService.deleteConfiguration(configuration.approverConfigId, deletedBy, isDeletedByAdmin).subscribe({
-        next: () => { this.submitSuccess = 'Request approver configuration deleted successfully.'; this.loadConfigurationList(); },
-        error: (err) => { this.submitError = err.error?.message || 'Failed to delete request approver configuration.'; }
+        next: () => { this.submitSuccess = 'Approver configuration deleted successfully.'; this.loadConfigurationList(); },
+        error: (err) => { this.submitError = err.error?.message || 'Failed to delete approver configuration.'; }
       });
     });
   }
@@ -326,6 +326,17 @@ export class RequestApproverComponent implements OnInit {
   }
 
   backToHome(): void {
+    const settingsView = window.history.state?.settingsView;
+    if (settingsView) {
+      this.router.navigate(['/settings'], { state: { settingsView } });
+      return;
+    }
+
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
     this.router.navigate(['/settings']);
   }
 

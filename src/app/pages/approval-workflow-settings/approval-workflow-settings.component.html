@@ -1,0 +1,124 @@
+<div class="workflow-page">
+  <div class="tabs">
+    <button type="button" class="header-back" (click)="backToHome()" aria-label="Back to settings">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">
+      {{ isEditMode ? 'Edit' : 'Create' }}
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <section *ngIf="activeTab === 'create'" class="panel">
+    <h2>{{ pageTitle }}</h2>
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+    <div *ngIf="workItemsError" class="error-text">{{ workItemsError }}</div>
+
+    <form [formGroup]="workflowForm" (ngSubmit)="onSave()">
+      <div class="field">
+        <label for="workItemId">Work Item <span class="required">*</span></label>
+        <select id="workItemId" formControlName="workItemId">
+          <option [ngValue]="null" disabled>Select work item</option>
+          <option *ngFor="let workItem of workItems" [ngValue]="workItem.itemId">{{ workItem.label }} ({{ workItem.code }})</option>
+        </select>
+        <span *ngIf="workflowForm.get('workItemId')?.touched && workflowForm.get('workItemId')?.hasError('required')" class="error-text">
+          Work Item is required.
+        </span>
+      </div>
+
+      <div class="field checkbox-field">
+        <label for="isApprovalRequired">Approval required?</label>
+        <input id="isApprovalRequired" type="checkbox" formControlName="isApprovalRequired" />
+      </div>
+
+      <div class="field">
+        <label for="approvalPendingStatusId">Approval Pending Status <span *ngIf="workflowForm.get('isApprovalRequired')?.value" class="required">*</span></label>
+        <select id="approvalPendingStatusId" formControlName="approvalPendingStatusId" [disabled]="!workflowForm.get('workItemId')?.value || isLoadingStatuses">
+          <option [ngValue]="null" disabled>Select status</option>
+          <option *ngFor="let status of statuses" [ngValue]="status.statusId">{{ status.statusCode }}</option>
+        </select>
+        <span *ngIf="isLoadingStatuses" class="hint-text">Loading statuses...</span>
+        <span *ngIf="workflowForm.get('approvalPendingStatusId')?.touched && workflowForm.get('approvalPendingStatusId')?.hasError('required')" class="error-text">
+          Select a status when approval is required.
+        </span>
+      </div>
+
+      <div class="field">
+        <label for="autoActionTimeline">Auto-Action Timeout <span class="required">*</span></label>
+        <div class="timeline-row">
+          <input id="autoActionTimeline" type="number" min="1" step="1" formControlName="autoActionTimeline" placeholder="Enter duration" />
+          <select id="autoActionTimeUnit" formControlName="autoActionTimeUnit" aria-label="Auto approval time unit">
+            <option *ngFor="let unit of timeUnits" [value]="unit.value">{{ unit.label }}</option>
+          </select>
+        </div>
+        <span *ngIf="workflowForm.get('autoActionTimeline')?.touched && workflowForm.get('autoActionTimeline')?.invalid" class="error-text">
+          Enter a whole number greater than zero.
+        </span>
+      </div>
+
+      <div class="field">
+        <label for="statusAfterAutoAction">Status After Auto-Action <span class="required">*</span></label>
+        <select id="statusAfterAutoAction" formControlName="statusAfterAutoAction" [disabled]="!workflowForm.get('workItemId')?.value || isLoadingStatuses">
+          <option [ngValue]="null" disabled>Select status</option>
+          <option *ngFor="let status of statuses" [ngValue]="status.statusId">{{ status.statusCode }}</option>
+        </select>
+        <span *ngIf="workflowForm.get('statusAfterAutoAction')?.touched && workflowForm.get('statusAfterAutoAction')?.hasError('required')" class="error-text">
+          Select an auto-approval status.
+        </span>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update Workflow' : 'Save Workflow') }}
+        </button>
+        <button *ngIf="isEditMode" type="button" class="reset-btn" (click)="selectTab('list')">Cancel</button>
+        <button *ngIf="!isEditMode" type="button" class="reset-btn" (click)="resetForm()">Reset</button>
+      </div>
+    </form>
+  </section>
+
+  <section *ngIf="activeTab === 'list'" class="panel">
+    <div class="list-heading">
+      <h2>Approval Workflow List</h2>
+      <button type="button" class="primary-action" (click)="selectTab('create')">Create Workflow</button>
+    </div>
+    <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+    <div *ngIf="listError" class="error-text">{{ listError }}</div>
+
+    <div *ngIf="isLoading" class="empty-state">Loading approval workflows...</div>
+    <div *ngIf="!isLoading && workflows.length" class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Work Item</th>
+            <th>Approval Required</th>
+            <th>Approval Pending Status</th>
+            <th>Auto-Action Timeout</th>
+            <th>Status After Auto-Action</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let workflow of workflows">
+            <td>{{ getWorkItemLabel(workflow.workItemId) }}</td>
+            <td>{{ workflow.isApprovalRequired ? 'Yes' : 'No' }}</td>
+            <td>{{ workflow.approvalPendingStatusCode }}</td>
+            <td>{{ workflow.autoActionTimeline }} {{ workflow.autoActionTimeUnit | lowercase }}</td>
+            <td>{{ workflow.statusAfterAutoActionCode | titlecase }}</td>
+            <td class="action-buttons">
+              <button type="button" (click)="editWorkflow(workflow)" aria-label="Edit approval workflow">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button type="button" (click)="deleteWorkflow(workflow)" aria-label="Delete approval workflow">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="!isLoading && !listError && workflows.length === 0" class="empty-state">No approval workflows found.</div>
+  </section>
+</div>
