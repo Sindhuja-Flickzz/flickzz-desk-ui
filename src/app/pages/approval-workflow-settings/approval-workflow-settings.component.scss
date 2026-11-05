@@ -85,6 +85,16 @@
     }
   }
 
+  .field-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+
+    .field {
+      max-width: none;
+    }
+  }
+
   .checkbox-field {
     flex-direction: row;
     align-items: center;
@@ -230,6 +240,11 @@
   @media (max-width: 600px) {
     .panel {
       padding: 16px;
+    }
+
+    .field-row {
+      grid-template-columns: 1fr;
+      gap: 0;
     }
 
     .timeline-row {

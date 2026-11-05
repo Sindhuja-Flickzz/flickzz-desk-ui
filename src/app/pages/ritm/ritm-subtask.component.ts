@@ -380,9 +380,7 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const pendingStatusId = this.approvalWorkflow?.isApprovalRequired
-      ? Number(this.approvalWorkflow.approvalPendingStatusId)
-      : null;
+    const pendingStatusId = Number(this.approvalWorkflow?.approvalPendingStatusId);
     if (pendingStatusId === statusId) {
       this.requestRemarkAndUpdateStatus(statusId);
       return;

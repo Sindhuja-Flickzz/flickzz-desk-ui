@@ -225,13 +225,15 @@ export class RitmService {
     return this.http.get<EffortSummaryResponse>(`${this.baseUrl}/ticket/effort/summary/${ticketId}/${orgId}`);
   }
 
-  getPlannedHours(orgId: string | number): Observable<any> {
-    return this.http.get(`${this.baseUrl}/ticket/list/hours/planned/${orgId}`);
+  getPlannedHours(orgId: string | number, agentId: string | number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/ticket/list/hours/planned/${orgId}/${agentId}`);
   }
 
   updatePlannedHours(payload: {
     ticketId: number;
     orgId: number;
+    agentId: number;
+    workItemId: number;
     hoursPlanned: number;
     minutesPlanned: number;
     updatedBy: number;

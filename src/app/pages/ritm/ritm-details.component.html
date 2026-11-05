@@ -45,17 +45,47 @@
       </div>
 
       <div *ngIf="!effortSummaryLoading && effortSummary" class="effort-summary-progress">
-        <div class="effort-chart-track" role="group" aria-label="Effort progress: ticket logged, subtasks logged, and planned">
-          <button
-            *ngFor="let segment of getEffortSummarySegments()"
-            type="button"
-            class="effort-chart-segment"
-            [ngClass]="'effort-chart-' + segment.key"
-            [style.flex-basis.%]="segment.width"
-            [attr.aria-label]="getEffortSummaryTooltip(segment)"
-            [attr.tabindex]="segment.minutes > 0 ? 0 : -1">
-            <span class="effort-chart-tooltip" aria-hidden="true">{{ getEffortSummaryTooltip(segment) }}</span>
-          </button>
+        <div class="effort-summary-chart">
+          <div class="effort-summary-chart-heading">
+            <span class="effort-summary-chart-title">Effort Summary</span>
+            <strong>{{ getEffortSummaryUsagePercent() }}%</strong>
+          </div>
+          <div class="effort-summary-progressbar" role="progressbar" tabindex="0"
+            [attr.aria-label]="'Ticket effort used: ' + getFormattedEffort(effortSummary.ticketLoggedEffort) + ' of ' + getFormattedEffort(effortSummary.plannedEffort)"
+            aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="getEffortSummaryUsagePercent()">
+            <div class="effort-summary-progressbar-track">
+              <span class="effort-summary-progressbar-fill" [style.width.%]="getEffortSummaryUsagePercent()"></span>
+            </div>
+            <span class="effort-chart-tooltip" aria-hidden="true">
+              <div class="effort-tooltip-total">
+                Total Planned Effort: {{ getFormattedEffort(effortSummary.plannedEffort) }}
+              </div>
+              <div class="effort-tooltip-agents">
+                <strong>Ticket logged effort: {{ getFormattedEffort(effortSummary.ticketLoggedEffort) }}</strong>
+                <div *ngFor="let agent of effortSummary.agents">
+                  {{ agent.agentName }}: {{ getFormattedEffort(agent.effort) }}
+                </div>
+                <div *ngIf="!effortSummary.agents?.length">No agent effort recorded</div>
+              </div>
+              <div class="effort-tooltip-subtasks" *ngIf="effortSummary.subtasks.length">
+                <strong>Subtasks logged effort: {{ getFormattedEffort(effortSummary.subtasksLoggedEffort) }}</strong>
+                <div *ngFor="let subtask of effortSummary.subtasks" class="effort-tooltip-subtask">
+                  <div>{{ subtask.subtaskNumber }}: {{ getFormattedEffort(subtask.totalLoggedEffort) }}</div>
+                  <div *ngFor="let agent of subtask.agents" class="effort-tooltip-subtask-agent">
+                    {{ agent.agentName }}: {{ getFormattedEffort(agent.effort) }}
+                  </div>
+                  <div *ngIf="!subtask.agents?.length" class="effort-tooltip-subtask-agent">
+                    No agent effort recorded
+                  </div>
+                </div>
+                <div *ngIf="!effortSummary.subtasks?.length">No subtask effort recorded</div>
+              </div>
+            </span>
+          </div>
+          <div class="effort-summary-chart-labels">
+            <span>Total logged effort <strong>{{ getFormattedEffort(effortSummary.totalLoggedEffort) }}</strong></span>
+            <span>Planned <strong>{{ getFormattedEffort(effortSummary.plannedEffort) }}</strong></span>
+          </div>
         </div>
       </div>
     </section>

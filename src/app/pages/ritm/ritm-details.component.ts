@@ -17,14 +17,6 @@ import { EffortSummary, EffortSummaryResponse } from '../../models/effort-summar
 import { USER_ROLES } from '../../data/app_constants';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 
-type EffortSummarySegment = {
-  key: 'plannedEffort' | 'ticketLoggedEffort' | 'subtasksLoggedEffort';
-  label: string;
-  minutes: number;
-  formatted: string;
-  width: number;
-};
-
 @Component({
   selector: 'app-ritm-details',
   standalone: true,
@@ -38,6 +30,7 @@ export class RitmDetailsComponent implements OnInit {
   ritmId: string | null = null;
   ritm: any = null;
   workItemCode: string | null = null;
+  workItemId: number | null = null;
   workNotes: any[] = [];
   history: any[] = [];
   slaInfo: any = null;
@@ -156,16 +149,31 @@ export class RitmDetailsComponent implements OnInit {
       this.templates = [];
       this.templatesLoading = false;
       this.workItemCode = null;
+      this.workItemId = null;
       return;
     }
 
     this.workItemCode = null;
+    this.workItemId = null;
     this.loading = true;
     this.ritmService.getRitmById(String(this.ritmId)).pipe(finalize(() => this.loading = false)).subscribe({
       next: (response) => {
         const payload = response?.attributes ?? response ?? {};
         const detailPayload = Array.isArray(payload) ? payload[0] ?? {} : payload;
         this.ritm = detailPayload?.ritm ?? detailPayload;
+        const workItemId = this.ritm?.workItemId
+          ?? this.ritm?.workItem?.workItemId
+          ?? this.ritm?.workItem?.itemId
+          ?? this.ritm?.workItem?.id
+          ?? detailPayload?.workItemId
+          ?? detailPayload?.workItem?.workItemId
+          ?? detailPayload?.workItem?.itemId
+          ?? detailPayload?.workItem?.id
+          ?? response?.workItemId
+          ?? response?.workItem?.workItemId
+          ?? response?.workItem?.itemId
+          ?? response?.workItem?.id;
+        this.workItemId = workItemId == null ? null : Number(workItemId);
         this.loadEffortSummary(
           this.ritm?.ticketId
             ?? this.ritm?.id
@@ -240,68 +248,45 @@ export class RitmDetailsComponent implements OnInit {
       });
   }
 
-  getEffortSummarySegments(): EffortSummarySegment[] {
-    if (!this.effortSummary) {
-      return [];
-    }
-
-    const entries = [
-      { key: 'ticketLoggedEffort' as const, label: 'Ticket logged effort', effort: this.effortSummary.ticketLoggedEffort },
-      { key: 'subtasksLoggedEffort' as const, label: 'Subtasks logged effort', effort: this.effortSummary.subtasksLoggedEffort },
-      { key: 'plannedEffort' as const, label: 'Planned effort', effort: this.effortSummary.plannedEffort }
-    ];
-    const minutesTotal = entries.reduce((total, entry) => total + this.getEffortMinutes(entry.effort), 0);
-
-    return entries.map((entry) => {
-      const minutes = this.getEffortMinutes(entry.effort);
-      return {
-        key: entry.key,
-        label: entry.label,
-        minutes,
-        formatted: this.getFormattedEffort(entry.effort),
-        width: minutesTotal > 0 ? (minutes / minutesTotal) * 100 : 100 / entries.length
-      };
-    });
-  }
-
-  getEffortSummaryTooltip(segment: EffortSummarySegment): string {
-    if (!this.effortSummary) {
-      return `${segment.label}: ${segment.formatted}`;
-    }
-
-    if (segment.key === 'ticketLoggedEffort') {
-      const agents = this.effortSummary.agents ?? [];
-      return [
-        `${segment.label}: ${segment.formatted}`,
-        ...(agents.length
-          ? agents.map((agent) => `${agent.agentName}: ${this.getFormattedEffort(agent.effort)}`)
-          : ['No agent effort recorded'])
-      ].join('\n');
-    }
-
-    if (segment.key === 'subtasksLoggedEffort') {
-      const subtasks = this.effortSummary.subtasks ?? [];
-      return [
-        `${segment.label}: ${segment.formatted}`,
-        ...(subtasks.length
-          ? subtasks.flatMap((subtask) => [
-            `${subtask.subtaskNumber} (${this.getFormattedEffort(subtask.totalLoggedEffort)})`,
-            ...(subtask.agents?.length
-              ? subtask.agents.map((agent) => `  ${agent.agentName}: ${this.getFormattedEffort(agent.effort)}`)
-              : ['  No agent effort recorded'])
-          ])
-          : ['No subtask effort recorded'])
-      ].join('\n');
-    }
-
-    return `${segment.label}: ${segment.formatted}`;
-  }
-
   private getEffortMinutes(effort: { hours?: number; minutes?: number } | null | undefined): number {
     return (Number(effort?.hours) || 0) * 60 + (Number(effort?.minutes) || 0);
   }
 
-  private getFormattedEffort(effort: { hours?: number; minutes?: number; formatted?: string } | null | undefined): string {
+  getEffortSummaryUsagePercent(): number {
+    const plannedMinutes = this.getEffortMinutes(this.effortSummary?.plannedEffort);
+    if (plannedMinutes <= 0) {
+      return 0;
+    }
+
+    return Math.min(100, Math.round((this.getEffortMinutes(this.effortSummary?.totalLoggedEffort) / plannedMinutes) * 100));
+  }
+
+  getEffortSummaryTooltip(): string {
+    if (!this.effortSummary) {
+      return 'Effort summary data is unavailable.';
+    }
+
+    const agents = this.effortSummary.agents ?? [];
+    const subtasks = this.effortSummary.subtasks ?? [];
+    return [
+      `Total logged effort: ${this.getFormattedEffort(this.effortSummary.totalLoggedEffort)}`,
+      'Agents:',
+      ...(agents.length
+        ? agents.map((agent) => `${agent.agentName}: ${this.getFormattedEffort(agent.effort)}`)
+        : ['No agent effort recorded']),
+      `Subtasks logged effort: ${this.getFormattedEffort(this.effortSummary.subtasksLoggedEffort)}`,
+      ...(subtasks.length
+        ? subtasks.flatMap((subtask) => [
+          `${subtask.subtaskNumber}: ${this.getFormattedEffort(subtask.totalLoggedEffort)}`,
+          ...(subtask.agents?.length
+            ? subtask.agents.map((agent) => `  ${agent.agentName}: ${this.getFormattedEffort(agent.effort)}`)
+            : ['  No agent effort recorded'])
+        ])
+        : ['No subtask effort recorded'])
+    ].join('\n');
+  }
+
+  getFormattedEffort(effort: { hours?: number; minutes?: number; formatted?: string } | null | undefined): string {
     if (effort?.formatted) {
       return effort.formatted;
     }
@@ -907,7 +892,7 @@ export class RitmDetailsComponent implements OnInit {
     this.effortCalculationLoading = true;
     this.plannedHoursLoading = true;
     this.effortTypesLoading = true;
-    this.ritmService.getPlannedHours(this.orgId).pipe(finalize(() => this.plannedHoursLoading = false)).subscribe({
+    this.ritmService.getPlannedHours(this.orgId, this.agentId ?? 0).pipe(finalize(() => this.plannedHoursLoading = false)).subscribe({
       next: response => {
         const plannedHoursList = this.normalizeList(response?.attributes ?? response?.data ?? response);
         const ticketId = Number(this.ritmId);
@@ -979,6 +964,8 @@ export class RitmDetailsComponent implements OnInit {
     const minutes = Number(this.plannedMinutesInput);
     const ticketId = Number(this.ritmId);
     const orgId = Number(this.orgId);
+    const agentId = this.agentId ?? this.getCurrentUserId();
+    const workItemId = Number(this.workItemId);
     if (this.plannedHoursInput == null || !Number.isInteger(hours) || hours < 0
       || this.plannedMinutesInput == null || !Number.isInteger(minutes) || minutes < 0 || minutes > 59) {
       this.effortError = 'Enter valid planned hours and minutes (minutes must be between 0 and 59).';
@@ -992,12 +979,18 @@ export class RitmDetailsComponent implements OnInit {
       this.effortError = 'Unable to save planned hours: ticket or organization ID is unavailable.';
       return;
     }
+    if (!Number.isInteger(agentId) || agentId <= 0 || !Number.isInteger(workItemId) || workItemId <= 0) {
+      this.effortError = 'Unable to save planned hours: agent or work item ID is unavailable.';
+      return;
+    }
 
     this.isSavingPlannedHours = true;
     const isAdmin = localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase();
     this.ritmService.updatePlannedHours({
       ticketId,
       orgId,
+      agentId,
+      workItemId,
       hoursPlanned: hours,
       minutesPlanned: minutes,
       updatedBy: this.getCurrentUserId(),
