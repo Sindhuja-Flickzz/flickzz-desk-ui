@@ -102,7 +102,7 @@
           <select id="assignmentWorkItem" formControlName="workItemId" (change)="onAssignmentWorkItemChange()">
             <option value="">Select a work item</option>
             <option *ngFor="let workItem of workItems" [ngValue]="workItem.itemId">
-              {{ workItem.label }} ({{ workItem.code }})
+              {{ workItem.description }} ({{ workItem.code }})
             </option>
           </select>
           <span *ngIf="workItemsLoading" class="field-hint">Loading work items...</span>
@@ -151,7 +151,7 @@
               [ngModelOptions]="{ standalone: true }" (ngModelChange)="filterAssignments()">
               <option [ngValue]="''">All work items</option>
               <option *ngFor="let workItem of workItems" [ngValue]="workItem.itemId">
-                {{ workItem.label }} ({{ workItem.code }})
+                {{ workItem.description }} ({{ workItem.code }})
               </option>
             </select>
           </div>

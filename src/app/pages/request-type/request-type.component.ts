@@ -280,9 +280,9 @@ export class RequestTypeComponent implements OnInit {
     const workItemId = Number(assignment?.workItemId ?? assignment?.workItem?.itemId);
     const workItem = this.workItems.find(item => item.itemId === workItemId);
     const workItemLabel = assignment?.workItemLabel
-      || assignment?.workItem?.label
+      || assignment?.workItem?.description
       || assignment?.workItemCode
-      || workItem?.label
+      || workItem?.description
       || (Number.isFinite(workItemId) ? `Work item ${workItemId}` : 'Unknown work item');
 
     const requestTypeValues = assignment?.requestTypes

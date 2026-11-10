@@ -88,6 +88,7 @@ import { TemplatecomponentComponent } from './pages/settings/templatecomponent/t
 import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
 import { ApprovalComponent } from './pages/approval/approval.component';
 import { ApprovalWorkflowSettingsComponent } from './pages/approval-workflow-settings/approval-workflow-settings.component';
+import { WorkitemComponent } from './pages/workitem/workitem.component';
 
 @NgModule({
   declarations: [
@@ -142,7 +143,8 @@ import { ApprovalWorkflowSettingsComponent } from './pages/approval-workflow-set
     MyTicketsComponent,
     RitmStatusComponent,
     ApprovalComponent,
-    ApprovalWorkflowSettingsComponent
+    ApprovalWorkflowSettingsComponent,
+    WorkitemComponent
   ],
   imports: [
     BrowserModule,

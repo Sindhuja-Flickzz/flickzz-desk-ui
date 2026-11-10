@@ -21,7 +21,7 @@
           <label for="workItemId">Work Item <span class="required">*</span></label>
           <select id="workItemId" formControlName="workItemId">
             <option [ngValue]="null" disabled>Select work item</option>
-            <option *ngFor="let workItem of workItems" [ngValue]="workItem.itemId">{{ workItem.label }} ({{ workItem.code }})</option>
+            <option *ngFor="let workItem of workItems" [ngValue]="workItem.itemId">{{ workItem.description }} ({{ workItem.code }})</option>
           </select>
           <span *ngIf="workflowForm.get('workItemId')?.touched && workflowForm.get('workItemId')?.hasError('required')" class="error-text">
             Work Item is required.

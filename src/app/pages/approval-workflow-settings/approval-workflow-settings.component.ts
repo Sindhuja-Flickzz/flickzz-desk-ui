@@ -265,7 +265,7 @@ export class ApprovalWorkflowSettingsComponent implements OnInit {
 
   getWorkItemLabel(workItemId: number): string {
     const workItem = this.workItems.find(item => item.itemId === workItemId);
-    return workItem?.label ? `${workItem.label} (${workItem.code})` : String(workItemId);
+    return workItem?.description ? `${workItem.description} (${workItem.code})` : String(workItemId);
   }
 
   private loadWorkItems(): void {
