@@ -16,6 +16,10 @@ export class RequestTypeService {
     return this.http.get<any>(`${this.baseUrl}/ticket/request/type/list/${userOrgId}`);
   }
 
+  getRequestTypesByWorkItem(workItem: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/ticket/work/item/request/type/list/${workItem}`);
+  }
+
   getRequestTypeAssignments(userOrgId: string): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/ticket/request/type/assignment/list/${userOrgId}`);
   }

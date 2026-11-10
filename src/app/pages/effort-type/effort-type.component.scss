@@ -38,7 +38,8 @@
   }
 
   .create-panel,
-  .list-panel {
+  .list-panel,
+  .assign-panel {
     padding: 22px;
     border: 1px solid #eef2f9;
     border-radius: 0 0 12px 12px;
@@ -67,6 +68,107 @@
         border-color: #0f5bba;
       }
     }
+
+    label {
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #1d326d;
+    }
+  }
+
+  .assignment-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  select {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid #ccd6e8;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #fff;
+    font: inherit;
+
+    &:focus {
+      outline: none;
+      border-color: #0f5bba;
+    }
+  }
+
+  .field-hint {
+    display: block;
+    margin-top: 6px;
+    color: #68748a;
+    font-size: 13px;
+  }
+
+  .assignment-actions-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+  }
+
+  .assignment-actions-row > .actions {
+    flex-shrink: 0;
+  }
+
+  .assignment-filters {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(200px, .75fr);
+    align-items: end;
+    gap: 12px;
+    flex: 1;
+    max-width: 650px;
+    margin: 0 0 10px auto;
+  }
+
+  .assignment-filter-field,
+  .assignment-filters .search-container {
+    margin: 0;
+  }
+
+  .assignment-filter-field {
+    min-width: 0;
+  }
+
+  .assignment-filters .search-input {
+    min-width: 0;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1.5px solid #c8d5e6;
+    border-radius: 20px;
+    background: #f0f4fc;
+    color: #1d326d;
+  }
+
+  .remove-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #d32f2f;
+    color: #fff;
+    cursor: pointer;
+    line-height: 1;
   }
 
   .effort-type-rows {
@@ -125,7 +227,7 @@
   .actions {
     display: flex;
     gap: 10px;
-    margin-top: 10px;
+    margin-bottom: 10px;
 
     .save-btn,
     .reset-btn {
@@ -240,6 +342,11 @@
     justify-content: flex-end;
   }
 
+  .assign-panel > mat-paginator {
+    display: flex;
+    justify-content: flex-end;
+  }
+
   .confirmation-backdrop {
     position: fixed;
     inset: 0;
@@ -275,6 +382,27 @@
   }
 
   @media (max-width: 640px) {
+    .assignment-fields {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+
+    .assignment-actions-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+    }
+
+    .assignment-actions-row > .actions {
+      flex-wrap: wrap;
+    }
+
+    .assignment-filters {
+      grid-template-columns: 1fr;
+      max-width: none;
+      margin: 0 0 10px;
+    }
+
     .effort-type-row {
       grid-template-columns: minmax(0, 1fr);
     }

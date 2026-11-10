@@ -3,6 +3,7 @@
     <button type="button" class="save-btn header-back" (click)="backToSettings()"><mat-icon>chevron_left</mat-icon></button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'assign'" (click)="selectTab('assign')">Assign</button>
   </div>
 
   <div *ngIf="activeTab === 'create'" class="create-panel">
@@ -87,6 +88,113 @@
     <div class="pagination-controls">
       <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" (page)="onPageChange($event)" showFirstLastButtons></mat-paginator>
     </div>
+  </div>
+
+  <div *ngIf="activeTab === 'assign'" class="assign-panel">
+    <h2>Assign Effort Types</h2>
+    <div *ngIf="assignmentError" class="error-text">✗ {{ assignmentError }}</div>
+    <div *ngIf="submitSuccess" class="success-text">✓ {{ submitSuccess }}</div>
+
+    <form [formGroup]="assignmentForm" (ngSubmit)="onAssignEffortTypes()">
+      <div class="assignment-fields">
+        <div class="field">
+          <label for="assignmentWorkItem">Work Item</label>
+          <select id="assignmentWorkItem" formControlName="workItemId" (change)="onAssignmentWorkItemChange()">
+            <option value="">Select a work item</option>
+            <option *ngFor="let workItem of workItems" [ngValue]="workItem.itemId">
+              {{ workItem.label }} ({{ workItem.code }})
+            </option>
+          </select>
+          <span *ngIf="workItemsLoading" class="field-hint">Loading work items...</span>
+          <span *ngIf="workItemsError" class="error-text">{{ workItemsError }}</span>
+        </div>
+
+        <div class="field">
+          <label for="assignmentEffortType">Effort Types</label>
+          <select id="assignmentEffortType" formControlName="effortTypeId" (change)="addSelectedEffortType()">
+            <option value="">Select an effort type</option>
+            <option *ngFor="let effortType of getAvailableEffortTypes()" [ngValue]="effortType.effortTypeId ?? effortType.id">
+              {{ effortType.typeName }}
+            </option>
+          </select>
+          <div *ngIf="selectedEffortTypeIds.length > 0" class="chips">
+            <span *ngFor="let effortTypeId of selectedEffortTypeIds" class="chip">
+              {{ getEffortTypeName(effortTypeId) }}
+              <button type="button" class="remove-icon" [attr.aria-label]="'Remove ' + getEffortTypeName(effortTypeId)"
+                (click)="removeSelectedEffortType(effortTypeId)">×</button>
+            </span>
+          </div>
+          <span *ngIf="assignmentForm.get('workItemId')?.value && getAvailableEffortTypes().length === 0
+            && selectedEffortTypeIds.length === 0 && !loading" class="field-hint">
+            All effort types are already assigned to this work item.
+          </span>
+          <span *ngIf="loading" class="field-hint">Loading effort types...</span>
+        </div>
+      </div>
+
+      <div class="assignment-actions-row">
+        <div class="actions">
+          <button type="submit" class="save-btn"
+            [disabled]="isAssigning || workItemsLoading || loading || assignmentLoading">
+            {{ isAssigning ? 'Assigning...' : 'Assign Effort Types' }}
+          </button>
+          <button type="button" class="reset-btn" (click)="resetAssignmentForm()">Reset</button>
+        </div>
+        <div class="assignment-filters">
+          <div class="search-container">
+            <input type="text" [(ngModel)]="assignmentSearchValue" (ngModelChange)="filterAssignments()"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="Search by work item or effort type..." class="search-input">
+          </div>
+          <div class="field assignment-filter-field">
+            <select id="assignmentWorkItemFilter" [(ngModel)]="assignmentWorkItemFilter"
+              [ngModelOptions]="{ standalone: true }" (ngModelChange)="filterAssignments()">
+              <option [ngValue]="''">All work items</option>
+              <option *ngFor="let workItem of workItems" [ngValue]="workItem.itemId">
+                {{ workItem.label }} ({{ workItem.code }})
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div *ngIf="assignmentLoading" class="field-hint">Loading assignments...</div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Work Item</th>
+            <th>Effort Types</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let assignment of getPaginatedAssignments()">
+            <td>{{ assignment.workItem }}</td>
+            <td>{{ assignment.effortTypes }}</td>
+            <td class="action-buttons">
+              <button type="button" class="delete-action" (click)="deleteAssignment(assignment)"
+                [disabled]="deletingAssignmentId === assignment.assignmentId && assignment.assignmentId !== null"
+                [attr.title]="assignment.assignmentId === null ? 'Assignment ID unavailable' : 'Delete assignment'"
+                [attr.aria-label]="'Delete assignment for ' + assignment.workItem">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="!assignmentLoading && !assignmentError && assignments.length === 0" class="empty-state">
+      No effort type assignments found.
+    </div>
+    <div *ngIf="!assignmentLoading && !assignmentError && assignments.length > 0 && filteredAssignments.length === 0"
+      class="empty-state">
+      No assignments match the selected filters.
+    </div>
+    <mat-paginator [length]="assignmentTotalRecords" [pageSize]="assignmentPageSize"
+      [pageSizeOptions]="pageSizeOptions" (page)="onAssignmentPageChange($event)" showFirstLastButtons>
+    </mat-paginator>
   </div>
 
   <div *ngIf="pendingDelete" class="confirmation-backdrop" role="presentation">

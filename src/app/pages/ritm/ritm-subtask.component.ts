@@ -291,7 +291,7 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
   }
 
   private loadRequestTypes(): void {
-    this.requestTypeService.getRequestTypes(Number(this.orgId)).subscribe({
+    this.requestTypeService.getRequestTypesByWorkItem('RITM_SUBTASK').subscribe({
       next: response => this.requestTypes = this.normalizeArray(response?.attributes ?? response),
       error: error => {
         this.submitError = 'Unable to load request types.';

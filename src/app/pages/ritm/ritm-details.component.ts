@@ -927,7 +927,9 @@ export class RitmDetailsComponent implements OnInit {
       }
     });
 
-    this.effortTypeService.getActiveEffortTypes(Number(this.orgId)).subscribe({
+    const workItemId = this.ritm?.workItem.itemId;
+
+    this.effortTypeService.getActiveEffortTypesByWorkItem(workItemId).subscribe({
       next: response => {
         this.effortTypes = this.normalizeList(response?.attributes ?? response?.data ?? response);
         this.effortTypesLoading = false;
