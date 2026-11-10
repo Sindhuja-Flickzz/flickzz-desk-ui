@@ -16,6 +16,25 @@ export class RequestTypeService {
     return this.http.get<any>(`${this.baseUrl}/ticket/request/type/list/${userOrgId}`);
   }
 
+  getRequestTypesByWorkItem(workItem: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/ticket/work/item/request/type/list/${workItem}`);
+  }
+
+  getRequestTypeAssignments(userOrgId: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/ticket/request/type/assignment/list/${userOrgId}`);
+  }
+
+  createRequestTypeAssignment(request: RequestTypeAssignmentRequest): Observable<any> {
+    return this.http.post(`${this.baseUrl}/ticket/request/type/assignment/create`, request);
+  }
+
+  deleteRequestTypeAssignment(request: RequestTypeAssignmentDeleteRequest): Observable<any> {
+    return this.http.delete(
+      `${this.baseUrl}/ticket/request/type/assignment/delete`,
+      { body: request }
+    );
+  }
+
   createRequestTypes(requests: RequestTypeRequest[]): Observable<any> {
     return this.http.post(`${this.baseUrl}/ticket/request/type/create`, requests);
   }
@@ -27,4 +46,21 @@ export class RequestTypeService {
 
     return this.http.delete(`${this.baseUrl}/ticket/request/type/${requestTypeId}`, { params });
   }
+}
+
+export interface RequestTypeAssignmentRequest {
+  workItemId: number;
+  requestTypeIds: number[];
+  companyId: number;
+  createdBy: number;
+  updatedBy: number;
+  isCreatedByAdmin: boolean;
+  isUpdatedByAdmin: boolean;
+}
+
+export interface RequestTypeAssignmentDeleteRequest {
+  companyId: number;
+  mappingid: number;
+  deletedBy: number;
+  isDeletedByAdmin: boolean;
 }

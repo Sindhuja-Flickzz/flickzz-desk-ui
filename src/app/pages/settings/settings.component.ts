@@ -19,6 +19,7 @@ export class SettingsComponent {
     { title: 'Plant', route: '/plant' },
     { title: 'Calendar', route: '/calendar' },
     { title: 'Skills', route: '/skill' },
+    { title: 'Work Items', route: '/work-item' },
     { title: 'Agent', route: '/agent' },
     { title: 'Number Range', route: '/number-range' },
     { title: 'Impact', route: '/impact' },

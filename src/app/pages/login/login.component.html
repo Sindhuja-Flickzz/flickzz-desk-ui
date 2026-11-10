@@ -94,7 +94,7 @@
 <div class="container" *ngIf="isMfaSetupMode">
   <h2>Two-Factor Authentication</h2>
   <div *ngIf="submitError" class="error-text">✗ {{ submitError }}</div>
-  <div class="qr-code" *ngIf="!commonResponse.attributes.mfaEnabled">
+  <div class="qr-code" *ngIf="commonResponse.attributes.secretImageUri">
     <img [src]="commonResponse.attributes.secretImageUri" alt="QR Code">
   </div>
   <div class="form-group">

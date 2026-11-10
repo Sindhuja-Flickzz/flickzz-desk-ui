@@ -29,13 +29,44 @@
     align-items: center;
     cursor: pointer;
   }
-  .create-panel, .list-panel {
+  .create-panel, .list-panel, .assign-panel {
     padding: 22px;
     border: 1px solid #eef2f9;
     border-radius: 0 0 12px 12px;
     background: #fff;
   }
   .field { display: flex; flex-direction: column; margin-bottom: 14px; }
+  .assignment-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+  .assignment-actions-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+  }
+  .assignment-actions-row > .actions { flex-shrink: 0; }
+  .assignment-filters {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(220px, .75fr);
+    gap: 12px;
+    align-items: end;
+    flex: 1;
+    max-width: 650px;
+    margin: 0 0 10px auto;
+  }
+  .assignment-filter-field { margin-bottom: 0; }
+  .assignment-filters .search-container { margin: 0; }
+  .assignment-filters .search-input { min-width: 0; }
+  select {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid #ccd6e8;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #fff;
+    font: inherit;
+    &:focus { outline: none; border-color: #0f5bba; }
+  }
+  .field-hint { color: #666; font-size: 13px; margin-top: 6px; }
   label, h3 { color: #1d326d; }
   label { margin-bottom: 6px; font-weight: 600; }
   .input-row { display: flex; align-items: center; gap: 10px; }
@@ -65,7 +96,7 @@
     cursor: pointer;
   }
   .remove-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; background: #d32f2f; color: #fff; border-radius: 50%; }
-  .actions { display: flex; gap: 10px; margin-top: 10px; }
+  .actions { display: flex; gap: 10px; margin-bottom: 10px; }
   .actions .reset-btn { background: #fff; color: #0f5bba; border: 1px solid #0f5bba; }
   .error-text { color: #d32f2f; margin-top: 10px; }
   .success-text { color: #2e7d32; margin-top: 10px; }
@@ -78,4 +109,12 @@
   tbody tr:hover { background: #f5f8ff; }
   .action-buttons button { width: 45px; height: 32px; border: none; border-radius: 6px; cursor: pointer; background: #eff4fb; color: #084d8f; }
   .empty-state { text-align: center; padding: 40px; color: #666; font-size: 16px; }
+
+  @media (max-width: 700px) {
+    .assignment-fields { grid-template-columns: 1fr; gap: 0; }
+    .assignment-actions-row { flex-direction: column; align-items: stretch; gap: 0; }
+    .assignment-actions-row > .actions { flex-wrap: wrap; }
+    .assignment-filters { grid-template-columns: 1fr; }
+    .assignment-filters { max-width: none; margin: 0 0 10px; }
+  }
 }

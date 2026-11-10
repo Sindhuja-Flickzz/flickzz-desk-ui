@@ -16,55 +16,89 @@
     <div *ngIf="workItemsError" class="error-text">{{ workItemsError }}</div>
 
     <form [formGroup]="workflowForm" (ngSubmit)="onSave()">
-      <div class="field">
-        <label for="workItemId">Work Item <span class="required">*</span></label>
-        <select id="workItemId" formControlName="workItemId">
-          <option [ngValue]="null" disabled>Select work item</option>
-          <option *ngFor="let workItem of workItems" [ngValue]="workItem.itemId">{{ workItem.label }} ({{ workItem.code }})</option>
-        </select>
-        <span *ngIf="workflowForm.get('workItemId')?.touched && workflowForm.get('workItemId')?.hasError('required')" class="error-text">
-          Work Item is required.
-        </span>
+      <div class="field-row">
+        <div class="field">
+          <label for="workItemId">Work Item <span class="required">*</span></label>
+          <select id="workItemId" formControlName="workItemId">
+            <option [ngValue]="null" disabled>Select work item</option>
+            <option *ngFor="let workItem of workItems" [ngValue]="workItem.itemId">{{ workItem.description }} ({{ workItem.code }})</option>
+          </select>
+          <span *ngIf="workflowForm.get('workItemId')?.touched && workflowForm.get('workItemId')?.hasError('required')" class="error-text">
+            Work Item is required.
+          </span>
+        </div>
+
+        <div class="field">
+          <label for="approvalPendingStatusId">Approval Pending Status <span class="required">*</span></label>
+          <select id="approvalPendingStatusId" formControlName="approvalPendingStatusId" [disabled]="!workflowForm.get('workItemId')?.value || isLoadingStatuses">
+            <option [ngValue]="null" disabled>Select status</option>
+            <option *ngFor="let status of statuses" [ngValue]="status.statusId">{{ status.statusCode }}</option>
+          </select>
+          <span *ngIf="isLoadingStatuses" class="hint-text">Loading statuses...</span>
+          <span *ngIf="workflowForm.get('approvalPendingStatusId')?.touched && workflowForm.get('approvalPendingStatusId')?.hasError('required')" class="error-text">
+            Select an approval pending status.
+          </span>
+        </div>
       </div>
 
       <div class="field checkbox-field">
-        <label for="isApprovalRequired">Approval required?</label>
-        <input id="isApprovalRequired" type="checkbox" formControlName="isApprovalRequired" />
+        <input id="configureAutoApprovalOnTimeout" type="checkbox" formControlName="configureAutoApprovalOnTimeout" />
+        <label for="configureAutoApprovalOnTimeout">Configure Auto Approval on Timeout</label>
       </div>
-
-      <div class="field">
-        <label for="approvalPendingStatusId">Approval Pending Status <span *ngIf="workflowForm.get('isApprovalRequired')?.value" class="required">*</span></label>
-        <select id="approvalPendingStatusId" formControlName="approvalPendingStatusId" [disabled]="!workflowForm.get('workItemId')?.value || isLoadingStatuses">
-          <option [ngValue]="null" disabled>Select status</option>
-          <option *ngFor="let status of statuses" [ngValue]="status.statusId">{{ status.statusCode }}</option>
-        </select>
-        <span *ngIf="isLoadingStatuses" class="hint-text">Loading statuses...</span>
-        <span *ngIf="workflowForm.get('approvalPendingStatusId')?.touched && workflowForm.get('approvalPendingStatusId')?.hasError('required')" class="error-text">
-          Select a status when approval is required.
-        </span>
-      </div>
-
-      <div class="field">
-        <label for="autoActionTimeline">Auto-Action Timeout <span class="required">*</span></label>
-        <div class="timeline-row">
-          <input id="autoActionTimeline" type="number" min="1" step="1" formControlName="autoActionTimeline" placeholder="Enter duration" />
-          <select id="autoActionTimeUnit" formControlName="autoActionTimeUnit" aria-label="Auto approval time unit">
-            <option *ngFor="let unit of timeUnits" [value]="unit.value">{{ unit.label }}</option>
-          </select>
+      <div *ngIf="workflowForm.get('configureAutoApprovalOnTimeout')?.value" class="field-row">
+        <div class="field">
+          <label for="autoActionTimeline">Auto-Action Timeout <span class="required">*</span></label>
+          <div class="timeline-row">
+            <input id="autoActionTimeline" type="number" min="1" step="1" formControlName="autoActionTimeline" placeholder="Enter duration" />
+            <select id="autoActionTimeUnit" formControlName="autoActionTimeUnit" aria-label="Auto approval time unit">
+              <option *ngFor="let unit of timeUnits" [value]="unit.value">{{ unit.label }}</option>
+            </select>
+          </div>
+          <span *ngIf="workflowForm.get('autoActionTimeline')?.touched && workflowForm.get('autoActionTimeline')?.invalid" class="error-text">
+            Enter a whole number greater than zero.
+          </span>
         </div>
-        <span *ngIf="workflowForm.get('autoActionTimeline')?.touched && workflowForm.get('autoActionTimeline')?.invalid" class="error-text">
-          Enter a whole number greater than zero.
-        </span>
+        <div class="field">
+          <label for="statusAfterAutoAction">Status After Auto-Action <span class="required">*</span></label>
+          <select id="statusAfterAutoAction" formControlName="statusAfterAutoAction" [disabled]="!workflowForm.get('workItemId')?.value || isLoadingStatuses">
+            <option [ngValue]="null" disabled>Select status</option>
+            <option *ngFor="let status of statuses" [ngValue]="status.statusId">{{ status.statusCode }}</option>
+          </select>
+          <span *ngIf="workflowForm.get('statusAfterAutoAction')?.touched && workflowForm.get('statusAfterAutoAction')?.hasError('required')" class="error-text">
+            Select an auto-approval status.
+          </span>
+        </div>
       </div>
-
+      <div class="field-row">
+        <div class="field">
+          <label for="statusOnApproval">Status on approval <span class="required">*</span></label>
+          <select id="statusOnApproval" formControlName="statusOnApproval" [disabled]="!workflowForm.get('workItemId')?.value || isLoadingStatuses">
+            <option [ngValue]="null" disabled>Select status</option>
+            <option *ngFor="let status of statuses" [ngValue]="status.statusId">{{ status.statusCode }}</option>
+          </select>
+          <span *ngIf="workflowForm.get('statusOnApproval')?.touched && workflowForm.get('statusOnApproval')?.hasError('required')" class="error-text">
+            Select a status for approval.
+          </span>
+        </div>
+        <div class="field">
+          <label for="statusOnDecline">Status on Decline <span class="required">*</span></label>
+          <select id="statusOnDecline" formControlName="statusOnDecline" [disabled]="!workflowForm.get('workItemId')?.value || isLoadingStatuses">
+            <option [ngValue]="null" disabled>Select status</option>
+            <option *ngFor="let status of statuses" [ngValue]="status.statusId">{{ status.statusCode }}</option>
+          </select>
+          <span *ngIf="workflowForm.get('statusOnDecline')?.touched && workflowForm.get('statusOnDecline')?.hasError('required')" class="error-text">
+            Select a status for decline.
+          </span>
+        </div>
+      </div>
       <div class="field">
-        <label for="statusAfterAutoAction">Status After Auto-Action <span class="required">*</span></label>
-        <select id="statusAfterAutoAction" formControlName="statusAfterAutoAction" [disabled]="!workflowForm.get('workItemId')?.value || isLoadingStatuses">
+        <label for="statusOnClarify">Status on Clarify <span class="required">*</span></label>
+        <select id="statusOnClarify" formControlName="statusOnClarify" [disabled]="!workflowForm.get('workItemId')?.value || isLoadingStatuses">
           <option [ngValue]="null" disabled>Select status</option>
           <option *ngFor="let status of statuses" [ngValue]="status.statusId">{{ status.statusCode }}</option>
         </select>
-        <span *ngIf="workflowForm.get('statusAfterAutoAction')?.touched && workflowForm.get('statusAfterAutoAction')?.hasError('required')" class="error-text">
-          Select an auto-approval status.
+        <span *ngIf="workflowForm.get('statusOnClarify')?.touched && workflowForm.get('statusOnClarify')?.hasError('required')" class="error-text">
+          Select a status for clarify.
         </span>
       </div>
 
@@ -93,20 +127,24 @@
         <thead>
           <tr>
             <th>Work Item</th>
-            <th>Approval Required</th>
             <th>Approval Pending Status</th>
             <th>Auto-Action Timeout</th>
             <th>Status After Auto-Action</th>
+            <th>Status on approval</th>
+            <th>Status on Decline</th>
+            <th>Status on Clarify</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let workflow of workflows">
             <td>{{ getWorkItemLabel(workflow.workItemId) }}</td>
-            <td>{{ workflow.isApprovalRequired ? 'Yes' : 'No' }}</td>
             <td>{{ workflow.approvalPendingStatusCode }}</td>
-            <td>{{ workflow.autoActionTimeline }} {{ workflow.autoActionTimeUnit | lowercase }}</td>
-            <td>{{ workflow.statusAfterAutoActionCode | titlecase }}</td>
+            <td>{{ workflow.autoActionTimeline == null ? 'Not configured' : workflow.autoActionTimeline + ' ' + (workflow.autoActionTimeUnit | lowercase) }}</td>
+            <td>{{ workflow.statusAfterAutoAction == null ? 'Not configured' : (workflow.statusAfterAutoActionCode | titlecase) }}</td>
+            <td>{{ workflow.statusOnApprovalCode | titlecase }}</td>
+            <td>{{ workflow.statusOnDeclineCode | titlecase }}</td>
+            <td>{{ workflow.statusOnClarifyCode | titlecase }}</td>
             <td class="action-buttons">
               <button type="button" (click)="editWorkflow(workflow)" aria-label="Edit approval workflow">
                 <mat-icon>edit</mat-icon>

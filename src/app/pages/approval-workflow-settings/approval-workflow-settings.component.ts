@@ -52,11 +52,14 @@ export class ApprovalWorkflowSettingsComponent implements OnInit {
     this.workflowForm = this.fb.group({
       configId: [null],
       workItemId: [null, Validators.required],
-      isApprovalRequired: [false],
-      approvalPendingStatusId: [null],
-      autoActionTimeline: [null, [Validators.required, Validators.min(1), Validators.pattern('^[0-9]+$')]],
-      autoActionTimeUnit: ['DAYS', Validators.required],
-      statusAfterAutoAction: ['', Validators.required]
+      approvalPendingStatusId: [null, Validators.required],
+      configureAutoApprovalOnTimeout: [false],
+      autoActionTimeline: [null],
+      autoActionTimeUnit: ['DAYS'],
+      statusAfterAutoAction: [null],
+      statusOnApproval: ['', Validators.required],
+      statusOnDecline: ['', Validators.required],
+      statusOnClarify: ['', Validators.required]
     });
   }
 
@@ -70,8 +73,8 @@ export class ApprovalWorkflowSettingsComponent implements OnInit {
         this.loadStatuses(Number(workItemId));
       }
     });
-    this.workflowForm.get('isApprovalRequired')?.valueChanges.subscribe(isRequired => {
-      this.setShootingStatusValidation(isRequired);
+    this.workflowForm.get('configureAutoApprovalOnTimeout')?.valueChanges.subscribe(configured => {
+      this.setAutoApprovalTimeoutConfiguration(configured);
     });
   }
 
@@ -111,19 +114,20 @@ export class ApprovalWorkflowSettingsComponent implements OnInit {
     this.workflowForm.reset({
       configId: null,
       workItemId: null,
-      isApprovalRequired: false,
       approvalPendingStatusId: null,
+      configureAutoApprovalOnTimeout: false,
       autoActionTimeline: null,
       autoActionTimeUnit: 'DAYS',
-      statusAfterAutoAction: ''
+      statusAfterAutoAction: null,
+      statusOnApproval: '',
+      statusOnDecline: '',
+      statusOnClarify: ''
     });
-    this.setShootingStatusValidation(false);
   }
 
   onSave(): void {
     this.submitError = '';
     this.submitSuccess = '';
-    this.setShootingStatusValidation(this.workflowForm.get('isApprovalRequired')?.value);
     this.workflowForm.markAllAsTouched();
     if (this.workflowForm.invalid) {
       return;
@@ -135,13 +139,13 @@ export class ApprovalWorkflowSettingsComponent implements OnInit {
       ...(this.isEditMode ? { configId: Number(formValue.configId) } : {}),
       companyId: Number(this.userOrgId),
       workItemId: Number(formValue.workItemId),
-      isApprovalRequired: Boolean(formValue.isApprovalRequired),
-      approvalPendingStatusId: formValue.isApprovalRequired
-        ? Number(formValue.approvalPendingStatusId)
-        : null,
-      autoActionTimeline: Number(formValue.autoActionTimeline),
-      autoActionTimeUnit: formValue.autoActionTimeUnit,
-      statusAfterAutoAction: Number(formValue.statusAfterAutoAction),
+      approvalPendingStatusId: Number(formValue.approvalPendingStatusId),
+      autoActionTimeline: formValue.configureAutoApprovalOnTimeout ? Number(formValue.autoActionTimeline) : null,
+      autoActionTimeUnit: formValue.configureAutoApprovalOnTimeout ? formValue.autoActionTimeUnit : null,
+      statusAfterAutoAction: formValue.configureAutoApprovalOnTimeout ? Number(formValue.statusAfterAutoAction) : null,
+      statusOnApproval: Number(formValue.statusOnApproval),
+      statusOnDecline: Number(formValue.statusOnDecline),
+      statusOnClarify: Number(formValue.statusOnClarify),
       createdBy: userId,
       updatedBy: userId,
       isCreatedByAdmin: localStorage.getItem('isAdmin') === 'true',
@@ -177,21 +181,50 @@ export class ApprovalWorkflowSettingsComponent implements OnInit {
     this.pageTitle = 'Edit Approval Workflow';
     this.submitError = '';
     this.submitSuccess = '';
-    this.setShootingStatusValidation(workflow.isApprovalRequired);
     this.workflowForm.patchValue({
       configId: workflow.configId,
       workItemId: workflow.workItemId,
-      isApprovalRequired: workflow.isApprovalRequired,
       approvalPendingStatusId: workflow.approvalPendingStatusId,
+      configureAutoApprovalOnTimeout: workflow.autoActionTimeline != null || workflow.statusAfterAutoAction != null,
       autoActionTimeline: workflow.autoActionTimeline,
-      autoActionTimeUnit: workflow.autoActionTimeUnit,
-      statusAfterAutoAction: workflow.statusAfterAutoAction ?? ''
+      autoActionTimeUnit: workflow.autoActionTimeUnit ?? 'DAYS',
+      statusAfterAutoAction: workflow.statusAfterAutoAction ?? null,
+      statusOnApproval: workflow.statusOnApproval ?? '',
+      statusOnDecline: workflow.statusOnDecline ?? '',
+      statusOnClarify: workflow.statusOnClarify ?? ''
     }, { emitEvent: false });
+    this.setAutoApprovalTimeoutConfiguration(this.workflowForm.get('configureAutoApprovalOnTimeout')?.value);
     this.loadStatuses(
       workflow.workItemId,
       workflow.approvalPendingStatusId,
-      workflow.statusAfterAutoAction
+      workflow.statusAfterAutoAction,
+      workflow.statusOnApproval,
+      workflow.statusOnDecline,
+      workflow.statusOnClarify
     );
+  }
+
+  private setAutoApprovalTimeoutConfiguration(configured: boolean): void {
+    const timelineControl = this.workflowForm.get('autoActionTimeline');
+    const timeUnitControl = this.workflowForm.get('autoActionTimeUnit');
+    const statusControl = this.workflowForm.get('statusAfterAutoAction');
+
+    if (configured) {
+      timelineControl?.setValidators([Validators.required, Validators.min(1), Validators.pattern('^[0-9]+$')]);
+      timeUnitControl?.setValidators(Validators.required);
+      statusControl?.setValidators(Validators.required);
+    } else {
+      timelineControl?.clearValidators();
+      timeUnitControl?.clearValidators();
+      statusControl?.clearValidators();
+      timelineControl?.reset(null, { emitEvent: false });
+      timeUnitControl?.reset('DAYS', { emitEvent: false });
+      statusControl?.reset(null, { emitEvent: false });
+    }
+
+    timelineControl?.updateValueAndValidity({ emitEvent: false });
+    timeUnitControl?.updateValueAndValidity({ emitEvent: false });
+    statusControl?.updateValueAndValidity({ emitEvent: false });
   }
 
   deleteWorkflow(workflow: ApprovalWorkflow): void {
@@ -232,7 +265,7 @@ export class ApprovalWorkflowSettingsComponent implements OnInit {
 
   getWorkItemLabel(workItemId: number): string {
     const workItem = this.workItems.find(item => item.itemId === workItemId);
-    return workItem?.label ? `${workItem.label} (${workItem.code})` : String(workItemId);
+    return workItem?.description ? `${workItem.description} (${workItem.code})` : String(workItemId);
   }
 
   private loadWorkItems(): void {
@@ -258,7 +291,10 @@ export class ApprovalWorkflowSettingsComponent implements OnInit {
   private loadStatuses(
     workItemId: number,
     selectedStatusId: number | null = null,
-    selectedAutoActionStatus: number | string | null = null
+    selectedAutoActionStatus: number | string | null = null,
+    selectedApprovalStatus: number | string | null = null,
+    selectedDeclineStatus: number | string | null = null,
+    selectedClarifyStatus: number | string | null = null
   ): void {
     const workItemCode = this.workItems.find(item => item.itemId === workItemId)?.code;
     if (!workItemCode) {
@@ -276,18 +312,23 @@ export class ApprovalWorkflowSettingsComponent implements OnInit {
         if (selectedStatusId != null) {
           this.workflowForm.patchValue({ approvalPendingStatusId: selectedStatusId }, { emitEvent: false });
         }
-        if (selectedAutoActionStatus != null) {
-          const autoActionStatus = this.statuses.find(status =>
-            status.statusCode === String(selectedAutoActionStatus) ||
-            status.statusId === Number(selectedAutoActionStatus)
-          );
-          if (autoActionStatus) {
-            this.workflowForm.patchValue(
-              { statusAfterAutoAction: autoActionStatus.statusId },
-              { emitEvent: false }
-            );
+        const statusSelections = [
+          ['statusAfterAutoAction', selectedAutoActionStatus],
+          ['statusOnApproval', selectedApprovalStatus],
+          ['statusOnDecline', selectedDeclineStatus],
+          ['statusOnClarify', selectedClarifyStatus]
+        ] as const;
+        statusSelections.forEach(([controlName, selectedStatus]) => {
+          if (selectedStatus == null) {
+            return;
           }
-        }
+          const status = this.statuses.find(item =>
+            item.statusCode === String(selectedStatus) || item.statusId === Number(selectedStatus)
+          );
+          if (status) {
+            this.workflowForm.patchValue({ [controlName]: status.statusId }, { emitEvent: false });
+          }
+        });
       },
       error: err => {
         this.statuses = [];
@@ -322,12 +363,4 @@ export class ApprovalWorkflowSettingsComponent implements OnInit {
     });
   }
 
-  private setShootingStatusValidation(isRequired: boolean): void {
-    const control = this.workflowForm.get('approvalPendingStatusId');
-    if (!control) {
-      return;
-    }
-    control.setValidators(isRequired ? [Validators.required] : []);
-    control.updateValueAndValidity({ emitEvent: false });
-  }
 }

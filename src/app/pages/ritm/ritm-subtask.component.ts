@@ -291,7 +291,7 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
   }
 
   private loadRequestTypes(): void {
-    this.requestTypeService.getRequestTypes(Number(this.orgId)).subscribe({
+    this.requestTypeService.getRequestTypesByWorkItem('RITM_SUBTASK').subscribe({
       next: response => this.requestTypes = this.normalizeArray(response?.attributes ?? response),
       error: error => {
         this.submitError = 'Unable to load request types.';
@@ -380,9 +380,7 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const pendingStatusId = this.approvalWorkflow?.isApprovalRequired
-      ? Number(this.approvalWorkflow.approvalPendingStatusId)
-      : null;
+    const pendingStatusId = Number(this.approvalWorkflow?.approvalPendingStatusId);
     if (pendingStatusId === statusId) {
       this.requestRemarkAndUpdateStatus(statusId);
       return;

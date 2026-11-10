@@ -1,0 +1,90 @@
+<div class="workitem-page">
+  <div class="tabs">
+    <button type="button" class="back-btn" aria-label="Back to settings" (click)="backToSettings()">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
+  </div>
+
+  <section *ngIf="activeTab === 'create'" class="panel">
+    <h2>Create Work Item</h2>
+    <div *ngIf="submitError" class="error-text" role="alert">{{ submitError }}</div>
+    <div *ngIf="submitSuccess" class="success-text" role="status">{{ submitSuccess }}</div>
+
+    <form [formGroup]="workItemForm" (ngSubmit)="onSave()" novalidate>
+      <div class="field">
+        <label for="work-item-code">Work Item Code</label>
+        <input id="work-item-code" type="text" formControlName="code" autocomplete="off">
+        <span *ngIf="workItemForm.get('code')?.touched && workItemForm.get('code')?.hasError('required')" class="error-text">
+          Work item code is required.
+        </span>
+        <span *ngIf="workItemForm.get('code')?.touched && workItemForm.get('code')?.hasError('pattern')" class="error-text">
+          Work item code cannot contain only whitespace.
+        </span>
+      </div>
+
+      <div class="field">
+        <label for="work-item-description">Description</label>
+        <textarea id="work-item-description" formControlName="description" rows="3"></textarea>
+        <span *ngIf="workItemForm.get('description')?.touched && workItemForm.get('description')?.hasError('required')" class="error-text">
+          Description is required.
+        </span>
+        <span *ngIf="workItemForm.get('description')?.touched && workItemForm.get('description')?.hasError('pattern')" class="error-text">
+          Description cannot contain only whitespace.
+        </span>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="save-btn" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Saving...' : 'Save' }}
+        </button>
+        <button type="button" class="reset-btn" [disabled]="isSubmitting" (click)="workItemForm.reset(); submitError = ''; submitSuccess = ''">
+          Reset
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section *ngIf="activeTab === 'list'" class="panel">
+    <h2>Work Item List</h2>
+    <div *ngIf="listError" class="error-text" role="alert">{{ listError }}</div>
+    <div *ngIf="submitSuccess" class="success-text" role="status">{{ submitSuccess }}</div>
+
+    <div class="search-container">
+      <input type="search" [(ngModel)]="searchValue" (ngModelChange)="filterBySearch()"
+        placeholder="Search work items..." aria-label="Search work items">
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Work Item Code</th>
+            <th>Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let workItem of getPaginatedWorkItems()">
+            <td>{{ workItem.code }}</td>
+            <td>{{ workItem.description || workItem.description }}</td>
+            <td class="action-buttons">
+              <button type="button" aria-label="Delete work item" title="Delete work item"
+                [disabled]="deletingItemId === workItem.itemId" (click)="onDeleteWorkItem(workItem)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="loading" class="empty-state" role="status">Loading work items...</div>
+    <div *ngIf="!loading && !listError && filteredWorkItems.length === 0" class="empty-state">No work items found.</div>
+
+    <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions"
+      (page)="onPageChange($event)" showFirstLastButtons>
+    </mat-paginator>
+  </section>
+</div>

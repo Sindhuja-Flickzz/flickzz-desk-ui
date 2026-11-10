@@ -184,7 +184,7 @@ export class RitmComponent implements OnInit, OnDestroy {
   }
 
   private loadRequestTypes(): void {
-    this.requestTypeService.getRequestTypes(Number(this.orgId)).subscribe({
+    this.requestTypeService.getRequestTypesByWorkItem('RITM').subscribe({
       next: response => {
         const requestTypes = Array.isArray(response) ? response : response?.attributes || [];
         this.requestTypes = Array.isArray(requestTypes) ? requestTypes : [];

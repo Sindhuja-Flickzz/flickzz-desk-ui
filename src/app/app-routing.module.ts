@@ -40,6 +40,7 @@ import { GroupRitmComponent } from './pages/group-ritm/group-ritm.component';
 import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
 import { ApprovalComponent } from './pages/approval/approval.component';
 import { ApprovalWorkflowSettingsComponent } from './pages/approval-workflow-settings/approval-workflow-settings.component';
+import { WorkitemComponent } from './pages/workitem/workitem.component';
 
 const routes: Routes = [
   {
@@ -184,6 +185,11 @@ const routes: Routes = [
   {
     path: 'skill',
     component: SkillComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'work-item',
+    component: WorkitemComponent,
     canActivate: [authGuard]
   },
   {

@@ -37,10 +37,25 @@ export interface TemplateDetail {
 export interface WorkItem {
   itemId: number;
   code: string;
-  label: string;
+  description: string;
   isActive: boolean;
   createdBy: string;
   updatedBy: string;
+}
+
+export interface WorkItemCreateRequest {
+  code: string;
+  description: string;
+  companyId: number;
+  createdBy: number;
+  isCreatedByAdmin: boolean;
+}
+
+export interface WorkItemDeleteRequest {
+  itemId: number;
+  orgId: number;
+  deletedBy: number;
+  isDeletedByAdmin: boolean;
 }
 
 export interface FieldTypeItem {

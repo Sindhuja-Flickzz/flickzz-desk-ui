@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONSTANTS } from '../data/app_constants';
-import { VariantRequest } from '../models/variant.model';
+import { VariantRequest, WorkItemCreateRequest, WorkItemDeleteRequest } from '../models/variant.model';
 
 @Injectable({
   providedIn: 'root'
@@ -18,6 +18,14 @@ export class VariantService {
 
   getWorkItemList(orgId: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/settings/work/item/list/${orgId}`);
+  }
+
+  createWorkItem(request: WorkItemCreateRequest): Observable<any> {
+    return this.http.post(`${this.baseUrl}/settings/work/item/create`, request);
+  }
+
+  deleteWorkItem(request: WorkItemDeleteRequest): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/settings/work/item/delete`, { body: request });
   }
 
   getFieldTypeList(orgId: string): Observable<any> {
