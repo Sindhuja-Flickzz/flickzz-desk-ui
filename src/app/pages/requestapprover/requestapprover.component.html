@@ -1,6 +1,6 @@
 <div class="request-approver-page">
   <div class="tabs">
-    <button type="button" class="save-btn header-back" (click)="backToHome()" aria-label="Back to settings"><mat-icon>chevron_left</mat-icon></button>
+    <button type="button" class="save-btn header-back" appPreviousPage aria-label="Back to previous page"><mat-icon>chevron_left</mat-icon></button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ isEditMode ? 'Edit' : 'Create' }}</button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
   </div>

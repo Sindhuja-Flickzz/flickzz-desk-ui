@@ -5,6 +5,7 @@ import { AuthenticationService } from './service/authentication.service';
 import { ThemeService } from './service/theme.service';
 import { NotificationService } from './service/notification.service';
 import { NotificationOverlayService } from './service/notification-overlay.service';
+import { NavigationHistoryService } from './service/navigation-history.service';
 import { MenuItem } from './models/menu';
 import { MENU_INFO, APP_CONSTANTS } from './data/app_constants';
 
@@ -65,10 +66,12 @@ export class AppComponent implements OnInit, OnDestroy {
     private authService: AuthenticationService,
     public themeService: ThemeService,
     private notificationService: NotificationService,
-    private notificationOverlayService: NotificationOverlayService
+    private notificationOverlayService: NotificationOverlayService,
+    private navigationHistory: NavigationHistoryService
   ) {}
 
   ngOnInit() {
+    this.navigationHistory.initialize();
     const currentUrl = this.router.url;
     this.currentUrl = currentUrl;
     this.showSidebar = !!localStorage.getItem('token') && !currentUrl.startsWith('/login') ;

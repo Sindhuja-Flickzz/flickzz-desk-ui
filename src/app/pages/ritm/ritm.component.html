@@ -1,7 +1,7 @@
 <div class="ritm-page" [class.success-state]="showSuccessScreen">
   <div class="page-header">
     <div class="page-heading" *ngIf="!showSuccessScreen">
-      <button type="button" class="save-btn header-back" (click)="onCancel()" aria-label="Back to Settings" title="Back to Settings">
+      <button type="button" class="save-btn header-back" appPreviousPage aria-label="Back to previous page" title="Back to previous page">
         <mat-icon>chevron_left</mat-icon>
       </button>
       <div class="page-title-group">

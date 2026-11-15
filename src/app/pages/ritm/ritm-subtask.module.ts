@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterModule, Routes } from '@angular/router';
 import { RitmSubtaskComponent } from './ritm-subtask.component';
+import { PreviousPageDirective } from '../../shared/previous-page.directive';
 
 const routes: Routes = [{ path: '', component: RitmSubtaskComponent }];
 
@@ -22,6 +23,7 @@ const routes: Routes = [{ path: '', component: RitmSubtaskComponent }];
     MatDialogModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    PreviousPageDirective,
     RouterModule.forChild(routes)
   ]
 })

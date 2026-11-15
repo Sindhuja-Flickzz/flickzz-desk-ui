@@ -89,6 +89,7 @@ import { RitmStatusComponent } from './pages/ritm-status/ritm-status.component';
 import { ApprovalComponent } from './pages/approval/approval.component';
 import { ApprovalWorkflowSettingsComponent } from './pages/approval-workflow-settings/approval-workflow-settings.component';
 import { WorkitemComponent } from './pages/workitem/workitem.component';
+import { PreviousPageDirective } from './shared/previous-page.directive';
 
 @NgModule({
   declarations: [
@@ -180,7 +181,8 @@ import { WorkitemComponent } from './pages/workitem/workitem.component';
     MatBadgeModule,
     MatListModule,
     MatDividerModule,
-    DragDropModule
+    DragDropModule,
+    PreviousPageDirective
   ],
   providers: [
     HttpClient,

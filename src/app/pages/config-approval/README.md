@@ -155,7 +155,7 @@ Base endpoint: `/bp/config/approval`
 
 Primary list endpoint:
 ```
-GET /bp/config/approval/list/{userId}
+GET /approval/list/{userId}
 ```
 
 Response Model: `ConfigChangeApprovalVO[]`
@@ -397,7 +397,7 @@ this.kpiCards = [
 ## Troubleshooting
 
 ### Approvals not loading
-- Verify API endpoint is correct: `/bp/config/approval/list/{userId}`
+- Verify API endpoint is correct: `/approval/list/{userId}`
 - Check user authentication and interceptor
 - Verify response model matches `ConfigChangeApprovalVO`
 

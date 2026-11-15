@@ -1,6 +1,6 @@
 <div class="request-type-page">
   <div class="tabs">
-    <button type="button" class="save-btn header-back" (click)="backToSettings()"><mat-icon>chevron_left</mat-icon></button>
+    <button type="button" class="save-btn header-back" appPreviousPage><mat-icon>chevron_left</mat-icon></button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'assign'" (click)="selectTab('assign')">Assign</button>

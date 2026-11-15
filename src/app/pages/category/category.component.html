@@ -1,6 +1,6 @@
 <div class="category-page">
   <div class="tabs">
-    <button type="button" class="save-btn header-back" (click)="backToPrevious()"><mat-icon>chevron_left</mat-icon></button>
+    <button type="button" class="save-btn header-back" appPreviousPage><mat-icon>chevron_left</mat-icon></button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">{{ isEditMode ? 'Edit' : 'Create' }}</button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'list'" (click)="selectTab('list')">List</button>
   </div>
