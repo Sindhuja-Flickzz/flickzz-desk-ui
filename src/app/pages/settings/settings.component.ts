@@ -23,12 +23,9 @@ export class SettingsComponent {
     { title: 'Agent', route: '/agent' },
     { title: 'Number Range', route: '/number-range' },
     { title: 'Impact', route: '/impact' },
-    { title: 'RITM', route: '/ritm' },
-    { title: 'RITM Status', route: '/ritm-status' },
+    { title: 'Status', route: '/ritm-status' },
     { title: 'Request Types', route: '/request-type' },
     { title: 'Effort Types', route: '/effort-type' },
-    { title: 'My Tickets', route: '/my-tickets' },
-    { title: 'Group RITM', route: '/group-ritm' },
     { title: 'Variant', route: '/variant' },
     { title: 'Template', route: '/templatecomponent' },
     {

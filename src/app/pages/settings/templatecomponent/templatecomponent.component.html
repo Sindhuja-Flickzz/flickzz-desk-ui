@@ -1,6 +1,6 @@
 <div class="vairant-page">
   <div class="tabs">
-    <button type="button" class="save-btn header-back" (click)="backToSettings()" aria-label="Back to settings">
+    <button type="button" class="save-btn header-back" appPreviousPage aria-label="Back to previous page">
       <mat-icon>chevron_left</mat-icon>
     </button>
     <button *ngIf="!isEditing" type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>

@@ -16,11 +16,12 @@ import { EffortType } from '../../models/effort-type.model';
 import { EffortSummary, EffortSummaryResponse } from '../../models/effort-summary.model';
 import { USER_ROLES } from '../../data/app_constants';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog.component';
+import { PreviousPageDirective } from '../../shared/previous-page.directive';
 
 @Component({
   selector: 'app-ritm-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [CommonModule, FormsModule, RouterModule, MatIconModule, MatProgressSpinnerModule, PreviousPageDirective],
   templateUrl: './ritm-details.component.html',
   styleUrls: ['./ritm-details.component.scss']
 })

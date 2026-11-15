@@ -1,6 +1,6 @@
 <div class="workitem-page">
   <div class="tabs">
-    <button type="button" class="back-btn" aria-label="Back to settings" (click)="backToSettings()">
+    <button type="button" class="back-btn" aria-label="Back to previous page" appPreviousPage>
       <mat-icon>chevron_left</mat-icon>
     </button>
     <button type="button" class="tab-btn" [class.active]="activeTab === 'create'" (click)="selectTab('create')">Create</button>

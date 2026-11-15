@@ -1,7 +1,7 @@
 <div class="profile-container">
   <!-- Header with Edit Button -->
   <div class="profile-header">
-    <button class="edit-btn" (click)="goBack()" aria-label="Go back">
+    <button class="edit-btn" appPreviousPage aria-label="Go to previous page">
       <span class="icon">←</span>
     </button>
     <h1 class="page-title">User Profile</h1>
@@ -367,6 +367,6 @@
   <!-- No Data State -->
   <div *ngIf="!isLoading && !profileData" class="no-data-state">
     <p>No profile data available.</p>
-    <button class="back-btn" (click)="goBack()">Go Back</button>
+    <button class="back-btn" appPreviousPage>Go Back</button>
   </div>
 </div>
