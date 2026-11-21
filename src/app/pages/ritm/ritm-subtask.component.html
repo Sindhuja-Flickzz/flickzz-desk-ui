@@ -215,7 +215,7 @@
 
       <div class="form-actions">
         <button mat-flat-button color="primary" type="submit"
-          [disabled]="submitting || loading || !!submitSuccess || (!isEditMode && (templatesLoading || !hasAvailableTemplate))">
+          [disabled]="submitting || loading || !!submitSuccess || (!isEditMode && (requestTypesLoading || !requestTypes.length || templatesLoading || !hasAvailableTemplate))">
           {{ submitting ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update RITM Subtask' : 'Create RITM Subtask') }}
         </button>
         <button mat-stroked-button type="button" (click)="onCancel()" [disabled]="submitting">Cancel</button>

@@ -15,7 +15,7 @@ import { BpAssignmentComponent } from './pages/business-partner/bp-assignment/bp
 import {AgentComponent} from "./pages/agent/agent.component";
 import {PriorityComponent} from "./pages/priority/priority.component";
 import {ImpactComponent} from "./pages/impact/impact.component";
-import {RitmComponent} from "./pages/ritm/ritm.component";
+import { TicketComponent } from "./pages/ritm/ritm.component";
 import {NumberRangeComponent} from "./pages/number-range/number-range.component";
 import {VerifyComponent} from './pages/verify/verify.component';
 import {EnquiryRegistrationComponent} from './pages/enquiry-registration/enquiry-registration.component';
@@ -169,7 +169,18 @@ const routes: Routes = [
   },
   {
     path: 'ritm',
-    component: RitmComponent,
+    component: TicketComponent,
+    canActivate: [authGuard],
+    data: { requestType: 'RITM' }
+  },
+  {
+    path: 'ticket/:requestType',
+    component: TicketComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'ticket',
+    component: TicketComponent,
     canActivate: [authGuard]
   },
   {

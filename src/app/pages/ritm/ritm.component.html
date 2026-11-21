@@ -5,7 +5,10 @@
         <mat-icon>chevron_left</mat-icon>
       </button>
       <div class="page-title-group">
-        <h1>RITM Request</h1>
+        <h1 class="request-type-link" role="link" tabindex="0">{{ requestTypeCode }} Request</h1>
+          <!-- (click)="navigateToNumberRange()"
+          (keydown.enter)="navigateToNumberRange()"
+          (keydown.space)="navigateToNumberRange()">{{ requestTypeCode }} Request</h1> -->
         <p class="page-subtitle">Raise a request to get the support you need</p>
       </div>
     </div>
@@ -16,14 +19,20 @@
   </div>
 
   <div *ngIf="submitSuccess && !showSuccessScreen" class="alert alert-success">{{ submitSuccess }}</div>
-  <div *ngIf="submitError" class="alert alert-error">{{ submitError }}</div>
+  <div *ngIf="submitError" class="alert alert-error">
+    <ng-container *ngIf="submitError === 'Unable to generate ' + requestTypeCode + ' number.'; else genericError">
+      Unable to
+      <a [routerLink]="['/number-range']" [queryParams]="{ requestType: requestTypeCode }">Generate {{ requestTypeCode }} number</a>.
+    </ng-container>
+    <ng-template #genericError>{{ submitError }}</ng-template>
+  </div>
   <div *ngIf="!isEditMode && !templatesLoading && !hasAvailableTemplate" class="alert alert-error">
-    <a [routerLink]="['/variant']">Create RITM template</a> to proceed.
+    <a [routerLink]="['/variant']">Create {{ requestTypeCode }} template</a> to proceed.
   </div>
 
   <ng-container *ngIf="!showSuccessScreen; else ritmSuccessScreen">
   <mat-card class="form-card">
-    <form [formGroup]="ritmForm" (ngSubmit)="onSubmit()" aria-label="RITM form">
+    <form [formGroup]="ritmForm" (ngSubmit)="onSubmit()" [attr.aria-label]="requestTypeCode + ' form'">
       <div class="section-block request-info-block">
         <div class="section-header">
           <span class="section-header-icon">✎</span>
@@ -32,7 +41,7 @@
 
         <div class="field-grid">
           <div class="field field-ritm">
-            <label>RITM Number</label>
+            <label>{{ requestTypeCode }} Number</label>
             <input formControlName="ritmNumber" readonly />
           </div>
 
@@ -303,8 +312,8 @@
 
       <div class="form-actions">
         <button mat-flat-button color="primary" type="submit"
-          [disabled]="submitting || loading || (!isEditMode && (templatesLoading || !hasAvailableTemplate))">
-          {{ submitting ? 'Saving...' : (isEditMode ? 'Update RITM' : 'Create RITM') }}
+          [disabled]="submitting || loading || (!isEditMode && (statusesLoading || !ritmStatuses.length || requestTypesLoading || !requestTypes.length || templatesLoading || !hasAvailableTemplate))">
+          {{ submitting ? 'Saving...' : (isEditMode ? 'Update ' + requestTypeCode : 'Create ' + requestTypeCode) }}
         </button>
         <button mat-stroked-button type="button" (click)="onCancel()">Cancel</button>
       </div>
@@ -317,7 +326,7 @@
       <header class="success-hero">
         <div class="success-badge" aria-hidden="true">✓</div>
         <div class="success-hero-copy">
-          <h2>{{ successRitmDetails?.ritmNumber || 'RITM' }} {{ successWasUpdate ? 'Updated' : 'Created' }} Successfully</h2>
+          <h2>{{ successRitmDetails?.ritmNumber || requestTypeCode }} {{ successWasUpdate ? 'Updated' : 'Created' }} Successfully</h2>
           <p>{{ successWasUpdate ? 'Your changes were saved successfully. The updated details are shown below.' : 'Your request is now in progress and the details below were captured for processing.' }}</p>
         </div>
         <div class="success-pill" [style.color]="getSuccessStatusColor() || null" [title]="getSuccessStatusColor() || ''">
@@ -383,12 +392,12 @@
       <div class="success-action-row">
         <button mat-stroked-button type="button" class="secondary-action" (click)="createAnotherRitm()">
           <mat-icon>add</mat-icon>
-          Create Another RITM
+          Create Another {{ requestTypeCode }}
         </button>
 
         <div class="success-action-group">
           <button mat-flat-button color="primary" type="button" class="primary-action" (click)="viewCreatedRitmDetails()">
-            View RITM Details
+            View {{ requestTypeCode }} Details
           </button>
         </div>
       </div>

@@ -71,8 +71,102 @@
       }
     }
 
-    textarea {
-      resize: vertical;
+    select {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #ccd6e8;
+      border-radius: 10px;
+      padding: 11px 12px;
+      background: #fff;
+      font: inherit;
+    }
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+
+    > .field {
+      margin-bottom: 14px;
+    }
+  }
+
+  .form-row.toggle-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .switch-field {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+
+    .switch-title {
+      font-weight: 600;
+      color: #1d326d;
+    }
+
+    .switch-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 28px;
+
+      input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+      }
+
+      .switch-track {
+        position: relative;
+        width: 40px;
+        height: 22px;
+        flex: 0 0 auto;
+        border-radius: 11px;
+        background: #ccd6e8;
+        cursor: pointer;
+        transition: background .2s ease;
+
+        &::after {
+          position: absolute;
+          top: 3px;
+          left: 3px;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: #fff;
+          content: '';
+          transition: transform .2s ease;
+        }
+      }
+
+      .switch-option {
+        color: #667085;
+        cursor: pointer;
+        transition: color .2s ease, font-weight .2s ease;
+
+        &.active {
+          color: #0f5bba;
+          font-weight: 700;
+        }
+      }
+
+      input:checked ~ .switch-track {
+        background: #0f5bba;
+      }
+
+      input:checked ~ .switch-track::after {
+        transform: translateX(18px);
+      }
+
+      input:focus-visible ~ .switch-track {
+        outline: 2px solid #0f5bba;
+        outline-offset: 2px;
+      }
     }
   }
 
@@ -140,7 +234,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 560px;
+      min-width: 760px;
 
       thead {
         background: #00246b;
@@ -182,5 +276,12 @@
     text-align: center;
     padding: 30px;
     color: #666;
+  }
+
+  @media (max-width: 640px) {
+    .form-row {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
   }
 }

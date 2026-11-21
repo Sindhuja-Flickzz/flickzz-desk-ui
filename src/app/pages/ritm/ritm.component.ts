@@ -16,11 +16,12 @@ import { VariantService } from '../../service/variant.service';
 import { USER_ROLES } from '../../data/app_constants';  
 
 @Component({
-  selector: 'app-ritm',
+  selector: 'app-ticket',
   templateUrl: './ritm.component.html',
   styleUrls: ['./ritm.component.scss']
 })
-export class RitmComponent implements OnInit, OnDestroy {
+export class TicketComponent implements OnInit, OnDestroy {
+  requestTypeCode = 'RITM';
   ritmForm!: FormGroup;
   taskForm!: FormGroup;
   users: AgentMaster[] = [];
@@ -47,6 +48,9 @@ export class RitmComponent implements OnInit, OnDestroy {
   bpOptions: CompanyRole[] = [];
   categories: CategoryMaster[] = [];
   requestTypes: RequestType[] = [];
+  requestTypesLoading = true;
+  statusesLoading = false;
+  private requestTypesLoadFailed = false;
   subCategories: CategorySubCategory[] = [];
   private currentTimeTimer: ReturnType<typeof setInterval> | null = null;
   watchListSearch = '';
@@ -85,6 +89,13 @@ export class RitmComponent implements OnInit, OnDestroy {
    }
 
   ngOnInit(): void {
+    this.requestTypeCode = (
+      this.route.snapshot.queryParamMap.get('requestType')
+      || this.route.snapshot.paramMap.get('requestType')
+      || this.route.snapshot.data['requestType']
+      || history.state?.requestType
+      || 'RITM'
+    ).trim().toUpperCase();
     this.initializeForms();
     this.initializePage();
     this.loadTemplateDetails();
@@ -184,13 +195,23 @@ export class RitmComponent implements OnInit, OnDestroy {
   }
 
   private loadRequestTypes(): void {
-    this.requestTypeService.getRequestTypesByWorkItem('RITM').subscribe({
+    this.requestTypesLoading = true;
+    this.requestTypeService.getRequestTypesByWorkItem(this.requestTypeCode).subscribe({
       next: response => {
         const requestTypes = Array.isArray(response) ? response : response?.attributes || [];
         this.requestTypes = Array.isArray(requestTypes) ? requestTypes : [];
+        this.requestTypesLoading = false;
+        this.requestTypesLoadFailed = false;
+        if (!this.isEditMode && this.requestTypes.length === 0) {
+          this.submitError = 'No request types are configured for this work item. Please contact your administrator.';
+        }
       },
-      error: () => {
+      error: error => {
         this.requestTypes = [];
+        this.requestTypesLoading = false;
+        this.requestTypesLoadFailed = true;
+        this.submitError = 'Unable to load request types.';
+        console.error(error);
       }
     });
   }
@@ -211,7 +232,7 @@ export class RitmComponent implements OnInit, OnDestroy {
   }
 
   private fetchRitmTemplateDetails(): void {
-    this.variantService.getRitmTemplateDetails(this.orgId, 'RITM').subscribe({
+    this.variantService.getRitmTemplateDetails(this.orgId, this.requestTypeCode).subscribe({
       next: response => {
         const templates = this.normalizeArray<any>(response?.attributes || response);
         this.templates = templates.map(template => ({
@@ -228,7 +249,7 @@ export class RitmComponent implements OnInit, OnDestroy {
       error: error => {
         this.templates = [];
         this.templatesLoading = false;
-        this.submitError = 'Unable to load RITM template details.';
+        this.submitError = `Unable to load ${this.requestTypeCode} template details.`;
       }
     });
   }
@@ -481,15 +502,20 @@ export class RitmComponent implements OnInit, OnDestroy {
   }
 
   private loadRitmStatuses(currentStatusId?: number, ritm?: any): void {
+    this.statusesLoading = true;
     const orgId = localStorage.getItem('userOrgId') || this.orgId;
     const statusesRequest = currentStatusId !== undefined
-      ? this.ritmService.getVisibleStatuses(Number(orgId), currentStatusId, 'RITM')
-      : this.ritmService.getActiveStatuses(orgId, 'RITM');
+      ? this.ritmService.getVisibleStatuses(Number(orgId), currentStatusId, this.requestTypeCode)
+      : this.ritmService.getActiveStatuses(orgId, this.requestTypeCode);
 
     statusesRequest.subscribe({
       next: (response: any) => {
+        this.statusesLoading = false;
         const statuses = response?.attributes ?? response ?? [];
         this.ritmStatuses = Array.isArray(statuses) ? statuses : [];
+        if (!this.isEditMode && this.ritmStatuses.length === 0) {
+          this.submitError = `No active statuses are configured for ${this.requestTypeCode}. Ticket creation is unavailable.`;
+        }
         if (currentStatusId !== undefined && ritm) {
           const currentStatus = ritm.status && typeof ritm.status === 'object'
             ? ritm.status
@@ -504,8 +530,11 @@ export class RitmComponent implements OnInit, OnDestroy {
         this.applyExistingStatusValue();
       },
       error: (err: unknown) => {
+        this.statusesLoading = false;
         this.ritmStatuses = [];
-        this.submitError = 'Unable to load available statuses for this RITM.';
+        this.submitError = this.isEditMode
+          ? 'Unable to load available statuses for this RITM.'
+          : 'Unable to load active statuses. Ticket creation is unavailable.';
         console.error(err);
       }
     });
@@ -844,10 +873,10 @@ export class RitmComponent implements OnInit, OnDestroy {
   }
 
   private generateRitmNumber(): void {
-    this.ritmService.getRequestNumber('RITM').subscribe({
+    this.ritmService.getRequestNumber(this.requestTypeCode).subscribe({
       next: response => this.ritmForm.get('ritmNumber')?.setValue(response.attributes),
       error: (err: unknown) => {
-        this.submitError = 'Unable to generate RITM number.';
+        this.submitError = 'Unable to generate '+ this.requestTypeCode+' number.';
         console.error(err);
       }
     });
@@ -960,6 +989,23 @@ export class RitmComponent implements OnInit, OnDestroy {
     this.submitSuccess = '';
 
     if (!this.isEditMode) {
+      if (this.statusesLoading) {
+        this.submitError = 'Statuses are still loading. Please wait.';
+        return;
+      }
+      if (this.ritmStatuses.length === 0) {
+        this.submitError = `No active statuses are configured for ${this.requestTypeCode}. Ticket creation is unavailable.`;
+        return;
+      }
+      if (this.requestTypesLoading || this.requestTypes.length === 0) {
+        this.submitError = this.requestTypesLoading
+          ? 'Request types are still loading. Please wait.'
+          : this.requestTypesLoadFailed
+            ? 'Unable to load request types.'
+            : 'No request types are configured for this work item. Please contact your administrator.';
+        return;
+      }
+
       const unavailableDependencies: string[] = [];
       if (this.ritmStatuses.length === 0) {
         unavailableDependencies.push('status');
@@ -969,7 +1015,7 @@ export class RitmComponent implements OnInit, OnDestroy {
       }
 
       if (unavailableDependencies.length > 0) {
-        this.submitError = `RITM creation is unavailable because ${unavailableDependencies.join(' and ')} data is not available.`;
+        this.submitError = `${this.requestTypeCode} creation is unavailable because ${unavailableDependencies.join(' and ')} data is not available.`;
         return;
       }
     }
@@ -991,7 +1037,7 @@ export class RitmComponent implements OnInit, OnDestroy {
       ...rawValues,
       openedBy: this.currentUser?.agentId ?? Number(localStorage.getItem('userId') || 0),
       assignmentGroup: this.assignmentGroupId,
-      requestType: 'RITM',
+      requestType: this.requestTypeCode,
       requestTypeId: Number(rawValues.requestTypeId),
       watchList: this.normalizeWatchListIds(rawValues.watchList),
       orgId: Number(this.orgId),
@@ -1026,7 +1072,9 @@ export class RitmComponent implements OnInit, OnDestroy {
     saveRequest$.subscribe({
       next: (response: any) => {
         const wasEditMode = this.isEditMode;
-        this.submitSuccess = wasEditMode ? 'RITM updated successfully.' : 'RITM created successfully.';
+        this.submitSuccess = wasEditMode
+          ? `${this.requestTypeCode} updated successfully.`
+          : `${this.requestTypeCode} created successfully.`;
         this.submitting = false;
         this.successWasUpdate = wasEditMode;
         const responseData = response?.attributes ?? response ?? {};
@@ -1088,6 +1136,12 @@ export class RitmComponent implements OnInit, OnDestroy {
 
   onCancel(): void {
     this.router.navigate(['/settings']);
+  }
+
+  navigateToNumberRange(): void {
+    this.router.navigate(['/number-range'], {
+      queryParams: { requestType: this.requestTypeCode }
+    });
   }
 
   viewCreatedRitmDetails(): void {
@@ -1337,7 +1391,7 @@ export class RitmComponent implements OnInit, OnDestroy {
   }
 
   createAnotherRitm() {
-    this.router.navigate(['/ritm'], { queryParams: {}, replaceUrl: true });
+    this.router.navigate(['/ticket', this.requestTypeCode], { queryParams: {}, replaceUrl: true });
     this.isEditMode = false;
     this.ritmId = '';
     this.showSuccessScreen = false;

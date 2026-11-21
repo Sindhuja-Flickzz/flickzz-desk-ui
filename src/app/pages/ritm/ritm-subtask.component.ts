@@ -39,6 +39,8 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
   priorities: PriorityMaster[] = [];
   categories: CategoryMaster[] = [];
   requestTypes: RequestType[] = [];
+  requestTypesLoading = true;
+  private requestTypesLoadFailed = false;
   subCategories: CategorySubCategory[] = [];
   templates: any[] = [];
   expandedTemplates: Record<string, boolean> = {};
@@ -291,9 +293,20 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
   }
 
   private loadRequestTypes(): void {
+    this.requestTypesLoading = true;
     this.requestTypeService.getRequestTypesByWorkItem('RITM_SUBTASK').subscribe({
-      next: response => this.requestTypes = this.normalizeArray(response?.attributes ?? response),
+      next: response => {
+        this.requestTypes = this.normalizeArray(response?.attributes ?? response);
+        this.requestTypesLoading = false;
+        this.requestTypesLoadFailed = false;
+        if (!this.isEditMode && this.requestTypes.length === 0) {
+          this.submitError = 'No request types are configured for this work item. Please contact your administrator.';
+        }
+      },
       error: error => {
+        this.requestTypes = [];
+        this.requestTypesLoading = false;
+        this.requestTypesLoadFailed = true;
         this.submitError = 'Unable to load request types.';
         console.error(error);
       }
@@ -819,6 +832,14 @@ export class RitmSubtaskComponent implements OnInit, OnDestroy {
     this.formSubmitted = true;
     this.submitError = '';
     this.submitSuccess = '';
+    if (!this.isEditMode && (this.requestTypesLoading || this.requestTypes.length === 0)) {
+      this.submitError = this.requestTypesLoading
+        ? 'Request types are still loading. Please wait.'
+        : this.requestTypesLoadFailed
+          ? 'Unable to load request types.'
+          : 'No request types are configured for this work item. Please contact your administrator.';
+      return;
+    }
     if (!this.isEditMode && (this.templatesLoading || !this.hasAvailableTemplate)) {
       this.submitError = 'No RITM template available.';
       return;

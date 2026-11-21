@@ -39,7 +39,10 @@ export class WorkitemComponent implements OnInit {
   ) {
     this.workItemForm = this.fb.group({
       code: ['', [Validators.required, Validators.pattern(/\S/)]],
-      description: ['', [Validators.required, Validators.pattern(/\S/)]]
+      description: ['', [Validators.required, Validators.pattern(/\S/)]],
+      isParent: [true],
+      isSR: [true],
+      parentWorkItemId: [null]
     });
   }
 
@@ -69,8 +72,31 @@ export class WorkitemComponent implements OnInit {
     this.workItemForm.markAllAsTouched();
     const code = String(this.workItemForm.get('code')?.value || '').trim();
     const description = String(this.workItemForm.get('description')?.value || '').trim();
+    const isParent = this.workItemForm.get('isParent')?.value;
+    const isSR = this.workItemForm.get('isSR')?.value;
+    const selectedParentId = this.workItemForm.get('parentWorkItemId')?.value;
     if (!code || !description) {
       this.submitError = 'Work item code and description are required.';
+      return;
+    }
+    if (typeof isParent !== 'boolean') {
+      this.submitError = 'Select Parent or Child.';
+      return;
+    }
+    if (typeof isSR !== 'boolean') {
+      this.submitError = 'Select SR or User story.';
+      return;
+    }
+    const parentWorkItemId = !isParent ? Number(selectedParentId) : null;
+    if (!isParent && (selectedParentId === null || selectedParentId === ''
+      || !Number.isInteger(parentWorkItemId)
+      || !this.workItems.some(item => item.itemId === parentWorkItemId))) {
+      this.workItemForm.get('parentWorkItemId')?.markAsTouched();
+      this.submitError = 'Select a valid parent work item.';
+      return;
+    }
+    if (this.workItemForm.invalid) {
+      this.submitError = 'Correct the highlighted fields before saving.';
       return;
     }
     if (this.workItems.some(item => item.code.trim().toLowerCase() === code.toLowerCase())) {
@@ -84,13 +110,16 @@ export class WorkitemComponent implements OnInit {
       description,
       companyId: Number(this.userOrgId),
       createdBy: Number(localStorage.getItem('userId') || 0),
-      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase()
+      isCreatedByAdmin: localStorage.getItem('userRole')?.toLowerCase() === USER_ROLES.ADMIN.toLowerCase(),
+      isParent,
+      isSR,
+      parentWorkItemId
     };
     this.variantService.createWorkItem(request).subscribe({
       next: () => {
         this.isSubmitting = false;
+        this.resetForm();
         this.submitSuccess = 'Work item created successfully.';
-        this.workItemForm.reset();
         this.activeTab = 'list';
         this.loadWorkItems();
       },
@@ -100,6 +129,45 @@ export class WorkitemComponent implements OnInit {
         this.submitError = err.error?.description || err.error?.message || 'Failed to create work item.';
       }
     });
+  }
+
+  onHierarchyTypeChange(): void {
+    const parentControl = this.workItemForm.get('parentWorkItemId');
+    if (this.workItemForm.get('isParent')?.value === false) {
+      parentControl?.setValidators(Validators.required);
+    } else {
+      parentControl?.clearValidators();
+      parentControl?.setValue(null);
+    }
+    parentControl?.updateValueAndValidity();
+  }
+
+  onHierarchySwitchChange(event: Event): void {
+    const target = event.target;
+    if (target instanceof HTMLInputElement) {
+      this.workItemForm.get('isParent')?.setValue(!target.checked);
+      this.onHierarchyTypeChange();
+    }
+  }
+
+  onWorkItemTypeSwitchChange(event: Event): void {
+    const target = event.target;
+    if (target instanceof HTMLInputElement) {
+      this.workItemForm.get('isSR')?.setValue(!target.checked);
+    }
+  }
+
+  resetForm(): void {
+    this.workItemForm.reset({
+      code: '',
+      description: '',
+      isParent: true,
+      isSR: true,
+      parentWorkItemId: null
+    });
+    this.onHierarchyTypeChange();
+    this.submitError = '';
+    this.submitSuccess = '';
   }
 
   loadWorkItems(): void {
@@ -126,8 +194,13 @@ export class WorkitemComponent implements OnInit {
           .filter((item: any): item is WorkItem => item && typeof item.code === 'string')
           .map((item: WorkItem) => ({
             ...item,
-            label: typeof item.description === 'string' ? item.description : '',
-            description: typeof item.description === 'string' ? item.description : ''
+            label: typeof item.label === 'string' ? item.label : (typeof item.description === 'string' ? item.description : ''),
+            description: typeof item.description === 'string' ? item.description : '',
+            isParent: item.isParent === true,
+            isServiceRequest: item.isServiceRequest === true,
+            parentItem: item.parentItem && typeof item.parentItem.code === 'string'
+              ? { code: item.parentItem.code }
+              : null
           }));
         this.filterBySearch();
         this.loading = false;
@@ -193,6 +266,10 @@ export class WorkitemComponent implements OnInit {
     this.filteredWorkItems = this.workItems.filter(item =>
       !term || item.code.toLowerCase().includes(term)
       || (item.description || '').toLowerCase().includes(term)
+      || (item.label || '').toLowerCase().includes(term)
+      || (item.isParent ? 'parent' : 'child').includes(term)
+      || (item.isServiceRequest ? 'service request yes' : 'no').includes(term)
+      || (item.parentItem?.code || '').toLowerCase().includes(term)
     );
     this.totalRecords = this.filteredWorkItems.length;
     this.currentPage = 0;
