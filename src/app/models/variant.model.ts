@@ -37,7 +37,13 @@ export interface TemplateDetail {
 export interface WorkItem {
   itemId: number;
   code: string;
+  label: string;
   description: string;
+  isParent: boolean;
+  isServiceRequest: boolean;
+  parentItem?: {
+    code: string;
+  } | null;
   isActive: boolean;
   createdBy: string;
   updatedBy: string;
@@ -49,6 +55,9 @@ export interface WorkItemCreateRequest {
   companyId: number;
   createdBy: number;
   isCreatedByAdmin: boolean;
+  isParent: boolean;
+  isSR: boolean;
+  parentWorkItemId: number | null;
 }
 
 export interface WorkItemDeleteRequest {

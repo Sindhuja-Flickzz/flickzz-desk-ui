@@ -230,7 +230,6 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   verifyCode() {
     if (this.isVerifying) return;
-    this.isVerifying = true;
     this.submitError = '';
 
     if (this.otpCode.length < 6) {
@@ -238,6 +237,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.isVerifying = true;
     const verifyRequest: VerificationRequest = {
       email: this.registerLoginRequest.email,
       code: parseInt(this.otpCode)
@@ -259,6 +259,7 @@ export class LoginComponent implements OnInit, OnDestroy {
           this.isVerifying = false;
           console.error('Code verification error', err);
           this.submitError = err.error?.description || 'Failed to verify code.';
+          this.otpCode = '';
         }
       });
   }

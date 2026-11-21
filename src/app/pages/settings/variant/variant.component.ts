@@ -97,6 +97,7 @@ export class VariantComponent implements OnInit, OnDestroy {
             ? workItemsData.map((item: WorkItem) => {
                 this.workItemMap.set(item.code, item);
                 return {
+                  code: item.code,
                   label: item.description,
                   value: item.code
                 };

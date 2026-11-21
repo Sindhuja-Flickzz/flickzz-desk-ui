@@ -77,6 +77,16 @@
   font-size: clamp(1.4rem, 2vw, 1.8rem);
 }
 
+.request-type-link {
+  cursor: pointer;
+}
+
+.request-type-link:hover,
+.request-type-link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .page-subtitle {
   margin: 0;
   color: #7a8599;

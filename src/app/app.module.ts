@@ -56,7 +56,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { PriorityComponent } from './pages/priority/priority.component';
 import { ImpactComponent } from './pages/impact/impact.component';
-import { RitmComponent } from './pages/ritm/ritm.component';
+import { TicketComponent } from './pages/ritm/ritm.component';
 import { BusinessPartnerComponent } from './pages/business-partner/business-partner.component';
 import { NumberRangeComponent } from './pages/number-range/number-range.component';
 import { VerifyComponent } from './pages/verify/verify.component';
@@ -113,7 +113,7 @@ import { PreviousPageDirective } from './shared/previous-page.directive';
     JoinPipe,
     PriorityComponent,
     ImpactComponent,
-    RitmComponent,
+    TicketComponent,
     BusinessPartnerComponent,
     NumberRangeComponent,
     VerifyComponent,

@@ -1824,9 +1824,9 @@ export class RitmDetailsComponent implements OnInit {
         return;
       }
 
-      this.router.navigate(['/ritm'], {
-        queryParams: { id: this.ritmId },
-        state: { ritmData: this.ritm }
+      this.router.navigate(['/ticket', this.requestType || 'RITM'], {
+        queryParams: { id: this.ritmId, requestType: this.requestType || 'RITM' },
+        state: { ritmData: this.ritm, requestType: this.requestType || 'RITM' }
       });
     }
   }

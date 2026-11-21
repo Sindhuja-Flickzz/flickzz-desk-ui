@@ -13,25 +13,72 @@
     <div *ngIf="submitSuccess" class="success-text" role="status">{{ submitSuccess }}</div>
 
     <form [formGroup]="workItemForm" (ngSubmit)="onSave()" novalidate>
-      <div class="field">
-        <label for="work-item-code">Work Item Code</label>
-        <input id="work-item-code" type="text" formControlName="code" autocomplete="off">
-        <span *ngIf="workItemForm.get('code')?.touched && workItemForm.get('code')?.hasError('required')" class="error-text">
-          Work item code is required.
-        </span>
-        <span *ngIf="workItemForm.get('code')?.touched && workItemForm.get('code')?.hasError('pattern')" class="error-text">
-          Work item code cannot contain only whitespace.
-        </span>
+      <div class="form-row">
+        <div class="field">
+          <label for="work-item-code">Work Item Code</label>
+          <input id="work-item-code" type="text" formControlName="code" autocomplete="off">
+          <span *ngIf="workItemForm.get('code')?.touched && workItemForm.get('code')?.hasError('required')" class="error-text">
+            Work item code is required.
+          </span>
+          <span *ngIf="workItemForm.get('code')?.touched && workItemForm.get('code')?.hasError('pattern')" class="error-text">
+            Work item code cannot contain only whitespace.
+          </span>
+        </div>
+
+        <div class="field">
+          <label for="work-item-description">Description</label>
+          <input id="work-item-description" type="text" formControlName="description">
+          <span *ngIf="workItemForm.get('description')?.touched && workItemForm.get('description')?.hasError('required')" class="error-text">
+            Description is required.
+          </span>
+          <span *ngIf="workItemForm.get('description')?.touched && workItemForm.get('description')?.hasError('pattern')" class="error-text">
+            Description cannot contain only whitespace.
+          </span>
+        </div>
       </div>
 
-      <div class="field">
-        <label for="work-item-description">Description</label>
-        <textarea id="work-item-description" formControlName="description" rows="3"></textarea>
-        <span *ngIf="workItemForm.get('description')?.touched && workItemForm.get('description')?.hasError('required')" class="error-text">
-          Description is required.
-        </span>
-        <span *ngIf="workItemForm.get('description')?.touched && workItemForm.get('description')?.hasError('pattern')" class="error-text">
-          Description cannot contain only whitespace.
+      <div class="form-row toggle-row">
+        <label class="switch-field">
+          <span class="switch-title">Hierarchy</span>
+          <span class="switch-control">
+            <input type="checkbox" role="switch"
+              [checked]="workItemForm.get('isParent')?.value === false"
+              aria-label="Parent or Child"
+              (change)="onHierarchySwitchChange($event)">
+            <span class="switch-option"
+              [class.active]="workItemForm.get('isParent')?.value !== false">Parent</span>
+            <span class="switch-track" aria-hidden="true"></span>
+            <span class="switch-option"
+              [class.active]="workItemForm.get('isParent')?.value === false">Child</span>
+          </span>
+        </label>
+
+        <label class="switch-field">
+          <span class="switch-title">Work Item Type</span>
+          <span class="switch-control">
+            <input type="checkbox" role="switch"
+              [checked]="workItemForm.get('isSR')?.value === false"
+              aria-label="SR or User story"
+              (change)="onWorkItemTypeSwitchChange($event)">
+            <span class="switch-option"
+              [class.active]="workItemForm.get('isSR')?.value !== false">SR</span>
+            <span class="switch-track" aria-hidden="true"></span>
+            <span class="switch-option"
+              [class.active]="workItemForm.get('isSR')?.value === false">User story</span>
+          </span>
+        </label>
+      </div>
+
+      <div *ngIf="workItemForm.get('isParent')?.value === false" class="field">
+        <label for="parent-work-item">Select parent</label>
+        <select id="parent-work-item" formControlName="parentWorkItemId">
+          <option [ngValue]="null">Select parent</option>
+          <option *ngFor="let item of workItems" [ngValue]="item.itemId">
+            {{ item.code }}
+          </option>
+        </select>
+        <span *ngIf="workItemForm.get('parentWorkItemId')?.touched && workItemForm.get('parentWorkItemId')?.hasError('required')" class="error-text">
+          Select a parent work item.
         </span>
       </div>
 
@@ -39,7 +86,7 @@
         <button type="submit" class="save-btn" [disabled]="isSubmitting">
           {{ isSubmitting ? 'Saving...' : 'Save' }}
         </button>
-        <button type="button" class="reset-btn" [disabled]="isSubmitting" (click)="workItemForm.reset(); submitError = ''; submitSuccess = ''">
+        <button type="button" class="reset-btn" [disabled]="isSubmitting" (click)="resetForm()">
           Reset
         </button>
       </div>
@@ -62,13 +109,19 @@
           <tr>
             <th>Work Item Code</th>
             <th>Description</th>
+            <th>Hierarchy</th>
+            <th>Service Request</th>
+            <th>Parent Item Code</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let workItem of getPaginatedWorkItems()">
             <td>{{ workItem.code }}</td>
-            <td>{{ workItem.description || workItem.description }}</td>
+            <td>{{ workItem.label }}</td>
+            <td>{{ workItem.isParent ? 'Parent' : 'Child' }}</td>
+            <td>{{ workItem.isServiceRequest ? 'Yes' : 'No' }}</td>
+            <td>{{ workItem.parentItem?.code || '-' }}</td>
             <td class="action-buttons">
               <button type="button" aria-label="Delete work item" title="Delete work item"
                 [disabled]="deletingItemId === workItem.itemId" (click)="onDeleteWorkItem(workItem)">

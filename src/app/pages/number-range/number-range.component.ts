@@ -6,7 +6,7 @@ import { NumberRangeService } from '../../service/number-range.service';
 import { RequestConfigRequest, RequestConfigVO } from '../../models/number-range';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared/confirmation-dialog/confirmation-dialog.component';
 import { USER_ROLES } from 'src/app/data/app_constants';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { VariantService } from '../../service/variant.service';
 
 @Component({
@@ -44,7 +44,8 @@ export class NumberRangeComponent implements OnInit {
     private numberRangeService: NumberRangeService,
     private variantService: VariantService,
     private dialog: MatDialog,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.numberRangeForm = this.fb.group({
       configId: [null],
@@ -98,6 +99,10 @@ export class NumberRangeComponent implements OnInit {
         this.requestTypes = Array.isArray(workItems)
           ? workItems.map((item: any) => item?.code).filter((code: any): code is string => typeof code === 'string' && code.trim().length > 0)
           : [];
+        const requestType = this.route.snapshot.queryParamMap.get('requestType')?.trim().toUpperCase();
+        if (requestType && this.requestTypes.includes(requestType)) {
+          this.numberRangeForm.patchValue({ requestType });
+        }
       },
       error: (err) => {
         console.error('Failed to load request types:', err);

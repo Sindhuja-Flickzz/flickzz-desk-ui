@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { AuthenticationService } from 'src/app/service/authentication.service';
 import { LoginComponent } from './login.component';
@@ -13,7 +13,7 @@ describe('LoginComponent', () => {
   let authService: jasmine.SpyObj<AuthenticationService>;
 
   beforeEach(() => {
-    authService = jasmine.createSpyObj('AuthenticationService', ['login']);
+    authService = jasmine.createSpyObj('AuthenticationService', ['login', 'verifyCode']);
     authService.login.and.returnValue(of({
       code: 'SUCCESS',
       title: 'OK',
@@ -53,5 +53,23 @@ describe('LoginComponent', () => {
     component.login();
 
     expect(authService.login).not.toHaveBeenCalled();
+  });
+
+  it('should show a verification error, clear the code, and allow retry after an invalid code', () => {
+    authService.verifyCode.and.returnValue(throwError(() => ({
+      error: { description: 'Invalid validation code' }
+    })));
+    component.otpCode = '123456';
+
+    component.verifyCode();
+
+    expect(component.submitError).toBe('Invalid validation code');
+    expect(component.otpCode).toBe('');
+    expect(component.isVerifying).toBeFalse();
+
+    component.otpCode = '654321';
+    fixture.detectChanges();
+    const verifyButton = fixture.nativeElement.querySelector('button[type="button"]') as HTMLButtonElement;
+    expect(verifyButton.disabled).toBeFalse();
   });
 });

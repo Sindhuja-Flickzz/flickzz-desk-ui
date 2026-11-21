@@ -153,16 +153,18 @@ export class RitmStatusComponent implements OnInit {
     }
 
     const normalizedStatusCode = statusCode.toLowerCase();
+    const normalizedRequestType = String(requestType).trim().toLowerCase();
     const numericSequence = Number(sequenceNo);
     const duplicateStatusCode = this.statusList.some(status =>
       status.statusCode.toLowerCase() === normalizedStatusCode
     ) || this.statuses.some(status =>
-      status.requestType === requestType &&
+      String(status.requestType || '').trim().toLowerCase() === normalizedRequestType &&
       status.statusCode.toLowerCase() === normalizedStatusCode
     );
     const duplicateSequence = this.statusList.some(status =>
       status.sequenceNo === numericSequence
     ) || this.statuses.some(status =>
+      String(status.requestType || '').trim().toLowerCase() === normalizedRequestType &&
       Number(status.sequenceNo) === numericSequence
     );
 
@@ -170,7 +172,7 @@ export class RitmStatusComponent implements OnInit {
       this.formError.statusCode = 'Status Code already added for this request type';
     }
     if (duplicateSequence) {
-      this.formError.sequenceNo = 'Sequence already added';
+      this.formError.sequenceNo = 'Sequence already added for this request type';
     }
     if (Object.keys(this.formError).length > 0) {
       return;

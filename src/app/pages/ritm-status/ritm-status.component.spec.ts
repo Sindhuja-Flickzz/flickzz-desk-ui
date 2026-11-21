@@ -126,6 +126,40 @@ describe('RitmStatusComponent', () => {
     expect(component.formError.statusCode).toBe('Status Code already added for this request type');
   });
 
+  it('allows the same sequence for a different request type', () => {
+    component.statuses = [
+      { statusId: 1, requestType: 'INC', statusCode: 'OPEN', sequenceNo: 1 } as any
+    ];
+    component.ritmStatusForm.patchValue({
+      requestType: 'RITM',
+      statusCode: 'OPEN',
+      sequenceNo: 1,
+      statusColor: '#00246b'
+    });
+
+    component.addStatus();
+
+    expect(component.statusList.map(status => status.sequenceNo)).toEqual([1]);
+    expect(component.formError.sequenceNo).toBeUndefined();
+  });
+
+  it('rejects a duplicate sequence for the same request type', () => {
+    component.statuses = [
+      { statusId: 1, requestType: 'RITM', statusCode: 'OPEN', sequenceNo: 1 } as any
+    ];
+    component.ritmStatusForm.patchValue({
+      requestType: 'RITM',
+      statusCode: 'PENDING',
+      sequenceNo: 1,
+      statusColor: '#00246b'
+    });
+
+    component.addStatus();
+
+    expect(component.statusList).toEqual([]);
+    expect(component.formError.sequenceNo).toBe('Sequence already added for this request type');
+  });
+
   it('clears all list filters and resets pagination', () => {
     component.searchValue = 'closed';
     component.selectedRequestType = 'INC';
